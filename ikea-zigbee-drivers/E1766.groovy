@@ -1,5 +1,5 @@
 /**
- * IKEA Tradfri Open/Close remote (E1766)
+ * IKEA Tradfri Open/Close Remote (E1766)
  *
  * @see https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/
  * @see https://zigbee.blakadder.com/Ikea_E1766.html
@@ -9,8 +9,8 @@
 import groovy.time.TimeCategory
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = "IKEA Tradfri Open/Close remote (E1766)"
-@Field static final String DRIVER_VERSION = "3.2.0"
+@Field static final String DRIVER_NAME = "IKEA Tradfri Open/Close Remote (E1766)"
+@Field static final String DRIVER_VERSION = "3.3.0"
 @Field static final Map<String, String> ZDP_STATUS = ["00":"SUCCESS", "80":"INV_REQUESTTYPE", "81":"DEVICE_NOT_FOUND", "82":"INVALID_EP", "83":"NOT_ACTIVE", "84":"NOT_SUPPORTED", "85":"TIMEOUT", "86":"NO_MATCH", "88":"NO_ENTRY", "89":"NO_DESCRIPTOR", "8A":"INSUFFICIENT_SPACE", "8B":"NOT_PERMITTED", "8C":"TABLE_FULL", "8D":"NOT_AUTHORIZED", "8E":"DEVICE_BINDING_TABLE_FULL"]
 @Field static final Map<String, String> ZCL_STATUS = ["00":"SUCCESS", "01":"FAILURE", "7E":"NOT_AUTHORIZED", "7F":"RESERVED_FIELD_NOT_ZERO", "80":"MALFORMED_COMMAND", "81":"UNSUP_CLUSTER_COMMAND", "82":"UNSUP_GENERAL_COMMAND", "83":"UNSUP_MANUF_CLUSTER_COMMAND", "84":"UNSUP_MANUF_GENERAL_COMMAND", "85":"INVALID_FIELD", "86":"UNSUPPORTED_ATTRIBUTE", "87":"INVALID_VALUE", "88":"READ_ONLY", "89":"INSUFFICIENT_SPACE", "8A":"DUPLICATE_EXISTS", "8B":"NOT_FOUND", "8C":"UNREPORTABLE_ATTRIBUTE", "8D":"INVALID_DATA_TYPE", "8E":"INVALID_SELECTOR", "8F":"WRITE_ONLY", "90":"INCONSISTENT_STARTUP_STATE", "91":"DEFINED_OUT_OF_BAND", "92":"INCONSISTENT", "93":"ACTION_DENIED", "94":"TIMEOUT", "95":"ABORT", "96":"INVALID_IMAGE", "97":"WAIT_FOR_DATA", "98":"NO_IMAGE_AVAILABLE", "99":"REQUIRE_MORE_IMAGE", "9A":"NOTIFICATION_PENDING", "C0":"HARDWARE_FAILURE", "C1":"SOFTWARE_FAILURE", "C2":"CALIBRATION_ERROR", "C3":"UNSUPPORTED_CLUSTER"]
 
@@ -38,11 +38,11 @@ metadata {
 
         // For firmwares: 2.2.010, 24.4.6
         fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0001,0003,0009,0020,1000,FC7C", outClusters:"0003,0004,0006,0008,0019,0102,1000", model:"TRADFRI open/close remote", manufacturer:"IKEA of Sweden"
-
+        
         // Attributes for capability.HealthCheck
         attribute "healthStatus", "ENUM", ["offline", "online", "unknown"]
     }
-
+    
     // Commands for capability.FirmwareUpdate
     command "updateFirmware"
 
@@ -81,7 +81,7 @@ def updated() {
     unschedule()
     if (logLevel == "1") runIn 1800, "logsOff"
     Log.info "🛠️ logLevel = ${logLevel}"
-
+    
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, "healthCheck"
 }
@@ -131,23 +131,23 @@ def configure() {
     // -- No reporting needed
 
     // Add E1766 specific Zigbee binds
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0106 {${device.zigbeeId}} {}" // Window Covering cluster
-
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0102 {${device.zigbeeId}} {}" // Window Covering cluster
+    
     // Configuration for capability.Battery
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0001 0x0021 0x20 0x0000 0xA8C0 {01} {}" // Report battery at least every 12 hours
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0001 {${device.zigbeeId}} {}" // Power Configuration cluster
     cmds += zigbee.readAttribute(0x0001, 0x0021)  // BatteryPercentage
-
+    
     // Configuration for capability.HealthCheck
     state.lastRx == 0
     state.lastTx == 0
     sendEvent name:"healthStatus", value:"online", descriptionText:"Health status initialized to online"
     sendEvent name:"checkInterval", value:3600, unit:"second", descriptionText:"Health check interval is 3600 seconds"
-
+    
     // Configuration for capability.PowerSource
     sendEvent name:"powerSource", value:"unknown", type:"digital", descriptionText:"Power source initialized to unknown"
     cmds += zigbee.readAttribute(0x0000, 0x0007) // PowerSource
-
+    
     // Configuration for capability.PushableButton
     def numberOfButtons = BUTTONS.count{_ -> true}
     sendEvent name:"numberOfButtons", value:numberOfButtons, descriptionText:"Number of buttons is ${numberOfButtons}"
@@ -208,11 +208,9 @@ def release(buttonNumber) {
 }
 
 // Implementation for capability.FirmwareUpdate
-List updateFirmware() {
-    def cmds = []
-    cmds += zigbee.updateFirmware()
-    if (debugEnable) log.debug "${device.displayName} updateFirmware $cmds"
-    return cmds
+def updateFirmware() {
+    Log.info '[IMPORTANT] For battery-powered devices, click the "Update Firmware" button immediately after pushing any button on the device in order to first wake it up!'
+    Utils.sendZigbeeCommands(zigbee.updateFirmware())
 }
 
 // ===================================================================================================================
@@ -231,7 +229,7 @@ def parse(String description) {
     Log.debug "msg=[${msg}]"
 
     state.lastRx = now()
-
+    
     // Parse for capability.HealthCheck
     if (device.currentValue("healthStatus", true) != "online") {
         Utils.sendEvent name:"healthStatus", value:"online", type:"digital", descriptionText:"Health status changed to online"
@@ -248,7 +246,7 @@ def parse(String description) {
         case { contains it, [clusterInt:0x0102, commandInt:0x01] }:
             def button = msg.commandInt == 0x00 ? BUTTONS.OPEN : BUTTONS.CLOSE
             return Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
-
+        
         // I/O button was released
         case { contains it, [clusterInt:0x0102, commandInt:0x02] }:
             def button = device.currentValue("pushed", true) == 1 ? BUTTONS.OPEN : BUTTONS.CLOSE
@@ -257,41 +255,41 @@ def parse(String description) {
         // ---------------------------------------------------------------------------------------------------------------
         // Handle capabilities Zigbee messages
         // ---------------------------------------------------------------------------------------------------------------
-
+        
         // Events for capability.Battery
-
+        
         // Report Attributes: BatteryPercentage
         // Read Attributes Reponse: BatteryPercentage
         case { contains it, [clusterInt:0x0001, commandInt:0x0A, attrInt:0x0021] }:
         case { contains it, [clusterInt:0x0001, commandInt:0x01, attrInt:0x0021] }:
             Integer percentage = Integer.parseInt(msg.value, 16)
-
+        
             // (0xFF) 255 is an invalid value for the battery percentage attribute, so we just ignore it
             if (percentage == 255) {
                 Log.warn "Ignored invalid reported battery percentage value: 0xFF (255)"
                 return
             }
-
+        
             percentage =  percentage / 2
             Utils.sendEvent name:"battery", value:percentage, unit:"%", type:"physical", descriptionText:"Battery is ${percentage}% full"
             return Utils.processedZclMessage("Report/Read Attributes Response", "BatteryPercentage=${percentage}")
-
+        
         // Other events that we expect but are not usefull for capability.Battery behavior
-
+        
         // ConfigureReportingResponse := { 08:Status, 08:Direction, 16:AttributeIdentifier }
         // Success example: [00] -> status = SUCCESS
         case { contains it, [clusterInt:0x0001, commandInt:0x07] }:
             if (msg.data[0] != "00") return Utils.failedZclMessage("Configure Reporting Response", msg.data[0], msg)
             return Utils.processedZclMessage("Configure Reporting Response", "cluster=0x${msg.clusterId}, data=${msg.data}")
-
+        
         // Events for capability.HealthCheck
         case { contains it, [clusterInt:0x0000, attrInt:0x0000] }:
             return Log.info("... pong")
-
+        
         // Read Attributes Reponse: PowerSource
         case { contains it, [clusterInt:0x0000, commandInt:0x01, attrInt:0x0007] }:
             String powerSource = "unknown"
-
+        
             // PowerSource := { 0x00:Unknown, 0x01:MainsSinglePhase, 0x02:MainsThreePhase, 0x03:Battery, 0x04:DC, 0x05:EmergencyMainsConstantlyPowered, 0x06:EmergencyMainsAndTransferSwitch }
             switch (msg.value) {
                 case "01":

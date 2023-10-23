@@ -10,7 +10,7 @@ import groovy.time.TimeCategory
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = "IKEA Askvader On/Off Switch (E1836)"
-@Field static final String DRIVER_VERSION = "3.2.0"
+@Field static final String DRIVER_VERSION = "3.3.0"
 @Field static final Map<String, String> ZDP_STATUS = ["00":"SUCCESS", "80":"INV_REQUESTTYPE", "81":"DEVICE_NOT_FOUND", "82":"INVALID_EP", "83":"NOT_ACTIVE", "84":"NOT_SUPPORTED", "85":"TIMEOUT", "86":"NO_MATCH", "88":"NO_ENTRY", "89":"NO_DESCRIPTOR", "8A":"INSUFFICIENT_SPACE", "8B":"NOT_PERMITTED", "8C":"TABLE_FULL", "8D":"NOT_AUTHORIZED", "8E":"DEVICE_BINDING_TABLE_FULL"]
 @Field static final Map<String, String> ZCL_STATUS = ["00":"SUCCESS", "01":"FAILURE", "7E":"NOT_AUTHORIZED", "7F":"RESERVED_FIELD_NOT_ZERO", "80":"MALFORMED_COMMAND", "81":"UNSUP_CLUSTER_COMMAND", "82":"UNSUP_GENERAL_COMMAND", "83":"UNSUP_MANUF_CLUSTER_COMMAND", "84":"UNSUP_MANUF_GENERAL_COMMAND", "85":"INVALID_FIELD", "86":"UNSUPPORTED_ATTRIBUTE", "87":"INVALID_VALUE", "88":"READ_ONLY", "89":"INSUFFICIENT_SPACE", "8A":"DUPLICATE_EXISTS", "8B":"NOT_FOUND", "8C":"UNREPORTABLE_ATTRIBUTE", "8D":"INVALID_DATA_TYPE", "8E":"INVALID_SELECTOR", "8F":"WRITE_ONLY", "90":"INCONSISTENT_STARTUP_STATE", "91":"DEFINED_OUT_OF_BAND", "92":"INCONSISTENT", "93":"ACTION_DENIED", "94":"TIMEOUT", "95":"ABORT", "96":"INVALID_IMAGE", "97":"WAIT_FOR_DATA", "98":"NO_IMAGE_AVAILABLE", "99":"REQUIRE_MORE_IMAGE", "9A":"NOTIFICATION_PENDING", "C0":"HARDWARE_FAILURE", "C1":"SOFTWARE_FAILURE", "C2":"CALIBRATION_ERROR", "C3":"UNSUPPORTED_CLUSTER"]
 
@@ -46,6 +46,9 @@ metadata {
     
     // Commands for capability.ZigbeeRouter
     command "requestRoutingData"
+    
+    // Commands for capability.FirmwareUpdate
+    command "updateFirmware"
 
     preferences {
         input(
@@ -244,6 +247,12 @@ def requestRoutingData() {
         "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0031 {00} {0x00}",
         "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0032 {00} {0x00}"
     ])
+}
+
+// Implementation for capability.FirmwareUpdate
+def updateFirmware() {
+    Log.info '[IMPORTANT] For battery-powered devices, click the "Update Firmware" button immediately after pushing any button on the device in order to first wake it up!'
+    Utils.sendZigbeeCommands(zigbee.updateFirmware())
 }
 
 // ===================================================================================================================

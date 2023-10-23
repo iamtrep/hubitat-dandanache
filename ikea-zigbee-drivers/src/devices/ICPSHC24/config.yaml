@@ -22,6 +22,7 @@ device:
         - { cluster: '0x0006', attr: '0x4003', description: 'PowerOnBehavior := { 0x00:TurnPowerOff, 0x01:TurnPowerOn, 0xFF:RestorePreviousState }' }
         - { cluster: '0x0008', attr: '0x0000', description: 'CurrentLevel := 0x00 to 0xFE (0 to 254)' }
     - file: src/capabilities/ZigbeeRouter.groovy
+    - file: src/capabilities/FirmwareUpdate.groovy
 
 zigbee:
   fingerprints:

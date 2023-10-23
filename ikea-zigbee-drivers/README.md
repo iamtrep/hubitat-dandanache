@@ -4,6 +4,7 @@ Supported devices:
 * [Tradfri Control Outlet (E1603)](#tradfri-control-outlet-e1603)
 * [Tradfri On/Off Switch (E1743)](#tradfri-onoff-switch-e1743)
 * [Tradfri Motion Sensor (E1745)](#tradfri-motion-sensor-e1745)
+* [Tradfri Open/Close Remote (E1766)](#tradfri-openclose-remote-e1766)
 * [Tradfri Remote Control (E1810)](#tradfri-remote-control-e1810)
 * [Tradfri Shortcut Button (E1812)](#tradfri-shortcut-button-e1812)
 * [Askvader On/Off Switch (E1836)](#askvader-onoff-switch-e1836)
@@ -111,6 +112,34 @@ Follow the steps below if you don't know what "Hubitat Package Manager" is:
 
 ### Device Pairing
 1. Open the back compartiment and you should see the small pair button (don't push it!)
+1. In the Hubitat interface, go to "Devices", click "Add Device" in the top right, click "Zigbee", then click "Start
+   Zigbee pairing"
+1. > IMPORTANT: Move close to your Hubitat hub, then click the pair button in the battery compartiment **4 times within
+   > 5 seconds**
+1. > IMPORTANT: Immediately after the device LED starts blinking red, keep the device **as close as you can** against
+   > your Hubitat hub for **at least 30 seconds** (after the LED stops blinking and turns off)
+1. Return to the pairing page and give your device a name and assign it to a room (optional)
+1. Close the device battery compartiment
+1. That's it, Have fun!
+
+
+## Tradfri Open/Close Remote (E1766)
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="https://zigbee.blakadder.com/assets/images/devices/Ikea_E1766.webp" style="width: 200px"> |
+| Product Code | |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E1766.groovy` |
+| Tested firmwares | `24.4.6` |
+
+### Features
+* Button Push events for: both buttons
+* Button Release events for: both buttons
+* Battery indicator (%)
+* Health status (online / offline)
+
+### Device Pairing
+1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (don't push it!)
 1. In the Hubitat interface, go to "Devices", click "Add Device" in the top right, click "Zigbee", then click "Start
    Zigbee pairing"
 1. > IMPORTANT: Move close to your Hubitat hub, then click the pair button in the battery compartiment **4 times within

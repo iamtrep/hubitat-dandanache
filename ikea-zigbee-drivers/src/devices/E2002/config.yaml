@@ -21,6 +21,7 @@ device:
         - { id: 'NEXT',  name: 'Next',  number: 3 }
         - { id: 'PREV',  name: 'Prev',  number: 4 }
     - file: src/capabilities/ReleasableButton.groovy
+    - file: src/capabilities/FirmwareUpdate.groovy
 
 zigbee:
   fingerprints:
