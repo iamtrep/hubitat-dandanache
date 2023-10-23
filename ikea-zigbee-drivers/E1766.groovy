@@ -1,15 +1,15 @@
 /**
- * IKEA Tradfri Motion Sensor (E1745)
+ * IKEA Tradfri Open/Close remote (E1766)
  *
  * @see https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/
- * @see https://zigbee.blakadder.com/Ikea_E1745.html
+ * @see https://zigbee.blakadder.com/Ikea_E1766.html
  * @see https://ww8.ikea.com/ikeahomesmart/releasenotes/releasenotes.html
  * @see https://static.homesmart.ikea.com/releaseNotes/
  */
 import groovy.time.TimeCategory
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = "IKEA Tradfri Motion Sensor (E1745)"
+@Field static final String DRIVER_NAME = "IKEA Tradfri Open/Close remote (E1766)"
 @Field static final String DRIVER_VERSION = "3.2.0"
 @Field static final Map<String, String> ZDP_STATUS = ["00":"SUCCESS", "80":"INV_REQUESTTYPE", "81":"DEVICE_NOT_FOUND", "82":"INVALID_EP", "83":"NOT_ACTIVE", "84":"NOT_SUPPORTED", "85":"TIMEOUT", "86":"NO_MATCH", "88":"NO_ENTRY", "89":"NO_DESCRIPTOR", "8A":"INSUFFICIENT_SPACE", "8B":"NOT_PERMITTED", "8C":"TABLE_FULL", "8D":"NOT_AUTHORIZED", "8E":"DEVICE_BINDING_TABLE_FULL"]
 @Field static final Map<String, String> ZCL_STATUS = ["00":"SUCCESS", "01":"FAILURE", "7E":"NOT_AUTHORIZED", "7F":"RESERVED_FIELD_NOT_ZERO", "80":"MALFORMED_COMMAND", "81":"UNSUP_CLUSTER_COMMAND", "82":"UNSUP_GENERAL_COMMAND", "83":"UNSUP_MANUF_CLUSTER_COMMAND", "84":"UNSUP_MANUF_GENERAL_COMMAND", "85":"INVALID_FIELD", "86":"UNSUPPORTED_ATTRIBUTE", "87":"INVALID_VALUE", "88":"READ_ONLY", "89":"INSUFFICIENT_SPACE", "8A":"DUPLICATE_EXISTS", "8B":"NOT_FOUND", "8C":"UNREPORTABLE_ATTRIBUTE", "8D":"INVALID_DATA_TYPE", "8E":"INVALID_SELECTOR", "8F":"WRITE_ONLY", "90":"INCONSISTENT_STARTUP_STATE", "91":"DEFINED_OUT_OF_BAND", "92":"INCONSISTENT", "93":"ACTION_DENIED", "94":"TIMEOUT", "95":"ABORT", "96":"INVALID_IMAGE", "97":"WAIT_FOR_DATA", "98":"NO_IMAGE_AVAILABLE", "99":"REQUIRE_MORE_IMAGE", "9A":"NOTIFICATION_PENDING", "C0":"HARDWARE_FAILURE", "C1":"SOFTWARE_FAILURE", "C2":"CALIBRATION_ERROR", "C3":"UNSUPPORTED_CLUSTER"]
@@ -20,20 +20,24 @@ import groovy.transform.Field
     "thereshold": "43200" // When checking, mark the device as offline if no Zigbee message was received in the last 43200 seconds
 ]
 
+// Fields for capability.PushableButton
+@Field static final Map<String, List<String>> BUTTONS = [
+    "OPEN": ["1", "Open"],
+    "CLOSE": ["2", "Close"],
+]
+
 metadata {
-    definition(name:DRIVER_NAME, namespace:"dandanache", author:"Dan Danache", importUrl:"https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E1745.groovy") {
+    definition(name:DRIVER_NAME, namespace:"dandanache", author:"Dan Danache", importUrl:"https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E1766.groovy") {
         capability "Configuration"
-        capability "MotionSensor"
         capability "Battery"
         capability "HealthCheck"
+        capability "HoldableButton"
         capability "PowerSource"
+        capability "PushableButton"
+        capability "ReleasableButton"
 
-        // For firmwares: 24.4.5
-        fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0001,0003,0020,1000,FC57,FC7C", outClusters:"0003,0004,0006,0008,0019,1000", model:"TRADFRI motion sensor", manufacturer:"IKEA of Sweden"
-
-        // Attributes for capability.MotionSensor
-        attribute "requestedBrightness", "NUMBER"            // Syncs with the brightness option on device (◐/⭘)
-        attribute "illumination", "ENUM", ["dim", "bright"]  // Works only in night mode 🌙
+        // For firmwares: 2.2.010, 24.4.6
+        fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0001,0003,0009,0020,1000,FC7C", outClusters:"0003,0004,0006,0008,0019,0102,1000", model:"TRADFRI open/close remote", manufacturer:"IKEA of Sweden"
 
         // Attributes for capability.HealthCheck
         attribute "healthStatus", "ENUM", ["offline", "online", "unknown"]
@@ -57,37 +61,6 @@ metadata {
             defaultValue: "2",
             required: true
         )
-
-        // Inputs for capability.MotionSensor
-        input(
-            name: "clearMotionPeriod",
-            type: "enum",
-            title: "Clear motion after",
-            description: "<small>Set status inactive if no motion is detected in this period</small>",
-            options: [
-                "60"  : "1 minute",
-                "120" : "2 minutes",
-                "180" : "3 minutes",
-                "240" : "4 minutes",
-                "300" : "5 minutes",
-                "360" : "6 minutes",
-                "420" : "7 minutes",
-                "480" : "8 minutes",
-                "540" : "9 minutes",
-                "600" : "10 minutes"
-            ],
-            defaultValue: "180",
-            required: true
-        )
-        // Inputs for capability.MotionSensor
-        input(
-            name: "onlyTriggerInDimLight",
-            type: "bool",
-            title: "Only detect motion in the dark",
-            description: "<small>Select the night mode 🌙 option on device for this to work</small>",
-            defaultValue: false,
-            required: true
-        )
     }
 }
 
@@ -108,10 +81,6 @@ def updated() {
     unschedule()
     if (logLevel == "1") runIn 1800, "logsOff"
     Log.info "🛠️ logLevel = ${logLevel}"
-
-    // Preferences for capability.MotionSensor
-    Log.info "🛠️ clearMotionPeriod = ${clearMotionPeriod} seconds"
-    Log.info "🛠️ onlyTriggerInDimLight = ${onlyTriggerInDimLight}"
 
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, "healthCheck"
@@ -158,11 +127,11 @@ def configure() {
 
     def cmds = []
 
-    // Configure E1745 specific Zigbee reporting
+    // Configure E1766 specific Zigbee reporting
     // -- No reporting needed
 
-    // Add E1745 specific Zigbee binds
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
+    // Add E1766 specific Zigbee binds
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0106 {${device.zigbeeId}} {}" // Window Covering cluster
 
     // Configuration for capability.Battery
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0001 0x0021 0x20 0x0000 0xA8C0 {01} {}" // Report battery at least every 12 hours
@@ -179,17 +148,16 @@ def configure() {
     sendEvent name:"powerSource", value:"unknown", type:"digital", descriptionText:"Power source initialized to unknown"
     cmds += zigbee.readAttribute(0x0000, 0x0007) // PowerSource
 
+    // Configuration for capability.PushableButton
+    def numberOfButtons = BUTTONS.count{_ -> true}
+    sendEvent name:"numberOfButtons", value:numberOfButtons, descriptionText:"Number of buttons is ${numberOfButtons}"
+
     // Query Basic cluster attributes
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x0005, 0x000A, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, ModelIdentifier, IKEAType, SWBuildID
 
     // Query all active endpoints
     cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0005 {00 ${zigbee.swapOctets(device.deviceNetworkId)}} {0x0000}"
     Utils.sendZigbeeCommands cmds
-}
-
-// Implementation for capability.MotionSensor
-def clearMotion() {
-    return Utils.sendEvent(name:"motion", value:"inactive", type:"digital", descriptionText:"Is inactive")
 }
 
 // Implementation for capability.HealthCheck
@@ -216,6 +184,27 @@ def pingExecute() {
 
     def offlineMarkAgo = TimeCategory.minus(thereshold, now).toString().replace(".000 seconds", " seconds")
     Log.info "Will me marked as offline if no message is received until ${thereshold.format("yyyy-MM-dd HH:mm:ss", location.timeZone)} (${offlineMarkAgo} from now)"
+}
+
+// Implementation for capability.HoldableButton
+def hold(buttonNumber) {
+    String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
+    if (buttonName == null) return Log.warn("Cannot hold button ${buttonNumber} because it is not defined")
+    Utils.sendEvent name:"held", value:buttonNumber, type:"digital", isStateChange:true, descriptionText:"Button ${buttonNumber} (${buttonName}) was held"
+}
+
+// Implementation for capability.PushableButton
+def push(buttonNumber) {
+    String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
+    if (buttonName == null) return Log.warn("Cannot push button ${buttonNumber} because it is not defined")
+    Utils.sendEvent name:"pushed", value:buttonNumber, type:"digital", isStateChange:true, descriptionText:"Button ${buttonNumber} (${buttonName}) was pressed"
+}
+
+// Implementation for capability.ReleasableButton
+def release(buttonNumber) {
+    String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
+    if (buttonName == null) return Log.warn("Cannot release button ${buttonNumber} because it is not defined")
+    Utils.sendEvent name:"released", value:buttonNumber, type:"digital", isStateChange:true, descriptionText:"Button ${buttonNumber} (${buttonName}) was released"
 }
 
 // Implementation for capability.FirmwareUpdate
@@ -251,37 +240,23 @@ def parse(String description) {
     switch (msg) {
 
         // ---------------------------------------------------------------------------------------------------------------
-        // Handle E1745 specific Zigbee messages
+        // Handle E1766 specific Zigbee messages
         // ---------------------------------------------------------------------------------------------------------------
 
-        // No specific events
+        // I/O button was pressed
+        case { contains it, [clusterInt:0x0102, commandInt:0x00] }:
+        case { contains it, [clusterInt:0x0102, commandInt:0x01] }:
+            def button = msg.commandInt == 0x00 ? BUTTONS.OPEN : BUTTONS.CLOSE
+            return Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
+
+        // I/O button was released
+        case { contains it, [clusterInt:0x0102, commandInt:0x02] }:
+            def button = device.currentValue("pushed", true) == 1 ? BUTTONS.OPEN : BUTTONS.CLOSE
+            return Utils.sendEvent(name:"released", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was released")
 
         // ---------------------------------------------------------------------------------------------------------------
         // Handle capabilities Zigbee messages
         // ---------------------------------------------------------------------------------------------------------------
-
-        // Events for capability.MotionSensor
-
-        // OnWithTimedOff := { 08:OnOffControl, 16:OnTime, 16:OffWaitTime }
-        // OnOffControl := { 01:AcceptOnlyWhenOn, 07:Reserved }
-        // Example: [01, 08, 07, 00, 00] -> acceptOnlyWhenOn=true, onTime=180, offWaitTime=0
-        case { contains it, [clusterInt:0x0006, commandInt:0x42] }:
-            String illumination = msg.data[0] == "01" ? "bright" : "dim"
-            Utils.sendEvent(name:"illumination", value:illumination, type:"physical", descriptionText:"Illumination is ${illumination}")
-
-            if (illumination == "bright" && onlyTriggerInDimLight) {
-                return Log.debug("Ignored detected motion because the \"Only detect motion in the dark\" option is active and the sensor detected plenty of light")
-            }
-
-            runIn Integer.parseInt(clearMotionPeriod), "clearMotion", [ overwrite:true ]
-            return Utils.sendEvent(name:"motion", value:"active", type:"physical", descriptionText:"Is active")
-
-        // MoveToLevelWithOnOff := { 08:Level, 16:TransitionTime }
-        // Example: [4C, 01, 00] -> level=30%, transitionTime=1/10seconds
-        // Example: :[FE, 01, 00 -> level=100%, transitionTime=1/10seconds
-        case { contains it, [clusterInt:0x0008, commandInt:0x04] }:
-            Integer requestedBrightness = Math.round(Integer.parseInt(msg.data[0], 16) * 100 / 254)
-            return Utils.sendEvent(name:"requestedBrightness", value:requestedBrightness, unit:"%", type:"physical", descriptionText:"Requested brightness set too ${requestedBrightness}%")
 
         // Events for capability.Battery
 
