@@ -1,7 +1,7 @@
 /**
  * Knockturn Alley - Simple toolkit driver to help developers peer deep into the guts of Zigbee devices.
  *
- * @version 1.3.0
+ * @version 1.4.0
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/CHANGELOG
  * @see https://community.hubitat.com/t/dev-knockturn-alley/125167
@@ -72,9 +72,17 @@ def a01Legilimens() {
     sendEvent name:"documentation", value:"<a href=\"https://dan-danache.github.io/hubitat/knockturn-alley-driver/\" target=\"_blank\">README</a>", isStateChange:false
     Log.info "🪄 Legilimens"
   
-    // Discover active endpoints
-    def cmd = "he raw 0x${device.deviceNetworkId} 0x0000 0x0000 0x0005 {00 ${zigbee.swapOctets(device.deviceNetworkId)}} {0x0000}"
-    Utils.sendZigbeeCommands([cmd])
+    List<String> cmds = []
+
+    // Active_EP_req
+    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0005 {42 ${zigbee.swapOctets(device.deviceNetworkId)}} {0x0000}"
+
+    // Node_Desc_req
+    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0002 {43 ${zigbee.swapOctets(device.deviceNetworkId)}} {0x0000}"
+
+    // Power_Desc_req
+    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0003 {44 ${zigbee.swapOctets(device.deviceNetworkId)}} {0x0000}"
+    Utils.sendZigbeeCommands(cmds)
 }
 
 def a02Scourgify(operation) {
@@ -91,7 +99,27 @@ def a02Scourgify(operation) {
     //table += "<tr><th colspan=9><a href=\"javascript:void\" onclick=\"navigator.clipboard.writeText(document.getElementById('ka_report').outerHTML)\">Copy</a></tr>"
     table += "<tr><th>ID</th><th>Name</th><th>Required</th><th>Access</th><th>Type</th><th>Bytes</th><th>Encoding</th><th>Value</th><th>Reporting</th></tr>"
     table += "</thead><tbody>"
-    
+
+    if (state.ka_nodeDescriptor) {
+        table += "<tr><th colspan=9 style='background-color:SteelBlue; color:White'>Node Descriptor</th></tr>"
+        (0..((state.ka_nodeDescriptor.size() / 2) - 1)).each { idx ->
+            table += "<tr>"
+            table += "<td>${state.ka_nodeDescriptor[idx * 2]}</td>"
+            table += "<td colspan=8>${state.ka_nodeDescriptor[idx * 2 + 1]}</td>"
+            table += "</tr>"
+        }
+    }
+
+    if (state.ka_powerDescriptor) {
+        table += "<tr><th colspan=9 style='background-color:SteelBlue; color:White'>Power Descriptor</th></tr>"
+        (0..((state.ka_powerDescriptor.size() / 2) - 1)).each { idx ->
+            table += "<tr>"
+            table += "<td>${state.ka_powerDescriptor[idx * 2]}</td>"
+            table += "<td colspan=8>${state.ka_powerDescriptor[idx * 2 + 1]}</td>"
+            table += "</tr>"
+        }
+    }
+
     state.ka_endpoints?.sort().each { endpoint ->
         table += "<tr><th colspan=9 style='background-color:SteelBlue; color:White'>Endpoint: 0x${Utils.hex endpoint, 2}</th></tr>"
         table += "<tr><th colspan=9>Out Clusters: ${state["ka_outClusters_${endpoint}"]?.sort().collect { "0x${Utils.hex it, 4} (${ZCL_CLUSTERS.get(it)?.name ?: "Unknown Cluster"})" }.join(", ")}</th></tr>"
@@ -109,7 +137,7 @@ def a02Scourgify(operation) {
                 table += "<tr><td colspan=9><b>Attributes</b></td></tr>"
                 attributes.sort().each { attribute ->
                     def attributeSpec = ZCL_CLUSTERS.get(cluster)?.get("attributes")?.get(attribute)
-                    def attributeType = state["ka_attribute_${endpoint}_${cluster}_${attribute}"]
+                    def attributeType = ZCL_DATA_TYPES[state["ka_attribute_${endpoint}_${cluster}_${attribute}"]]
                     def attributeValue = state["ka_attributeValue_${endpoint}_${cluster}_${attribute}"]
                     def attributeReporting = state["ka_attributeReporting_${endpoint}_${cluster}_${attribute}"]
                     
@@ -121,11 +149,14 @@ def a02Scourgify(operation) {
 
                     // Pretty value
                     String value = "${attributeValue?.value ?: "--"}"
-                    if (attributeValue?.value && attributeSpec?.constraints) {
-                        value += " = ${attributeSpec.constraints[Utils.dec(attributeValue.value)]}"
-                    }
-                    if (attributeValue?.value && attributeSpec?.decorate) {
-                        value += " = ${attributeSpec.decorate(attributeValue.value)}"
+                    if (attributeValue?.value) {
+                        if (attributeValue?.value && attributeSpec?.constraints) {
+                            value += " = ${attributeSpec.constraints[Utils.dec(attributeValue.value)]}"
+                        } else if (attributeValue?.value && attributeSpec?.decorate) {
+                            value += " = ${attributeSpec.decorate(attributeValue.value)}"
+                        } else if (attributeType?.decorate) {
+                            value += " = ${attributeType.decorate(attributeValue.value)}"
+                        }
                     }
                     
                     table += "<tr>"
@@ -187,17 +218,17 @@ def b01Accio(operation, endpointHex, clusterHex, attributeHex, manufacturerHex="
     Integer attribute = Integer.parseInt attributeHex.substring(2), 16
 
     Integer manufacturer = manufacturerHex ? Integer.parseInt(manufacturerHex.substring(2), 16) : null
-    String frameStart = "10 75"
+    String frameStart = "1043"
     if (manufacturer != null) {
-        frameStart = "04 ${Utils.payload manufacturer} 75"
+        frameStart = "04${Utils.payload manufacturer}43"
     }
 
     switch (operation) {
         case { it.startsWith("1 - ") }:
-            return Utils.sendZigbeeCommands(["he raw ${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart} 00 ${Utils.payload attribute}}"])
+            return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart}00 ${Utils.payload attribute}}"])
 
         case { it.startsWith("2 - ") }:
-            return Utils.sendZigbeeCommands(["he raw ${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart} 08 00 ${Utils.payload attribute}}"])
+            return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart}08 00${Utils.payload attribute}}"])
     }
 }
 
@@ -216,9 +247,9 @@ def b02EverteStatum(endpointHex, clusterHex, attributeHex, manufacturerHex="", t
     Integer attribute = Integer.parseInt attributeHex.substring(2), 16
 
     Integer manufacturer = manufacturerHex ? Integer.parseInt(manufacturerHex.substring(2), 16) : null
-    String frameStart = "10 75"
+    String frameStart = "1043"
     if (manufacturer != null) {
-        frameStart = "04 ${Utils.payload manufacturer} 75"
+        frameStart = "04${Utils.payload manufacturer}43"
     }
  
     Integer type = Integer.parseInt typeStr.substring(2, 4), 16
@@ -230,7 +261,7 @@ def b02EverteStatum(endpointHex, clusterHex, attributeHex, manufacturerHex="", t
     value = (value.split("") as List).collate(2).collect { it.join() }.reverse().join()
     
     // Send zigbee command
-    Utils.sendZigbeeCommands(["he raw ${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart} 02 ${Utils.payload attribute} ${typeStr.substring(2, 4)} ${value}}"])
+    Utils.sendZigbeeCommands(["he raw ${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart}02 ${Utils.payload attribute} ${typeStr.substring(2, 4)} ${value}}"])
 }
 
 def c01Imperio(endpointHex, clusterHex, commandHex, manufacturerHex="", payload="") {
@@ -248,13 +279,18 @@ def c01Imperio(endpointHex, clusterHex, commandHex, manufacturerHex="", payload=
     Integer command = Integer.parseInt commandHex.substring(2), 16
 
     Integer manufacturer = manufacturerHex ? Integer.parseInt(manufacturerHex.substring(2), 16) : null
-    String frameTail = ""
+    //String frameTail = ""
+    //if (manufacturer != null) {
+    //    frameTail = " {${Utils.hex manufacturer}}"
+    //}
+    String frameStart = "0143"
     if (manufacturer != null) {
-        frameTail = " {${Utils.hex manufacturer}}"
+        frameStart = "05${Utils.payload manufacturer}43"
     }
 
     // Send zigbee command
-    Utils.sendZigbeeCommands(["he cmd 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x${Utils.hex cluster} 0x${Utils.hex command, 2} {${payload}}${frameTail}"])
+    //Utils.sendZigbeeCommands(["he cmd 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x${Utils.hex cluster} 0x${Utils.hex command, 2} {${payload}}${frameTail}"])
+    Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart}${Utils.hex command, 2} ${payload}}"])
 }
 
 def c02Obliviate(operation) {
@@ -290,20 +326,27 @@ def c02Obliviate(operation) {
 
 def parse(String description) {
     Log.debug "description=[${description}]"
+    if (description.startsWith("zone status")) return
+
+    // Extract msg
     def msg = zigbee.parseDescriptionAsMap description
+    if (msg.containsKey("endpoint")) msg.endpointInt = Integer.parseInt(msg.endpoint, 16)
+    if (msg.containsKey("sourceEndpoint")) msg.endpointInt = Integer.parseInt(msg.sourceEndpoint, 16)
+    if (msg.clusterInt == null) msg.clusterInt = Integer.parseInt(msg.cluster, 16)
+    msg.commandInt = Integer.parseInt(msg.command, 16)
 
-    // Extract cluster and command from message
-    if (msg.clusterInt == null) msg.clusterInt = Utils.dec msg.cluster
-    msg.commandInt = Utils.dec msg.command
-
+    if (description.startsWith('read attr')) {
+        msg.isClusterSpecific = false
+    }
     Log.debug "msg=[${msg}]"
+
     switch (msg) {
 
         // Read Attribute Response (0x01) & Report attributes (0x0A)
-        case { contains it, [commandInt:0x01] }:
-        case { contains it, [commandInt:0x0A] }:
+        case { contains it, [isClusterSpecific:false, commandInt:0x01] }:
+        case { contains it, [isClusterSpecific:false, commandInt:0x0A] }:
             if (!msg.endpoint) {
-                return Utils.failedZigbeeMessage("Read Attribute Response", msg, msg.data[2])
+                return Utils.failedZclMessage("Read Attribute Response", msg.data[2], msg)
             }
             
             Integer endpoint = Utils.dec msg.endpoint
@@ -322,9 +365,9 @@ def parse(String description) {
 
         // DefaultResponse (0x0B) :=  { 08:CommandIdentifier, 08:Status }
         // Example: [00, 80] -> command = 0x00, status = MALFORMED_COMMAND (0x80)
-        case { contains it, [commandInt:0x0B] }:
+        case { contains it, [isClusterSpecific:false, commandInt:0x0B] }:
             if (msg.data[1] != "00") {
-                return Utils.failedZigbeeMessage("Default Response", msg, msg.data[1])
+                return Utils.failedZclMessage("Default Response", msg.data[1], msg)
             }
             
             Integer endpoint = Utils.dec msg.sourceEndpoint
@@ -332,19 +375,18 @@ def parse(String description) {
             Integer command = Utils.dec msg.data[0]
         
             return Utils.processedZigbeeMessage("Default Response", "endpoint=0x${Utils.hex endpoint, 2}, cluster=0x${Utils.hex cluster}, command=0x${Utils.hex command, 2}")
-        
-        // Write Attribute Response (0x04)
-        case { contains it, [commandInt:0x04] }:
-            if (msg.data[0] != "00") {
-                return Utils.failedZigbeeMessage("Write Attribute Response", msg, msg.data[0])
-            }
-        return Utils.processedZigbeeMessage("Write Attribute Response", "data=${msg.data}")
 
-        
-        // Read Reporting Configuration Response (0x09)
-        case { contains it, [commandInt:0x09] }:
+        // Write Attribute Response (0x04)
+        case { contains it, [isClusterSpecific:false, commandInt:0x04] }:
             if (msg.data[0] != "00") {
-                return Utils.failedZigbeeMessage("Read Reporting Configuration Response", msg, msg.data[0])
+                return Utils.failedZclMessage("Write Attribute Response", msg.data[0], msg)
+            }
+            return Utils.processedZigbeeMessage("Write Attribute Response", "data=${msg.data}")
+
+        // Read Reporting Configuration Response (0x09)
+        case { contains it, [isClusterSpecific:false, commandInt:0x09] }:
+            if (msg.data[0] != "00") {
+                return Utils.failedZclMessage("Read Reporting Configuration Response", msg.data[0], msg)
             }
             
             Integer endpoint = Utils.dec msg.sourceEndpoint
@@ -355,37 +397,248 @@ def parse(String description) {
 
             State.addAttributeReporting endpoint, cluster, attribute, minPeriod, maxPeriod
             return Utils.processedZigbeeMessage("Read Reporting Configuration Response", "endpoint=0x${Utils.hex endpoint, 2}, cluster=0x${Utils.hex cluster}, attribute=0x${Utils.hex attribute}, minPeriod=${minPeriod}, maxPeriod=${maxPeriod}")
-        
-        // Active_EP_rsp := { 08:Status, 16:NWKAddrOfInterest, 08:ActiveEPCount, n*08:ActiveEPList }
-        // Three endpoints example: [83, 00, 18, 4A, 03, 01, 02, 03] -> endpointIds=[01, 02, 03]
-        case { contains it, [clusterInt:0x8005] }:
-            if (msg.data[1] != "00") {
-                return Utils.failedZigbeeMessage("Active Endpoints Response", msg)
-            }
-        
-            Set<Integer> endpoints = []
-            Integer count = Utils.dec msg.data[4]
-            List<String> cmds = []
-            if (count > 0) {
-                (1..count).each() { i ->
-                    String endpointStr = msg.data[4 + i]
-                    Integer endpoint = Utils.dec endpointStr
-                    endpoints += endpoint
-                    
-                    // Query simple descriptor data
-                    cmds += "he raw ${device.deviceNetworkId} 0x0000 0x0000 0x0004 {00 ${zigbee.swapOctets(device.deviceNetworkId)} ${endpointStr}} {0x0000}"
+
+        // DiscoverAttributesResponse := { 08:Complete?, n*24:AttributeInformation }
+        // AttributeInformation := { 16:AttributeIdentifier, 08:AttributeDataType }
+        // AttributeDataType := @see @Field ZCL_DATA_TYPES
+        // Example: [01, 00, 00, 20, 01, 00, 20, 02, 00, 20, 03, 00, 20, 04, 00, 42, 05, 00, 42, 06, 00, 42, 07, 00, 30, 08, 00, 30, 09, 00, 30, 0A, 00, 41, 00, 40, 42, FD, FF, 21]
+        case { contains it, [isClusterSpecific:false, commandInt:0x0D] }:
+            Integer endpoint = Utils.dec msg.sourceEndpoint
+            Integer cluster = msg.clusterInt
+
+            List<String> data = msg.data.drop 1
+            Map<Integer, Integer> attributes = [:]
+            Map<Integer, Integer> varAttributes = [:]
+            while (data.size() >= 3) {
+                List<String> chunk = data.take 3
+                Integer attribute = Utils.dec chunk.take(2).reverse().join()
+                Integer type = Utils.dec chunk[2]
+                data = data.drop 3
+
+                // Ignore trailing AttributeReportingStatus
+                if (attribute == 0xFFFE) continue
+
+                def zclType = ZCL_DATA_TYPES[type]
+                if (zclType?.bytes == "var") {
+                    varAttributes[attribute] = type
+                } else {
+                    attributes[attribute] = type
                 }
-                State.addEndpoints endpoints
+            }
+
+            List<String> cmds = []
+            if (attributes.size() != 0) {
+                attributes.keySet().collate(3).each { attrs ->
+
+                    // Read attribute value (use batches of 3 to reduce mesh traffic)
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {104300 ${attrs.collect { Utils.payload it }.join()}}"
+
+                    // If attribute is reportable, also inquire its reporting status
+                    attrs.each {
+                        if (ZCL_CLUSTERS.get(cluster)?.get("attributes")?.get(it)?.get("acc")?.endsWith("P")) {
+                            cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {104308 00${Utils.payload it}}"
+                        }
+                    }
+                }
+            }
+
+            // Also process var attributes (one-by-one)
+            varAttributes.keySet().each { attr ->
+
+                // Read attribute value (use batches of 3 to reduce mesh traffic)
+                cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {104300 ${Utils.payload attr}}"
+
+                // If attribute is reportable, also inquire its reporting status
+                if (ZCL_CLUSTERS.get(cluster)?.get("attributes")?.get(attr)?.get("acc")?.endsWith("P")) {
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {104308 00${Utils.payload attr}}"
+                }
+            }
+
+            if (cmds.size() > 0) {
+                State.addAttributes endpoint, cluster, attributes
+                State.addAttributes endpoint, cluster, varAttributes
                 Utils.sendZigbeeCommands delayBetween(cmds, 1000)
             }
 
-            return Utils.processedZigbeeMessage("Active Endpoints Response", "endpoints=${endpoints}")
+            return Utils.processedZigbeeMessage("Discover Attributes Response", "endpoint=0x${Utils.hex endpoint, 2}, cluster=0x${Utils.hex cluster}, attributes=${attributes}, varAttributes=${varAttributes}")
+
+        // DiscoverCommandsReceivedResponse := { 08:Complete?, n*08:CommandIdentifier }
+        // Example: [01, 00, 01, 40] -> commands: 0x00, 0x01, 0x40
+        case { contains it, [isClusterSpecific:false, commandInt:0x12] }:
+            Integer endpoint = Utils.dec msg.sourceEndpoint
+            Integer cluster = msg.clusterInt
+
+            List<String> data = msg.data.drop 1
+            List<Integer> commands = data.collect {Utils.dec it  }
+
+            State.addCommands endpoint, cluster, commands
+            return Utils.processedZigbeeMessage("Discover Commands Received Response", "endpoint=0x${Utils.hex endpoint, 2}, cluster=0x${Utils.hex cluster}, commands=${commands}")
+
+        // ===================================================================================================================
+        // ZDO
+        // ===================================================================================================================
+
+        // Node_Desc_rsp := { 08:Status, 16:NWKAddrOfInterest, 03:LogicalType, 01:ComplexDescriptorAvailable, 01:UserDescriptorAvailable, 03:Reserved, 03:APSFlags, 05:FrequencyBand, 08:MACCapabilityFlags, 16:ManufacturerCode, 08:MaximumBufferSize, 16:MaximumIncomingTransferSize, 16:ServerMask, 16:MaximumOutgoingTransferSize, 08:DescriptorCapabilityDield }
+        // Example: [75, 00, 1F, B3, 01, 40, 8E, 7C, 11, 52, 52, 00, 00, 2C, 52, 00, 00]
+        case { contains it, [endpointInt:0x00, clusterInt:0x8002] }:
+            if (msg.data[1] != "00") {
+                return Utils.failedZdoMessage("Node Descriptor Response", msg.data[1], msg)
+            }
+
+            List<String> nodeDescriptor = []
+
+            // Logical Type
+            String octet = Integer.toBinaryString(Integer.parseInt(msg.data[4], 16)).padLeft(8, "0").reverse()
+            String logicalTypeBinary = octet.substring(0, 3).reverse()
+            String logicalType = null
+            switch (logicalTypeBinary) {
+                case "000":
+                    logicalType = "Zigbee Coordinator"
+                    break
+                case "001":
+                    logicalType = "Zigbee Router"
+                    break
+                case "010":
+                    logicalType = "Zigbee End Device (ZED)"
+                    break
+                default:
+                    logicalType = "Invalid value: ${logicalTypeBinary}"
+            }
+            nodeDescriptor += ["Logical Type", logicalType]
+
+            // Complex Descriptor Available & User Descriptor Available
+            nodeDescriptor += ["Complex Descriptor Available", octet[3] == "1" ? "Yes" : "No"]
+            nodeDescriptor += ["User Descriptor Available", octet[4] == "1" ? "Yes" : "No"]
+
+            // Frequency Band
+            octet = Integer.toBinaryString(Integer.parseInt(msg.data[5], 16)).padLeft(8, "0").reverse()
+            String frequencyBandBinary = octet.substring(3)
+            String frequencyBand = "Invalid value: ${frequencyBandBinary}"
+            if (frequencyBandBinary[0] == "1") frequencyBand = "868 - 868.6 MHz"
+            if (frequencyBandBinary[1] == "1") frequencyBand = "Reserved"
+            if (frequencyBandBinary[2] == "1") frequencyBand = "902 - 928 MHz"
+            if (frequencyBandBinary[3] == "1") frequencyBand = "2400 - 2483.5 MHz"
+            if (frequencyBandBinary[4] == "1") frequencyBand = "Reserved"
+            nodeDescriptor += ["Frequency Band", frequencyBand]
+
+            // MAC Capability Flags
+            octet = Integer.toBinaryString(Integer.parseInt(msg.data[6], 16)).padLeft(8, "0").reverse()
+            Log.debug "MAC Capability Flags = ${octet}"
+            nodeDescriptor += ["Alternate PAN Coordinator", octet[0] == "1" ? "Yes" : "No"]
+            nodeDescriptor += ["Device Type", octet[1] == "1" ? "Full Function Device (FFD)" : "Reduced Function Device (RFD)"]
+            nodeDescriptor += ["Mains Power Source", octet[2] == "1" ? "Yes" : "No"]
+            nodeDescriptor += ["Receiver On When Idle", octet[3] == "1" ? "Yes (always on)" : "No (conserve power during idle periods)"]
+            nodeDescriptor += ["Security Capability", octet[6] == "1" ? "Yes" : "No"]
+            nodeDescriptor += ["Allocate Address", octet[7] == "1" ? "Yes" : "No"]
+
+            // Manufacturer Code
+            String manufacturerCode = msg.data[7..8].reverse().join()
+            String manufacturerName = ZBE_MANUFACTURERS[Integer.parseInt(manufacturerCode, 16)]
+            nodeDescriptor += ["Manufacturer Code", "0x${manufacturerCode}${manufacturerName ? " = ${manufacturerName}" : ""}"]
+
+            // Maximum Buffer Size Field
+            nodeDescriptor += ["Maximum Buffer Size", "${Integer.parseInt(msg.data[9], 16)} bytes"]
+            nodeDescriptor += ["Maximum Incoming Transfer Size", "${Integer.parseInt(msg.data[10..11].reverse().join(), 16)} bytes"]
+
+            // Server Mask Field
+            octet = Integer.toBinaryString(Integer.parseInt(msg.data[12..13].reverse().join(), 16)).padLeft(16, "0")
+            Log.debug "Server Mask Field = ${octet}"
+            nodeDescriptor += ["Primary Trust Center", octet[0] == "1" ? "Yes" : "No"]
+            nodeDescriptor += ["Backup Trust Center", octet[1] == "1" ? "Yes" : "No"]
+            nodeDescriptor += ["Primary Binding Table Cache", octet[2] == "1" ? "Yes" : "No"]
+            nodeDescriptor += ["Backup Binding Table Cache", octet[3] == "1" ? "Yes" : "No"]
+            nodeDescriptor += ["Primary Discovery Cache", octet[4] == "1" ? "Yes" : "No"]
+            nodeDescriptor += ["Backup Discovery Cache", octet[5] == "1" ? "Yes" : "No"]
+            nodeDescriptor += ["Network Manager", octet[5] == "1" ? "Yes" : "No"]
+
+            // Maximum Outgoing Transfer Size Field & Descriptor Capability Field
+            nodeDescriptor += ["Maximum Outgoing Transfer Size", "${Integer.parseInt(msg.data[14..15].reverse().join(), 16)} bytes"]
+
+            octet = Integer.toBinaryString(Integer.parseInt(msg.data[16], 16)).padLeft(8, "0").reverse()
+            nodeDescriptor += ["Extended Active Endpoint List Available", octet[0] == "1" ? "Yes" : "No"]
+            nodeDescriptor += ["Extended Simple Descriptor List Available", octet[1] == "1" ? "Yes" : "No"]
+
+            return State.setNodeDescriptor(nodeDescriptor)
+
+
+        // Power_Desc_rsp := { 08:Status, 16:NWKAddrOfInterest, 04:CurrentPowerMode, 04:AvailablePowerSources, 04:CurrentPowerSource, 04:CurrentPowerSourceLevel }
+        // Example: [17, 00, 1F, B3, 10, C1]
+        case { contains it, [endpointInt:0x00, clusterInt:0x8003] }:
+            if (msg.data[1] != "00") {
+                return Utils.failedZdoMessage("Power Descriptor Response", msg.data[1], msg)
+            }
+
+            List<String> powerDescriptor = []
+
+            // Current Power Mode
+            String octet = Integer.toBinaryString(Integer.parseInt(msg.data[4], 16)).padLeft(8, "0").reverse()
+            Log.debug "Power Descriptor octet 1 = ${octet}"
+            String currentPowerModeBinary = octet.substring(0, 4).reverse()
+            String currentPowerMode = null
+            switch (currentPowerModeBinary) {
+                case "0000":
+                    currentPowerMode = "Same as \"Receiver On When Idle\" from \"Node Descriptor\" section above"
+                    break
+                case "0001":
+                    currentPowerMode = "Receiver comes on periodically as defined by the Power Descriptor"
+                    break
+                case "0010":
+                    currentPowerMode = "Receiver comes on when stimulated, for example, by a user pressing a button"
+                    break
+                default:
+                    currentPowerMode = "Invalid value: ${currentPowerModeBinary}"
+            }
+            powerDescriptor += ["Current Power Mode", currentPowerMode]
+
+            // Available Power Sources
+            String availablePowerSourcesBinary = octet.substring(4)
+            List<String> availablePowerSources = []
+            if (availablePowerSourcesBinary[0] == "1") availablePowerSources += "Constant (mains) power"
+            if (availablePowerSourcesBinary[1] == "1") availablePowerSources += "Rechargeable battery"
+            if (availablePowerSourcesBinary[2] == "1") availablePowerSources += "Disposable battery"
+            if (availablePowerSourcesBinary[3] == "1") availablePowerSources += "Reserved"
+            powerDescriptor += ["Available Power Sources", availablePowerSources.toString()]
+
+            // Current Power Sources
+            octet = Integer.toBinaryString(Integer.parseInt(msg.data[5], 16)).padLeft(8, "0").reverse()
+            Log.debug "Power Descriptor octet 2 = ${octet}"
+            String currentPowerSourcesBinary = octet.substring(0, 4)
+            List<String> currentPowerSources = []
+            if (currentPowerSourcesBinary[0] == "1") currentPowerSources += "Constant (mains) power"
+            if (currentPowerSourcesBinary[1] == "1") currentPowerSources += "Rechargeable battery"
+            if (currentPowerSourcesBinary[2] == "1") currentPowerSources += "Disposable battery"
+            if (currentPowerSourcesBinary[3] == "1") currentPowerSources += "Reserved"
+            powerDescriptor += ["Current Power Sources", currentPowerSources.toString()]
+
+            // Current Power Source Level
+            String currentPowerSourceLevelBinary = octet.substring(4).reverse()
+            String currentPowerSourceLevel = null
+            switch (currentPowerSourceLevelBinary) {
+                case "0000":
+                    currentPowerSourceLevel = "Critical"
+                    break
+                case "0100":
+                    currentPowerSourceLevel = "33%"
+                    break
+                case "1000":
+                    currentPowerSourceLevel = "66%"
+                    break
+                case "1100":
+                    currentPowerSourceLevel = "100%"
+                    break
+                default:
+                    currentPowerSourceLevel = "Reserved value: ${currentPowerSourceLevelBinary}"
+            }
+            powerDescriptor += ["Current Power Source Level", currentPowerSourceLevel]
+
+            return State.setPowerDescriptor(powerDescriptor)
+
 
         // Simple_Desc_rsp := { 08:Status, 16:NWKAddrOfInterest, 08:Length, 08:Endpoint, 16:ApplicationProfileIdentifier, 16:ApplicationDeviceIdentifier, 08:Reserved, 16:InClusterCount, n*16:InClusterList, 16:OutClusterCount, n*16:OutClusterList }
         // Example: [B7, 00, 18, 4A, 14, 03, 04, 01, 06, 00, 01, 03, 00,  00, 03, 00, 80, FC, 03, 03, 00, 04, 00, 80, FC] -> endpointId=03, inClusters=[0000, 0003, FC80], outClusters=[0003, 0004, FC80]
-        case { contains it, [clusterInt:0x8004] }:
+        case { contains it, [endpointInt:0x00, clusterInt:0x8004] }:
             if (msg.data[1] != "00") {
-                return Utils.failedZigbeeMessage("Simple Descriptor Response", msg)
+                return Utils.failedZclMessage("Simple Descriptor Response", msg.data[1], msg)
             }
 
             Integer endpoint = Utils.dec msg.data[5]
@@ -401,10 +654,10 @@ def parse(String description) {
                     inClusters += cluster
 
                     // Discover cluster attributes
-                    cmds += "he raw ${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {10 00 0C 00 00 FF}"
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {10 00 0C 00 00 FF}"
                     
                     // Discover cluster commands
-                    cmds += "he raw ${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {10 00 11 00 FF}"
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {10 00 11 00 FF}"
                 }
                 State.addInClusters endpoint, inClusters
             }
@@ -425,58 +678,31 @@ def parse(String description) {
             if (cmds.size != 0) Utils.sendZigbeeCommands delayBetween(cmds, 1000)
             return Utils.processedZigbeeMessage("Simple Descriptor Response", "endpoint=0x${Utils.hex endpoint, 2}, inClusters=${Utils.hexs inClusters}, outClusters=${Utils.hexs outClusters}")
 
-        // DiscoverAttributesResponse := { 08:Complete?, n*24:AttributeInformation }
-        // AttributeInformation := { 16:AttributeIdentifier, 08:AttributeDataType }
-        // AttributeDataType := @see @Field ZCL_DATA_TYPES
-        // Example: [01, 00, 00, 20, 01, 00, 20, 02, 00, 20, 03, 00, 20, 04, 00, 42, 05, 00, 42, 06, 00, 42, 07, 00, 30, 08, 00, 30, 09, 00, 30, 0A, 00, 41, 00, 40, 42, FD, FF, 21]
-        case { contains it, [commandInt:0x0D] }:
-            Integer endpoint = Utils.dec msg.sourceEndpoint
-            Integer cluster = msg.clusterInt
 
-            List<String> data = msg.data.drop 1
-            Map<Integer, Integer> attributes = [:]
-            while (data.size() >= 3) {
-                List<String> chunk = data.take 3
-                Integer attribute = Utils.dec chunk.take(2).reverse().join()
-                Integer type = Utils.dec chunk[2]
-                data = data.drop 3
-
-                // Ignore trailing AttributeReportingStatus
-                if (attribute == 0xFFFE) continue
-
-                attributes[attribute] = type
+        // Active_EP_rsp := { 08:Status, 16:NWKAddrOfInterest, 08:ActiveEPCount, n*08:ActiveEPList }
+        // Three endpoints example: [83, 00, 18, 4A, 03, 01, 02, 03] -> endpointIds=[01, 02, 03]
+        case { contains it, [endpointInt:0x00, clusterInt:0x8005] }:
+            if (msg.data[1] != "00") {
+                return Utils.failedZdoMessage("Active Endpoints Response", msg.data[1], msg)
             }
 
-            if (attributes.size() != 0) {
-                List<String> cmds = []
-                attributes.keySet().collate(2).each { attrs ->
-
-                    // Read attribute value (use batches of 3 to reduce mesh traffic)
-                    cmds += "he raw ${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {10 00 00 ${attrs.collect { Utils.payload it }.join()}}"
-
-                    // If attribute is reportable, also inquire its reporting status
-                    attrs.each {
-                        if (ZCL_CLUSTERS.get(cluster)?.get("attributes")?.get(it)?.get("acc")?.endsWith("P")) {
-                            cmds += "he raw ${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {10 00 08 00 ${Utils.payload it}}"
-                        }
-                    }
+            Set<Integer> endpoints = []
+            Integer count = Utils.dec msg.data[4]
+            List<String> cmds = []
+            if (count > 0) {
+                (1..count).each() { i ->
+                    String endpointStr = msg.data[4 + i]
+                    Integer endpoint = Utils.dec endpointStr
+                    endpoints += endpoint
+                    
+                    // Query simple descriptor data
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x0000 0x0000 0x0004 {00 ${zigbee.swapOctets(device.deviceNetworkId)} ${endpointStr}} {0x0000}"
                 }
+                State.addEndpoints endpoints
                 Utils.sendZigbeeCommands delayBetween(cmds, 1000)
-                State.addAttributes endpoint, cluster, attributes
             }
-            return Utils.processedZigbeeMessage("Discover Attributes Response", "endpoint=0x${Utils.hex endpoint, 2}, cluster=0x${Utils.hex cluster}, attributes=${attributes}")
 
-        // DiscoverCommandsReceivedResponse := { 08:Complete?, n*08:CommandIdentifier }
-        // Example: [01, 00, 01, 40] -> commands: 0x00, 0x01, 0x40
-        case { contains it, [commandInt:0x12] }:
-            Integer endpoint = Utils.dec msg.sourceEndpoint
-            Integer cluster = msg.clusterInt
-
-            List<String> data = msg.data.drop 1
-            List<Integer> commands = data.collect {Utils.dec it  }
-
-            State.addCommands endpoint, cluster, commands
-            return Utils.processedZigbeeMessage("Discover Commands Received Response", "endpoint=0x${Utils.hex endpoint, 2}, cluster=0x${Utils.hex cluster}, commands=${commands}")
+            return Utils.processedZigbeeMessage("Active Endpoints Response", "endpoints=${endpoints}")
 
         // ---------------------------------------------------------------------------------------------------------------
         // Unexpected Zigbee message
@@ -509,8 +735,9 @@ def parse(String description) {
 
     sendZigbeeCommands: { List<String> cmds ->
         if (cmds.size() == 0) return
-        Log.debug "◀ Sending Zigbee messages: ${cmds}"
-        sendHubCommand new hubitat.device.HubMultiAction(cmds, hubitat.device.Protocol.ZIGBEE)
+        List<String> send = delayBetween(cmds.findAll { !it.startsWith("delay") }, 1000)
+        Log.debug "◀ Sending Zigbee messages: ${send}"
+        sendHubCommand new hubitat.device.HubMultiAction(send, hubitat.device.Protocol.ZIGBEE)
     },
 
     sendEvent: { Map event ->
@@ -531,10 +758,12 @@ def parse(String description) {
         Log.debug "▶ Ignored Zigbee message: type=${type}, status=SUCCESS, data=${msg.data}"
     },
 
-    failedZigbeeMessage: { String type, Map msg, String status = null ->
-        if (status == null && msg.data.size() >= 1) status = msg.data[0]
-        String prettyStatus = status == null ? "NULL" : ZCL_STATUS[Integer.parseInt(status, 16)]
-        Log.warn "▶ Received Zigbee message: type=${type}, status=${prettyStatus}, data=${msg.data}"
+    failedZclMessage: { String type, String status, Map msg ->
+        Log.warn "▶ Received ZCL message: type=${type}, status=${ZCL_STATUS[Integer.parseInt(status, 16)]}, data=${msg.data}"
+    },
+
+    failedZdoMessage: { String type, String status, Map msg ->
+        Log.warn "▶ Received ZDO message: type=${type}, status=${ZDP_STATUS[Integer.parseInt(status, 16)]}, data=${msg.data}"
     }
 ]
 
@@ -562,7 +791,7 @@ private boolean contains(Map msg, Map spec) {
 
     addAttributes: { Integer endpoint, Integer cluster, Map<Integer, Integer> attributes ->
         attributes.each {
-            state["ka_attribute_${endpoint}_${cluster}_${it.key}"] = ZCL_DATA_TYPES[it.value]
+            state["ka_attribute_${endpoint}_${cluster}_${it.key}"] = it.value
         }
     },
 
@@ -580,6 +809,14 @@ private boolean contains(Map msg, Map spec) {
     
     addAttributeReporting: { Integer endpoint, Integer cluster, Integer attribute, Integer minPeriod, Integer maxPeriod ->
         state["ka_attributeReporting_${endpoint}_${cluster}_${attribute}"] = [ min:minPeriod, max:maxPeriod ]
+    },
+
+    setNodeDescriptor: { List<String> nodeDescriptor ->
+        state["ka_nodeDescriptor"] = nodeDescriptor
+    },
+
+    setPowerDescriptor: { List<String> powerDescriptor ->
+        state["ka_powerDescriptor"] = powerDescriptor
     }
 ]
 
@@ -587,7 +824,25 @@ private boolean contains(Map msg, Map spec) {
 // Constants
 // ===================================================================================================================
 
-@Field static final Map<String, String> ZCL_STATUS = [
+@Field static final Map<Integer, String> ZDP_STATUS = [
+    0x00: "SUCCESS",
+    0x80: "INV_REQUESTTYPE",
+    0x81: "DEVICE_NOT_FOUND",
+    0x82: "INVALID_EP",
+    0x83: "NOT_ACTIVE",
+    0x84: "NOT_SUPPORTED",
+    0x85: "TIMEOUT",
+    0x86: "NO_MATCH",
+    0x88: "NO_ENTRY",
+    0x89: "NO_DESCRIPTOR",
+    0x8A: "INSUFFICIENT_SPACE",
+    0x8B: "NOT_PERMITTED",
+    0x8C: "TABLE_FULL",
+    0x8D: "NOT_AUTHORIZED",
+    0x8E: "DEVICE_BINDING_TABLE_FULL"
+]
+
+@Field static final Map<Integer, String> ZCL_STATUS = [
     0x00: "SUCCESS",
     0x01: "FAILURE",
     0x7E: "NOT_AUTHORIZED",
@@ -635,7 +890,7 @@ private boolean contains(Map msg, Map spec) {
     0x0d: [name:"data48",    bytes:"6"],
     0x0e: [name:"data56",    bytes:"7"],
     0x0f: [name:"data64",    bytes:"8"],
-    0x10: [name:"bool",      bytes:"1"],
+    0x10: [name:"bool",      bytes:"1", decorate: { value -> "${value == "00" ? "False" : (value == "01" ? "True" : "Invalid value")}" }],
     0x18: [name:"map8",      bytes:"1"],
     0x19: [name:"map16",     bytes:"2"],
     0x1a: [name:"map24",     bytes:"3"],
@@ -665,7 +920,7 @@ private boolean contains(Map msg, Map spec) {
     0x38: [name:"semi",      bytes:"2"],
     0x39: [name:"single",    bytes:"4"],
     0x3a: [name:"double",    bytes:"8"],
-    0x41: [name:"octstr",    bytes:"var"],
+    0x41: [name:"octstr",    bytes:"var", decorate: { value -> "${!value ? "" : (value.split("") as List).collate(2).collect { "${Integer.parseInt(it.join(), 16) as char}" }.join()}" }],
     0x42: [name:"string",    bytes:"var"],
     0x43: [name:"octstr16",  bytes:"var"],
     0x44: [name:"string16",  bytes:"var"],
@@ -684,6 +939,97 @@ private boolean contains(Map msg, Map spec) {
     0xff: [name:"unknown",   bytes:"0"],
 ]
 
+// @see https://github.com/wireshark/wireshark/blob/master/epan/dissectors/packet-zbee.h
+@Field static final Map<Integer, String> ZBE_MANUFACTURERS = [
+    0x0000: "NONE",
+    0x1002: "EMBER",
+    0x100B: "PHILIPS",
+    0x1011: "VISONIC",
+    0x1014: "ATMEL",
+    0x1015: "DEVELCO",
+    0x101D: "YALE",
+    0x101E: "MAXSTREAM",
+    0x1021: "VANTAGE",
+    0x1021: "LEGRAND",
+    0x102E: "LGE",
+    0x1037: "JENNIC",
+    0x1039: "ALERTME",
+    0x104E: "CLS",
+    0x104E: "CENTRALITE",
+    0x1049: "SI_LABS",
+    0x105E: "SCHNEIDER",
+    0x1071: "4_NOKS",
+    0x1071: "BITRON",
+    0x1078: "COMPUTIME",
+    0x10EF: "XFINITY",
+    0x1262: "AXIS",
+    0x1092: "KWIKSET",
+    0x109a: "MMB",
+    0x109F: "NETVOX",
+    0x10B9: "NYCE",
+    0x10EF: "UNIVERSAL2",
+    0x10F2: "UBISYS",
+    0x1337: "DATEK_WIRLESS",
+    0x115C: "DANALOCK",
+    0x1236: "SCHLAGE",
+    0x1105: "BEGA",
+    0x110A: "PHYSICAL",
+    0x110C: "OSRAM",
+    0x1110: "PROFALUX",
+    0x1112: "EMBERTEC",
+    0x1124: "JASCO",
+    0x112E: "BUSCH_JAEGER",
+    0x1131: "SERCOMM",
+    0x1133: "BOSCH",
+    0x1135: "DDEL",
+    0x113B: "WAXMAN",
+    0x113C: "OWON",
+    0x1141: "TUYA",
+    0x1144: "LUTRON",
+    0x1155: "BOSCH2",
+    0x1158: "ZEN",
+    0x115B: "KEEN_HOME",
+    0x115F: "XIAOMI",
+    0x1160: "SENGLED_OPTOELEC",
+    0x1166: "INNR",
+    0x1168: "LDS",
+    0x1172: "PLUGWISE_BV",
+    0x1175: "D_LINK",
+    0x117A: "INSTA",
+    0x117C: "IKEA",
+    0x117E: "3A_SMART_HOME",
+    0x1185: "STELPRO",
+    0x1189: "LEDVANCE",
+    0x119C: "SINOPE",
+    0x119D: "JIUZHOU",
+    0x119D: "PAULMANN",
+    0x1209: "BOSCH3",
+    0x120B: "HEIMAN",
+    0x1214: "CHINA_FIRE_SEC",
+    0x121B: "MUELLER",
+    0x121C: "AURORA",
+    0x1224: "SUNRICHER",
+    0x1228: "XIAOYAN",
+    0x122A: "XAL",
+    0x122D: "ADUROLIGHT",
+    0x1233: "THIRD_REALITY",
+    0x1234: "DSR",
+    0x123B: "HANGZHOU_IMAGIC",
+    0x1241: "SAMJIN",
+    0x1246: "DANFOSS",
+    0x125F: "NIKO_NV",
+    0x1268: "KONKE",
+    0x126A: "SHYUGJ_TECHNOLOGY",
+    0x126E: "XIAOMI2",
+    0x1277: "ADEO",
+    0x1286: "SHENZHEN_COOLKIT",
+    0x1337: "DATEK",
+    0xBBAA: "OSRAM_STACK",
+    0xC2DF: "C2DF",
+    0xFFA0: "PHILIO"
+]
+
+// https://github.com/dresden-elektronik/deconz-rest-plugin/blob/master/general.xml
 @Field static final def ZCL_CLUSTERS = [
     0x0000: [
         name: "Basic Cluster",
@@ -704,6 +1050,37 @@ private boolean contains(Map msg, Map spec) {
                 0x05: "Emergency mains constantly powered",
                 0x06: "Emergency mains and transfer switch"
             ]],
+            0x0008: [ type:0x30, req:"No",  acc:"R--", name:"Generic Device Class" ],
+            0x0009: [ type:0x30, req:"No",  acc:"R--", name:"Generic Device Type", constraints: [
+                0x00: "Incandescent",
+                0x01: "Spotlight Halogen",
+                0x02: "Halogen Bulb",
+                0x03: "CFL",
+                0x04: "Linear Fluorescent",
+                0x05: "LED Bulb",
+                0x06: "Spotlight LED",
+                0x07: "LED Strip",
+                0x08: "LED Tube",
+                0x09: "Generic Indoor Luminaire",
+                0x0A: "Generic Outdoor Luminaire",
+                0x0B: "Pendant Luminaire",
+                0x0C: "Floor Standing Luminaire",
+                0xE0: "Generic Controller",
+                0xE1: "Wall Switch",
+                0xE2: "Portable Remote Controller",
+                0xE3: "Motion Sensor / Light Sensor",
+                0xF0: "Generic Actuator",
+                0xF1: "Wall Socket",
+                0xF2: "Gateway / Bridge",
+                0xF3: "Plug-in Unit",
+                0xF4: "Retrofit Actuator",
+                0xFF: "Unspecified"
+            ]],
+            0x000A: [ type:0x41, req:"No",  acc:"R--", name:"Product Code" ],
+            0x000B: [ type:0x42, req:"No",  acc:"R--", name:"Product URL" ],
+            0x000C: [ type:0x42, req:"No",  acc:"R--", name:"Manufacturer Version Details" ],
+            0x000D: [ type:0x42, req:"No",  acc:"R--", name:"Serial Number" ],
+            0x000E: [ type:0x42, req:"No",  acc:"R--", name:"Product Label" ],
             0x0010: [ type:0x42, req:"No",  acc:"RW-", name:"Location Description" ],
             0x0011: [ type:0x30, req:"No",  acc:"RW-", name:"Physical Environment" ],
             0x0012: [ type:0x10, req:"No",  acc:"RW-", name:"Device Enabled", constraints: [
@@ -730,7 +1107,7 @@ private boolean contains(Map msg, Map spec) {
             0x0013: [ type:0x21, req:"No",  acc:"RW-", name:"Mains Voltage Dwell Trip Point" ],
             
             0x0020: [ type:0x20, req:"No",  acc:"R--", name:"Battery Voltage" ],
-            0x0021: [ type:0x20, req:"No",  acc:"R-P", name:"Battery Percentage Remaining", decorate: { value -> "${Math.round(Integer.parseInt(value, 16) / 2) as Integer}%" } ],
+            0x0021: [ type:0x20, req:"No",  acc:"R-P", name:"Battery Percentage Remaining", decorate: { value -> "${Math.round(Integer.parseInt(value, 16) / 2) as Integer}% remaining" } ],
 
             0x0030: [ type:0x42, req:"No",  acc:"RW-", name:"Battery Manufacturer" ],
             0x0031: [ type:0x30, req:"No",  acc:"RW-", name:"Battery Size", constraints: [
@@ -778,7 +1155,7 @@ private boolean contains(Map msg, Map spec) {
     0x0003: [
         name: "Identify Cluster",
         attributes: [
-            0x0000: [ type:0x21, req:"Yes", acc:"RW-", name:"Identify Time" ]
+            0x0000: [ type:0x21, req:"Yes", acc:"RW-", name:"Identify Time", decorate: { value -> "${Integer.parseInt(value, 16)} seconds" }],
         ],
         commands: [
             0x00: [ req:"Yes", name:"Identify" ],
@@ -826,10 +1203,15 @@ private boolean contains(Map msg, Map spec) {
     0x0006: [
         name: "On/Off Cluster",
         attributes: [
-            0x0000: [ type:0x10, req:"Yes", acc:"R-P", name:"On Off" ],
+            0x0000: [ type:0x10, req:"Yes", acc:"R-P", name:"On Off", decorate: { value -> value == "00" ? "Off" : (value == "01" ? "On" : "Invalid value") }],
             0x4000: [ type:0x10, req:"No",  acc:"R--", name:"Global Scene Control" ],
             0x4001: [ type:0x21, req:"No",  acc:"RW-", name:"On Time" ],
-            0x4002: [ type:0x21, req:"No",  acc:"RW-", name:"Off Wait Time" ]
+            0x4002: [ type:0x21, req:"No",  acc:"RW-", name:"Off Wait Time" ],
+            0x4003: [ type:0x21, req:"No",  acc:"RW-", name:"Power On Behavior", constraints: [
+                0x00: "Turn power Off",
+                0x01: "Turn power On",
+                0xFF: "Restore previous state"
+            ]]
         ],
         commands: [
             0x00: [ req:"Yes", name:"Off" ],
@@ -858,13 +1240,14 @@ private boolean contains(Map msg, Map spec) {
     0x0008: [
         name: "Level Control Cluster",
         attributes: [
-            0x0000: [ type:0x20, req:"Yes", acc:"R-P", name:"Current Level" ],
+            0x0000: [ type:0x20, req:"Yes", acc:"R-P", name:"Current Level", decorate: { value -> value == "FF" ? "Invalid value" : "${((Integer.parseInt(value, 16) * 100 / 0xFE) as Integer)}%" }],
             0x0001: [ type:0x21, req:"No",  acc:"R--", name:"Remaining Time" ],
             0x0010: [ type:0x21, req:"No",  acc:"RW-", name:"On Off Transition Time" ],
-            0x0011: [ type:0x20, req:"No",  acc:"RW-", name:"On Level" ],
+            0x0011: [ type:0x20, req:"No",  acc:"RW-", name:"On Level", decorate: { value -> value == "FF" ? "Last level" : "${((Integer.parseInt(value, 16) * 100 / 0xFE) as Integer)}%" }],
             0x0012: [ type:0x21, req:"No",  acc:"RW-", name:"On Transition Time" ],
             0x0013: [ type:0x21, req:"No",  acc:"RW-", name:"Off Transition Time" ],
-            0x0014: [ type:0x21, req:"No",  acc:"RW-", name:"Default Move Rate" ]
+            0x0014: [ type:0x21, req:"No",  acc:"RW-", name:"Default Move Rate" ],
+            0x4000: [ type:0x20, req:"No",  acc:"RW-", name:"StartUp Current Level" ]
         ],
         commands: [
             0x00: [ req:"Yes", name:"Move To Level" ],
@@ -1163,16 +1546,19 @@ private boolean contains(Map msg, Map spec) {
     0x0020: [
         name: "Poll Cluster",
         attributes: [
-            0x0000: [ type:0x23, req:"Yes", acc:"RW-", name:"Check-in Interval" ],
-            0x0001: [ type:0x23, req:"Yes", acc:"R--", name:"Long Poll Interval" ],
-            0x0002: [ type:0x21, req:"Yes", acc:"R--", name:"Short Poll Interval" ],
-            0x0003: [ type:0x21, req:"Yes", acc:"RW-", name:"Fast Poll Timeout" ],
-            0x0004: [ type:0x23, req:"No",  acc:"R--", name:"Check-in Interval Min" ],
-            0x0005: [ type:0x23, req:"No",  acc:"R--", name:"Long Poll Interval Min" ],
-            0x0006: [ type:0x21, req:"No",  acc:"R--", name:"Fast Poll Timeout Max" ]
+            0x0000: [ type:0x23, req:"Yes", acc:"RW-", name:"Check-in Interval", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
+            0x0001: [ type:0x23, req:"Yes", acc:"R--", name:"Long Poll Interval", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
+            0x0002: [ type:0x21, req:"Yes", acc:"R--", name:"Short Poll Interval", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
+            0x0003: [ type:0x21, req:"Yes", acc:"RW-", name:"Fast Poll Timeout", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
+            0x0004: [ type:0x23, req:"No",  acc:"R--", name:"Check-in Interval Min", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
+            0x0005: [ type:0x23, req:"No",  acc:"R--", name:"Long Poll Interval Min", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
+            0x0006: [ type:0x21, req:"No",  acc:"R--", name:"Fast Poll Timeout Max", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Check-in" ]
+            0x00: [ req:"Yes", name:"Check-in" ],
+            0x01: [ req:"Yes", name:"Stop" ],
+            0x02: [ req:"No", name:"Set Long Poll Attribute" ],
+            0x03: [ req:"No", name:"Set Short Poll Attribute" ]
         ]
     ],
     0x0100: [
@@ -1475,7 +1861,8 @@ private boolean contains(Map msg, Map spec) {
             0x4006: [ req:"Yes", acc:"R--", name:"Color Loop Stored Enhanced Hue" ],
             0x400A: [ req:"Yes", acc:"R--", name:"Color Capabilities" ],
             0x400B: [ req:"Yes", acc:"R--", name:"Color Temp Physical Min Mireds" ],
-            0x400C: [ req:"Yes", acc:"R--", name:"Color Temp Physical Max Mireds" ]
+            0x400C: [ req:"Yes", acc:"R--", name:"Color Temp Physical Max Mireds" ],
+            0x4010: [ req:"No", acc:"RW-", name:"StartUp Color Temperature Mireds" ]
         ],
         commands: [
             0x00: [ req:"Yes", name:"Move to Hue" ],
@@ -1546,7 +1933,7 @@ private boolean contains(Map msg, Map spec) {
     0x0402: [
         name: "Temperature Measurement Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R-P", name:"MeasuredValue" ],
+            0x0000: [ req:"Yes", acc:"R-P", name:"MeasuredValue", decorate: { value -> "${(Integer.parseInt(value, 16) / 100)} °C" }],
             0x0001: [ req:"Yes", acc:"R--", name:"MinMeasuredValue" ],
             0x0002: [ req:"Yes", acc:"R--", name:"MaxMeasuredValue" ],
             0x0003: [ req:"No",  acc:"R-P", name:"Tolerance" ]
@@ -1579,7 +1966,7 @@ private boolean contains(Map msg, Map spec) {
     0x0405: [
         name: "Relative Humidity Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R-P", name:"Measured Value" ],
+            0x0000: [ req:"Yes", acc:"R-P", name:"Measured Value", decorate: { value -> "${(Integer.parseInt(value, 16) / 100)}% RH" }],
             0x0001: [ req:"Yes", acc:"R--", name:"Min Measured Value" ],
             0x0002: [ req:"Yes", acc:"R--", name:"Max Measured Value" ],
             0x0003: [ req:"No",  acc:"R-P", name:"Tolerance" ]
@@ -1772,8 +2159,8 @@ private boolean contains(Map msg, Map spec) {
             0x0A17: [ req:"No",  acc:"RW-", name:"RMS Voltage Swell Period PhC" ]
         ],
         commands: [
-            0x00: [ req:"No",  name:"Get Profile Info Response Command" ],
-            0x01: [ req:"No",  name:"Get Measurement Profile Response Command" ]
+            0x00: [ req:"No",  name:"Get Profile Info Response" ],
+            0x01: [ req:"No",  name:"Get Measurement Profile Response" ]
         ]
     ],
     0x0B05: [
@@ -1815,6 +2202,18 @@ private boolean contains(Map msg, Map spec) {
         ]
     ],
     0x1000: [
-        name: "ZLL/Touchlink Commissioning Cluster"
+        name: "ZLL/Touchlink Commissioning Cluster",
+        commands: [
+            0x00: [ req:"Yes", name:"Scan" ],
+            0x02: [ req:"Yes", name:"Device Information" ],
+            0x06: [ req:"Yes", name:"Identify" ],
+            0x07: [ req:"Yes", name:"Reset to Factory New" ],
+            0x10: [ req:"Yes", name:"Network Start" ],
+            0x12: [ req:"Yes", name:"Network Join Router" ],
+            0x14: [ req:"Yes", name:"Network Join End-Device" ],
+            0x16: [ req:"Yes", name:"Network Update" ],
+            0x41: [ req:"No",  name:"Get Group Identifiers" ],
+            0x42: [ req:"No",  name:"Get Endpoint List" ]
+        ]
     ]
 ]
