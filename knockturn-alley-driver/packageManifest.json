@@ -1,10 +1,10 @@
 {
     "packageName": "Knockturn Alley",
-    "version": "1.4.0",
-    "releaseNotes": "v1.4.0\n - Legilimens spell now also gathers data from \"Node Descriptor\" and \"Node Power Descriptor\"\n - Translate attribute hex value to friendly representations for some known attributes (e.g. Power On Behavior, Temperature, Relative Humidity, etc.)",
+    "version": "1.5.0",
+    "releaseNotes": "v1.5.0\n - Legilimens spell now also gathers data from Neighbors Table (LQI), Routing Table and Bindings Table",
     "minimumHEVersion": "2.1.9",
     "author": "Dan Danache (@dandanache)",
-    "dateReleased": "2023-10-26",
+    "dateReleased": "2023-10-27",
     "documentationLink": "https://dan-danache.github.io/hubitat/knockturn-alley-driver/",
     "communityLink": "https://community.hubitat.com/t/dev-knockturn-alley/125167/3",
     "licenseFile": "https://raw.githubusercontent.com/dan-danache/hubitat/master/LICENSE",
