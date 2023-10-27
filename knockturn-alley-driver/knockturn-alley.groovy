@@ -1,7 +1,7 @@
 /**
  * Knockturn Alley - Simple toolkit driver to help developers peer deep into the guts of Zigbee devices.
  *
- * @version 1.4.0
+ * @version 1.5.0
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/CHANGELOG
  * @see https://community.hubitat.com/t/dev-knockturn-alley/125167
@@ -82,6 +82,16 @@ def a01Legilimens() {
 
     // Power_Desc_req
     cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0003 {44 ${zigbee.swapOctets(device.deviceNetworkId)}} {0x0000}"
+
+    // Mgmt_Lqi_req
+    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0031 {45 00} {0x0000}"
+
+    // Mgmt_Rtg_req
+    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0032 {46 00} {0x0000}"
+
+    // Mgmt_Bind_req
+    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0033 {47 00} {0x0000}"
+
     Utils.sendZigbeeCommands(cmds)
 }
 
@@ -93,7 +103,7 @@ def a02Scourgify(operation) {
     }
     
     // Make data pretty
-    String table = "<style>#ka_report { border-collapse:collapse; font-weight:normal } #ka_report th { background-color:#F2F2F2 } #ka_report pre { margin:0 } #ka_report_div { margin-left:-40px; width:calc(100% + 40px) } @media (max-width: 840px) { #ka_report_div { margin-left:-64px; width:calc(100% + 87px) } }</style>"
+    String table = "<style>#ka_report { border-collapse:collapse; font-weight:normal } #ka_report th { background-color:#F2F2F2 } #ka_report .pre { font-family: monospace, monospace } #ka_report pre { margin:0 } #ka_report_div { margin-left:-40px; width:calc(100% + 40px) } @media (max-width: 840px) { #ka_report_div { margin-left:-64px; width:calc(100% + 87px) } }</style>"
     table += "<div id=ka_report_div style='overflow-x:scroll; padding:0 1px'><table id=ka_report class='cell-border nowrap hover stripe'>"
     table += "<thead>"
     //table += "<tr><th colspan=9><a href=\"javascript:void\" onclick=\"navigator.clipboard.writeText(document.getElementById('ka_report').outerHTML)\">Copy</a></tr>"
@@ -193,6 +203,55 @@ def a02Scourgify(operation) {
             }
         }
     }
+
+    if (state.ka_neighbors) {
+        table += "<tr><th colspan=9 style='background-color:SteelBlue; color:White'>Neighbors Table</th></tr>"
+
+        state.ka_neighbors.each { neighbor ->
+            table += "<tr><td class=pre colspan=9> ▶ "
+            List<String> content = []
+            (0..((neighbor.size() / 2) - 1)).each { idx ->
+                if (neighbor[idx * 2] == "LQI") {
+                    Integer lqi = neighbor[idx * 2 + 1]
+                    String color = lqi > 200 ? "green" : (lqi > 150 ? "blue" : (lqi > 130 ? "orange" : "red"))
+                    content += "LQI:<b style='color:${color}'>${lqi}</b>"
+                    return
+                }
+                content += "${neighbor[idx * 2]}:<b>${neighbor[idx * 2 + 1]}</b>"
+            }
+            table += content.join(" | ")
+            table += "</td></tr>"
+        }
+    }
+
+    if (state.ka_routes) {
+        table += "<tr><th colspan=9 style='background-color:SteelBlue; color:White'>Routing Table</th></tr>"
+
+        state.ka_routes.each { route ->
+            table += "<tr><td class=pre colspan=9> ▶ "
+            List<String> content = []
+            (0..((route.size() / 2) - 1)).each { idx ->
+                content += "${route[idx * 2]}:<b>${route[idx * 2 + 1]}</b>"
+            }
+            table += content.join(" | ")
+            table += "</td></tr>"
+        }
+    }
+
+    if (state.ka_bindings) {
+        table += "<tr><th colspan=9 style='background-color:SteelBlue; color:White'>Bindings Table</th></tr>"
+
+        state.ka_bindings.each { binding ->
+            table += "<tr><td class=pre colspan=9> ▶ "
+            List<String> content = []
+            (0..((binding.size() / 2) - 1)).each { idx ->
+                content += "${binding[idx * 2]}:<b>${binding[idx * 2 + 1]}</b>"
+            }
+            table += content.join(" | ")
+            table += "</td></tr>"
+        }
+    }
+
     table += "</tbody></table></div>"
     table += "<script>window.addEventListener('load', () => { \$('#ka_report').dataTable() })</script>"
 
@@ -279,17 +338,12 @@ def c01Imperio(endpointHex, clusterHex, commandHex, manufacturerHex="", payload=
     Integer command = Integer.parseInt commandHex.substring(2), 16
 
     Integer manufacturer = manufacturerHex ? Integer.parseInt(manufacturerHex.substring(2), 16) : null
-    //String frameTail = ""
-    //if (manufacturer != null) {
-    //    frameTail = " {${Utils.hex manufacturer}}"
-    //}
     String frameStart = "0143"
     if (manufacturer != null) {
         frameStart = "05${Utils.payload manufacturer}43"
     }
 
     // Send zigbee command
-    //Utils.sendZigbeeCommands(["he cmd 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x${Utils.hex cluster} 0x${Utils.hex command, 2} {${payload}}${frameTail}"])
     Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart}${Utils.hex command, 2} ${payload}}"])
 }
 
@@ -475,14 +529,14 @@ def parse(String description) {
             return Utils.processedZigbeeMessage("Discover Commands Received Response", "endpoint=0x${Utils.hex endpoint, 2}, cluster=0x${Utils.hex cluster}, commands=${commands}")
 
         // ===================================================================================================================
-        // ZDO
+        // Zigbee Device Profile (ZDP)
         // ===================================================================================================================
 
         // Node_Desc_rsp := { 08:Status, 16:NWKAddrOfInterest, 03:LogicalType, 01:ComplexDescriptorAvailable, 01:UserDescriptorAvailable, 03:Reserved, 03:APSFlags, 05:FrequencyBand, 08:MACCapabilityFlags, 16:ManufacturerCode, 08:MaximumBufferSize, 16:MaximumIncomingTransferSize, 16:ServerMask, 16:MaximumOutgoingTransferSize, 08:DescriptorCapabilityDield }
         // Example: [75, 00, 1F, B3, 01, 40, 8E, 7C, 11, 52, 52, 00, 00, 2C, 52, 00, 00]
         case { contains it, [endpointInt:0x00, clusterInt:0x8002] }:
             if (msg.data[1] != "00") {
-                return Utils.failedZdoMessage("Node Descriptor Response", msg.data[1], msg)
+                return Utils.failedZdpMessage("Node Descriptor Response", msg.data[1], msg)
             }
 
             List<String> nodeDescriptor = []
@@ -565,7 +619,7 @@ def parse(String description) {
         // Example: [17, 00, 1F, B3, 10, C1]
         case { contains it, [endpointInt:0x00, clusterInt:0x8003] }:
             if (msg.data[1] != "00") {
-                return Utils.failedZdoMessage("Power Descriptor Response", msg.data[1], msg)
+                return Utils.failedZdpMessage("Power Descriptor Response", msg.data[1], msg)
             }
 
             List<String> powerDescriptor = []
@@ -683,7 +737,7 @@ def parse(String description) {
         // Three endpoints example: [83, 00, 18, 4A, 03, 01, 02, 03] -> endpointIds=[01, 02, 03]
         case { contains it, [endpointInt:0x00, clusterInt:0x8005] }:
             if (msg.data[1] != "00") {
-                return Utils.failedZdoMessage("Active Endpoints Response", msg.data[1], msg)
+                return Utils.failedZdpMessage("Active Endpoints Response", msg.data[1], msg)
             }
 
             Set<Integer> endpoints = []
@@ -694,15 +748,220 @@ def parse(String description) {
                     String endpointStr = msg.data[4 + i]
                     Integer endpoint = Utils.dec endpointStr
                     endpoints += endpoint
-                    
+
                     // Query simple descriptor data
-                    cmds += "he raw 0x${device.deviceNetworkId} 0x0000 0x0000 0x0004 {00 ${zigbee.swapOctets(device.deviceNetworkId)} ${endpointStr}} {0x0000}"
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0004 {00 ${zigbee.swapOctets(device.deviceNetworkId)} ${endpointStr}} {0x0000}"
                 }
                 State.addEndpoints endpoints
                 Utils.sendZigbeeCommands delayBetween(cmds, 1000)
+                return Utils.processedZigbeeMessage("Active Endpoints Response", "endpoints=${Utils.hexs endpoints, 2}")
             }
 
-            return Utils.processedZigbeeMessage("Active Endpoints Response", "endpoints=${endpoints}")
+
+        // Mgmt_Lqi_rsp := { 08:Status, 08:NeighborTableEntriesTotal, 08:StartIndex, 08:NeighborTableEntriesIncluded, 176*n:NeighborTableList }
+        // NeighborTableList: { 64:ExtendedPANId, 64:IEEEAddress, 16:NetworkAddress, 02:DeviceType, 02:RxOnWhenIdle, 03:Relationship, 01:Reserved, 02:PermitJoining, 06:Reserved, 08:Depth, 08:LQI }
+        // Example: [46, 00, 0C, 00, 03, 50, 53, 3A, 0D, 00, DF, 66, 15, E9, A6, C9, 17, 00, 6F, 0D, 00, 00, 00, 04, 02, 00, A3, 50, 53, 3A, 0D, 00, DF, 66, 15, 80, BF, CA, 6B, 6A, 38, C1, A4, 4A, 16, 25, 02, 0F, B8, 50, 53, 3A, 0D, 00, DF, 66, 15, D3, FA, E1, 25, 00, 4B, 12, 00, 64, 17, 25, 02, 0F, 6A]
+        case { contains it, [endpointInt:0x00, clusterInt:0x8031] }:
+            if (msg.data[1] != "00") {
+                return Utils.failedZdpMessage("Neighbors Table Response", msg.data[1], msg)
+            }
+
+            Integer totalEntries = Integer.parseInt(msg.data[2], 16)
+            Integer includedEntries = Integer.parseInt(msg.data[4], 16)
+
+            List<List<String>> neighbors = []
+            Integer pos = 5
+            (0..(includedEntries - 1)).each {
+                List<String> neighbor = []
+
+                // ExtendedPANId, IEEEAddress, NetworkAddress
+                //neighbor += ["PAN Id", msg.data[pos..(pos + 8)].reverse().join()]
+                //neighbor += ["IEEE", msg.data[(pos + 8)..(pos + 16)].reverse().join()]
+                neighbor += ["Addr", msg.data[(pos + 16)..(pos + 17)].reverse().join()]
+
+                // DeviceType, RxOnWhenIdle, Relationship, Reserved
+                String octet = Integer.toBinaryString(Integer.parseInt(msg.data[pos + 18], 16)).padLeft(8, "0").reverse()
+                //Log.warn ("Mgmt_Lqi_rsp: octet #1: ${octet}")
+
+                String deviceTypeBinary = octet.substring(0, 2).reverse()
+                String deviceType = "Unknown"
+                switch (deviceTypeBinary) {
+                    case "00":
+                        deviceType = "Zigbee Coordinator"
+                        break
+                    case "01":
+                        deviceType = "Zigbee Router"
+                        break
+                    case "10":
+                        deviceType = "Zigbee End-Device"
+                        break
+                }
+                neighbor += ["Device Type", deviceType]
+
+                String rxOnWhenIdleBinary = octet.substring(2, 4).reverse()
+                String rxOnWhenIdle = "Unknown"
+                switch (rxOnWhenIdleBinary) {
+                    case "00":
+                        rxOnWhenIdle = "No"
+                        break
+                    case "01":
+                        rxOnWhenIdle = "Yes"
+                        break
+                }
+                neighbor += ["RxOnWhenIdle", rxOnWhenIdle]
+
+                String relationshipBinary = octet.substring(4, 7).reverse()
+                String relationship = "Unknown"
+                switch (relationshipBinary) {
+                    case "000":
+                        relationship = "Parent"
+                        break
+                    case "001":
+                        relationship = "Child"
+                        break
+                    case "010":
+                        relationship = "Sibling"
+                        break
+                    case "011":
+                        relationship = "Unknown"
+                        break
+                    case "100":
+                        relationship = "Previous Child"
+                        break
+                }
+                neighbor += ["Relationship", relationship]
+
+                // PermitJoining, Reserved
+                octet = Integer.toBinaryString(Integer.parseInt(msg.data[pos + 19], 16)).padLeft(8, "0").reverse()
+                //Log.warn ("Mgmt_Lqi_rsp: octet #2: ${octet}")
+
+                String permitJoiningBinary = octet.substring(0, 2).reverse()
+                String permitJoining = "Invalid"
+                switch (permitJoiningBinary) {
+                    case "00":
+                        permitJoining = "No"
+                        break
+                    case "01":
+                        permitJoining = "Yes"
+                        break
+                    case "10":
+                        permitJoining = "Unknown"
+                        break
+                }
+                neighbor += ["Permit Joining", permitJoining]
+
+                // Depth, LQI
+                neighbor += ["Depth", Integer.parseInt(msg.data[pos + 20], 16)]
+                neighbor += ["LQI", Integer.parseInt(msg.data[pos + 21], 16)]
+
+                neighbors.add neighbor
+                pos += 22
+            }
+
+            State.addNeighbors neighbors
+            return Utils.processedZigbeeMessage("Neighbors Table Response", "totalEntries=${totalEntries}, includedEntries=${includedEntries}, neighbors=${neighbors}")
+
+
+        // Mgmt_Rtg_rsp := { 08:Status, 08:RoutingTableEntriesTotal, 08:StartIndex, 08:RoutingTableEntriesIncluded, 40*n:RoutingTableList }
+        // RoutingTableList: { 16:DestinationAddress, 03:RouteStatus, 01:MemoryConstrained, 01:ManyToOne, 01:RouteRecordRequired, 02:Reserved, 16:NextHopAddress }
+        // Example: [24, 00, 0A, 00, 0A, 00, 00, 30, 00, 00, 00, 00, 03, 00, 00, ED, EE, 00, 8B, 72, 31, 98, 00, 8B, 72, AD, 56, 00, AD, 56, 58, 1E, 00, 64, 17, 4A, 16, 00, 4A, 16, 64, 17, 00, 64, 17, 3F, 5F, 00, 8B, 72, 9F, 9B, 00, 8B, 72
+        case { contains it, [endpointInt:0x00, clusterInt:0x8032] }:
+            if (msg.data[1] != "00") {
+                return Utils.failedZdpMessage("Routing Table Response", msg.data[1], msg)
+            }
+
+            Integer totalEntries = Integer.parseInt(msg.data[2], 16)
+            Integer includedEntries = Integer.parseInt(msg.data[4], 16)
+
+            List<List<String>> routes = []
+            Integer pos = 5
+            (0..(includedEntries - 1)).each {
+                List<String> route = []
+
+                // DestinationAddress
+                route += ["Destination", msg.data[pos..(pos + 1)].reverse().join()]
+
+                // NextHopAddress
+                route += ["Next Hop", msg.data[(pos + 3)..(pos + 4)].reverse().join()]
+
+                // RouteStatus
+                String octet = Integer.toBinaryString(Integer.parseInt(msg.data[pos + 2], 16)).padLeft(8, "0").reverse()
+                //Log.warn ("Octet: ${octet}")
+
+                String routeStatusBinary = octet.substring(0, 3).reverse()
+                String routeStatus = "Reserved  "
+                switch (routeStatusBinary) {
+                    case "000":
+                        routeStatus = "Active"
+                        break
+                    case "001":
+                        routeStatus = "Discovery underway"
+                        break
+                    case "010":
+                        routeStatus = "Discovery failed"
+                        break
+                    case "011":
+                        routeStatus = "Inactive"
+                        break
+                    case "100":
+                        routeStatus = "Validation underway"
+                        break
+                }
+                route += ["Route Status", routeStatus]
+
+                // MemoryConstrained, ManyToOne, RouteRecordRequired
+                //route += ["Memory Constrained", octet[3] == "1" ? "Yes" : "No"]
+                //route += ["Many To One", octet[4] == "1" ? "Yes" : "No"]
+                //route += ["Route Record Required", octet[5] == "1" ? "Yes" : "No"]
+
+                routes.add route
+                pos += 5
+            }
+
+            State.addRoutes routes
+            return Utils.processedZigbeeMessage("Routing Table Response", "totalEntries=${totalEntries}, includedEntries=${includedEntries}, routes=${routes}")
+
+
+        // Mgmt_Bind_rsp := { 08:Status, 08:BindingTableEntriesTotal, 08:StartIndex, 08:BindingTableEntriesIncluded, 112/168*n:BindingTableList }
+        // BindingTableList: { 64:SrcAddr, 08:SrcEndpoint, 16:ClusterId, 08:DstAddrMode, 16/64:DstAddr, 0/08:DstEndpoint }
+        // Example: [71, 00, 01, 00, 01,  C6, 9C, FE, FE, FF, F9, E3, B4,  01,  06, 00,  03,  E9, A6, C9, 17, 00, 6F, 0D, 00,  01]
+        case { contains it, [endpointInt:0x00, clusterInt:0x8033] }:
+            if (msg.data[1] != "00") {
+                return Utils.failedZdpMessage("Binding Table Response", msg.data[1], msg)
+            }
+
+            Integer totalEntries = Integer.parseInt(msg.data[2], 16)
+            Integer includedEntries = Integer.parseInt(msg.data[4], 16)
+
+            List<List<String>> bindings = []
+            Integer pos = 5
+            (0..(includedEntries - 1)).each { idx ->
+                List<String> binding = []
+
+                // SrcAddr, SrcEndpoint, ClusterId
+                binding += ["Source", msg.data[(pos)..(pos + 7)].reverse().join()]
+                binding += ["Source Endpoint", "0x" + msg.data[pos + 8]]
+                binding += ["Cluster", "0x" + msg.data[(pos + 9)..(pos + 10)].reverse().join()]
+
+                // DstAddrMode
+                String dstAddrMode = msg.data[pos + 11]
+                if (dstAddrMode != "01" && dstAddrMode != "03") return
+
+                // 16 bit DstAddr
+                if (dstAddrMode == "01") {
+                    binding += ["Destination", msg.data[(pos + 12)..(pos + 13)].reverse().join()]
+                    pos += 14
+                } else {
+                    binding += ["Destination", msg.data[(pos + 12)..(pos + 19)].reverse().join()]
+                    binding += ["Destination Endpoint", "0x" + msg.data[pos + 20]]
+                    pos += 21
+                }
+
+                bindings.add binding
+            }
+
+            State.addBindings bindings
+            return Utils.processedZigbeeMessage("Binding Table Response", "totalEntries=${totalEntries}, includedEntries=${includedEntries}, bindings=${bindings}")
 
         // ---------------------------------------------------------------------------------------------------------------
         // Unexpected Zigbee message
@@ -762,8 +1021,8 @@ def parse(String description) {
         Log.warn "▶ Received ZCL message: type=${type}, status=${ZCL_STATUS[Integer.parseInt(status, 16)]}, data=${msg.data}"
     },
 
-    failedZdoMessage: { String type, String status, Map msg ->
-        Log.warn "▶ Received ZDO message: type=${type}, status=${ZDP_STATUS[Integer.parseInt(status, 16)]}, data=${msg.data}"
+    failedZdpMessage: { String type, String status, Map msg ->
+        Log.warn "▶ Received ZDP message: type=${type}, status=${ZDP_STATUS[Integer.parseInt(status, 16)]}, data=${msg.data}"
     }
 ]
 
@@ -817,6 +1076,18 @@ private boolean contains(Map msg, Map spec) {
 
     setPowerDescriptor: { List<String> powerDescriptor ->
         state["ka_powerDescriptor"] = powerDescriptor
+    },
+
+    addNeighbors: { List<List<String>> neighbors ->
+        state["ka_neighbors"] = neighbors
+    },
+
+    addRoutes: { List<List<String>> routes ->
+        state["ka_routes"] = routes
+    },
+
+    addBindings: { List<List<String>> bindings ->
+        state["ka_bindings"] = bindings
     }
 ]
 
@@ -1106,7 +1377,7 @@ private boolean contains(Map msg, Map spec) {
             0x0012: [ type:0x21, req:"No",  acc:"RW-", name:"Mains Voltage Max Threshold" ],
             0x0013: [ type:0x21, req:"No",  acc:"RW-", name:"Mains Voltage Dwell Trip Point" ],
             
-            0x0020: [ type:0x20, req:"No",  acc:"R--", name:"Battery Voltage" ],
+            0x0020: [ type:0x20, req:"No",  acc:"R--", name:"Battery Voltage", decorate: { value -> value == "00" ? "" : "${Integer.parseInt(value, 16) * 100}mV" } ],
             0x0021: [ type:0x20, req:"No",  acc:"R-P", name:"Battery Percentage Remaining", decorate: { value -> "${Math.round(Integer.parseInt(value, 16) / 2) as Integer}% remaining" } ],
 
             0x0030: [ type:0x42, req:"No",  acc:"RW-", name:"Battery Manufacturer" ],
@@ -1205,8 +1476,8 @@ private boolean contains(Map msg, Map spec) {
         attributes: [
             0x0000: [ type:0x10, req:"Yes", acc:"R-P", name:"On Off", decorate: { value -> value == "00" ? "Off" : (value == "01" ? "On" : "Invalid value") }],
             0x4000: [ type:0x10, req:"No",  acc:"R--", name:"Global Scene Control" ],
-            0x4001: [ type:0x21, req:"No",  acc:"RW-", name:"On Time" ],
-            0x4002: [ type:0x21, req:"No",  acc:"RW-", name:"Off Wait Time" ],
+            0x4001: [ type:0x21, req:"No",  acc:"RW-", name:"On Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
+            0x4002: [ type:0x21, req:"No",  acc:"RW-", name:"Off Wait Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
             0x4003: [ type:0x21, req:"No",  acc:"RW-", name:"Power On Behavior", constraints: [
                 0x00: "Turn power Off",
                 0x01: "Turn power On",
@@ -1241,11 +1512,11 @@ private boolean contains(Map msg, Map spec) {
         name: "Level Control Cluster",
         attributes: [
             0x0000: [ type:0x20, req:"Yes", acc:"R-P", name:"Current Level", decorate: { value -> value == "FF" ? "Invalid value" : "${((Integer.parseInt(value, 16) * 100 / 0xFE) as Integer)}%" }],
-            0x0001: [ type:0x21, req:"No",  acc:"R--", name:"Remaining Time" ],
-            0x0010: [ type:0x21, req:"No",  acc:"RW-", name:"On Off Transition Time" ],
+            0x0001: [ type:0x21, req:"No",  acc:"R--", name:"Remaining Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
+            0x0010: [ type:0x21, req:"No",  acc:"RW-", name:"On Off Transition Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
             0x0011: [ type:0x20, req:"No",  acc:"RW-", name:"On Level", decorate: { value -> value == "FF" ? "Last level" : "${((Integer.parseInt(value, 16) * 100 / 0xFE) as Integer)}%" }],
-            0x0012: [ type:0x21, req:"No",  acc:"RW-", name:"On Transition Time" ],
-            0x0013: [ type:0x21, req:"No",  acc:"RW-", name:"Off Transition Time" ],
+            0x0012: [ type:0x21, req:"No",  acc:"RW-", name:"On Transition Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
+            0x0013: [ type:0x21, req:"No",  acc:"RW-", name:"Off Transition Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
             0x0014: [ type:0x21, req:"No",  acc:"RW-", name:"Default Move Rate" ],
             0x4000: [ type:0x20, req:"No",  acc:"RW-", name:"StartUp Current Level" ]
         ],
