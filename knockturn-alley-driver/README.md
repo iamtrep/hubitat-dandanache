@@ -32,6 +32,7 @@ Spells for auto discovering Zigbee features:
 Spells for handling Zigbee Attributes:
 - [B01 - Accio](#b01---accio)
 - [B02 - Everte Statum](#b02---everte-statum)
+- [B03 - Oppugno](#b03---oppugno)
 
 Spells for executing Zigbee Commands and managing driver state:
 - [C01 - Imperio](#c01---imperio)
@@ -78,6 +79,18 @@ Before casting the spell, have the Logs section open in order to see the device 
 `Everte Statum` spell updates the value for the specified Zigbee attribute. You can now fight back and do some real damage to your devices!
 
 After casting the spell, you may want to cast `Accio` to query the device for the updated attribute value.
+
+### B03 - Oppugno
+<img src="img/Oppugno.webp" height="200px"/>
+
+`Oppugno` spell configures the reporting details for the specified Zigbee attribute.
+
+Notes:
+- If Min Interval is set to 0 (0x0000), then there is no minimum limit, unless one is imposed by the specification of the cluster using this reporting mechanism or by the application
+- If Max Interval is set to 65535 (0xFFFF), then the device SHALL not issue reports for the specified attribute, and the configuration information for that attribute need not be maintained (in an implementation using dynamic memory allocation, the memory space for that information may then be reclaimed).
+- If Max Interval is set to 0 (0x0000) and Min Interval is set to 65535 (0xFFFF), then the device SHALL revert back to its default reporting configuration. The reportable change field, if present, SHALL be set to zero.
+
+After casting the spell, you may want to cast `Accio` to query the device for the updated reporting configuration for that specific attribute.
 
 ### C01 - Imperio
 <img src="img/Imperio.gif" height="200px"/>

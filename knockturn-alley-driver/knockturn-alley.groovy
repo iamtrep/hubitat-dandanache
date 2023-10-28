@@ -1,7 +1,7 @@
 /**
  * Knockturn Alley - Simple toolkit driver to help developers peer deep into the guts of Zigbee devices.
  *
- * @version 1.5.0
+ * @version 1.6.0
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/CHANGELOG
  * @see https://community.hubitat.com/t/dev-knockturn-alley/125167
@@ -37,13 +37,28 @@ metadata {
             [name: "Cluster*", description: "Cluster ID - hex format (e.g.: 0x0001)", type: "STRING"],
             [name: "Attribute*", description: "Attribute ID - hex format (e.g.: 0x0001)", type: "STRING"],
             [name: "Manufacturer", description: "Manufacturer Code - hex format (e.g.: 0x117C)", type: "STRING"],
-            [name: "Data type*", description: "Attribute data type", type: "ENUM", constraints:
+            [name: "Data Type*", description: "Attribute data type", type: "ENUM", constraints:
                  ZCL_DATA_TYPES.keySet()
                      .findAll { ZCL_DATA_TYPES[it].bytes != "0" && ZCL_DATA_TYPES[it].bytes != "var" }
                      .sort()
                      .collect { "0x${Utils.hex it, 2}: ${ZCL_DATA_TYPES[it].name} (${ZCL_DATA_TYPES[it].bytes} bytes)" }
             ],
             [name: "Value*", description: "Attribute value - hex format (e.g.: 0001 - for uint16)", type: "STRING"],
+        ]
+        command "b03Oppugno", [
+            [name: "Endpoint*", description: "Endpoint ID - hex format (e.g.: 0x01)", type: "STRING"],
+            [name: "Cluster*", description: "Cluster ID - hex format (e.g.: 0x0001)", type: "STRING"],
+            [name: "Attribute*", description: "Attribute ID - hex format (e.g.: 0x0001)", type: "STRING"],
+            [name: "Manufacturer", description: "Manufacturer Code - hex format (e.g.: 0x117C)", type: "STRING"],
+            [name: "Data Type*", description: "Attribute data type", type: "ENUM", constraints:
+                 ZCL_DATA_TYPES.keySet()
+                     .findAll { ZCL_DATA_TYPES[it].bytes != "0" && ZCL_DATA_TYPES[it].bytes != "var" }
+                     .sort()
+                     .collect { "0x${Utils.hex it, 2}: ${ZCL_DATA_TYPES[it].name} (${ZCL_DATA_TYPES[it].bytes} bytes)" }
+            ],
+            [name: "Min Interval*", description: "Minimum reporting interval between issuing reports - in seconds [0..65534]", type: "NUMBER"],
+            [name: "Max Interval*", description: "Maximum reporting interval between issuing reports - in seconds [0..65534], 65535 -> disable reporting", type: "NUMBER"],
+            [name: "Reportable Change*", description: "Minimum change to the attribute that will trigger a report - hex format (e.g.: 0001 - for uint16)", type: "STRING"],
         ]
         command "c01Imperio", [
             [name: "Endpoint*", description: "Endpoint ID - hex format (e.g.: 0x01)", type: "STRING"],
@@ -284,10 +299,14 @@ def b01Accio(operation, endpointHex, clusterHex, attributeHex, manufacturerHex="
 
     switch (operation) {
         case { it.startsWith("1 - ") }:
-            return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart}00 ${Utils.payload attribute}}"])
+            String command = "00"
+            String payload = "${Utils.payload attribute}"
+            return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart}${command} ${payload}}"])
 
         case { it.startsWith("2 - ") }:
-            return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart}08 00${Utils.payload attribute}}"])
+            String command = "08"
+            String payload = "00 ${Utils.payload attribute}"
+            return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart}${command} ${payload}}"])
     }
 }
 
@@ -299,7 +318,7 @@ def b02EverteStatum(endpointHex, clusterHex, attributeHex, manufacturerHex="", t
     if (!clusterHex.startsWith("0x") || clusterHex.size() != 6) return Log.error("Invalid Cluster ID: ${clusterHex}")
     if (!attributeHex.startsWith("0x") || attributeHex.size() != 6) return Log.error("Invalid Attribute ID: ${clusterHex}")
     if (manufacturerHex && (!manufacturerHex.startsWith("0x") || manufacturerHex.size() != 6)) return Log.error("Invalid Manufacturer Code: ${manufacturerHex}")
-    if (valueHex && !HEXADECIMAL_PATTERN.matcher(valueHex).matches()) return Log.error("Invalid Value: ${payload}")
+    if (valueHex && !HEXADECIMAL_PATTERN.matcher(valueHex).matches()) return Log.error("Invalid Value: ${valueHex}")
 
     Integer endpoint = Integer.parseInt endpointHex.substring(2), 16
     Integer cluster = Integer.parseInt clusterHex.substring(2), 16
@@ -320,7 +339,45 @@ def b02EverteStatum(endpointHex, clusterHex, attributeHex, manufacturerHex="", t
     value = (value.split("") as List).collate(2).collect { it.join() }.reverse().join()
     
     // Send zigbee command
-    Utils.sendZigbeeCommands(["he raw ${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart}02 ${Utils.payload attribute} ${typeStr.substring(2, 4)} ${value}}"])
+    String command = "02"
+    String payload = "${Utils.payload attribute} ${typeStr.substring(2, 4)} ${value}"
+    Utils.sendZigbeeCommands(["he raw ${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart}${command} ${payload}}"])
+}
+
+def b03Oppugno(endpointHex, clusterHex, attributeHex, manufacturerHex="", typeStr, minInterval, maxInterval, reportableChangeHex) {
+    sendEvent name:"documentation", value:"<a href=\"https://dan-danache.github.io/hubitat/knockturn-alley-driver/\" target=\"_blank\">README</a>", isStateChange:false
+    Log.info "🪄 Oppugno: endpoint=${endpointHex}, cluster=${clusterHex}, attribute=${attributeHex}, manufacturer=${manufacturerHex}, type=${typeStr}, minInterval=${minInterval}, maxInterval=${maxInterval}, reportableChange=${reportableChangeHex}"
+
+    if (!endpointHex.startsWith("0x") || endpointHex.size() != 4) return Log.error("Invalid Endpoint ID: ${endpointHex}")
+    if (!clusterHex.startsWith("0x") || clusterHex.size() != 6) return Log.error("Invalid Cluster ID: ${clusterHex}")
+    if (!attributeHex.startsWith("0x") || attributeHex.size() != 6) return Log.error("Invalid Attribute ID: ${clusterHex}")
+    if (manufacturerHex && (!manufacturerHex.startsWith("0x") || manufacturerHex.size() != 6)) return Log.error("Invalid Manufacturer Code: ${manufacturerHex}")
+    if (reportableChangeHex && !HEXADECIMAL_PATTERN.matcher(reportableChangeHex).matches()) return Log.error("Invalid Reportable Change: ${reportableChangeHex}")
+    if (minInterval < 0 || minInterval > 65535)  return Log.error("Invalid Min Interval: ${minInterval}")
+    if (maxInterval < 0 || maxInterval > 65535)  return Log.error("Invalid Max Interval: ${maxInterval}")
+
+    Integer endpoint = Integer.parseInt endpointHex.substring(2), 16
+    Integer cluster = Integer.parseInt clusterHex.substring(2), 16
+    Integer attribute = Integer.parseInt attributeHex.substring(2), 16
+
+    Integer manufacturer = manufacturerHex ? Integer.parseInt(manufacturerHex.substring(2), 16) : null
+    String frameStart = "1043"
+    if (manufacturer != null) {
+        frameStart = "04${Utils.payload manufacturer}43"
+    }
+
+    Integer type = Integer.parseInt typeStr.substring(2, 4), 16
+    String reportableChange = reportableChangeHex.replaceAll " ", ""
+    Integer typeLen = Integer.parseInt ZCL_DATA_TYPES[type].bytes
+    if (reportableChange.size() != typeLen * 2) return Log.error("Invalid Reportable Change: It must have exactly ${typeLen} bytes but you provided ${reportableChange.size()}: ${valueHex}")
+
+    // Transform BE -> LE: "123456" -> ["1", "2", "3", "4", "5", "6"] -> [["1", "2"], ["3", "4"], ["5", "6"]] -> ["12", "34", "56"] -> ["56", "34", "12"] -> "563412"
+    reportableChange = (reportableChange.split("") as List).collate(2).collect { it.join() }.reverse().join()
+
+    // Send zigbee command
+    String command = "06"
+    String payload = "00 ${Utils.payload attribute} ${typeStr.substring(2, 4)} ${Utils.payload (minInterval as Integer)} ${Utils.payload (maxInterval as Integer)} ${reportableChange}"
+    Utils.sendZigbeeCommands(["he raw ${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart}${command} ${payload}} "])
 }
 
 def c01Imperio(endpointHex, clusterHex, commandHex, manufacturerHex="", payload="") {
@@ -436,6 +493,14 @@ def parse(String description) {
                 return Utils.failedZclMessage("Write Attribute Response", msg.data[0], msg)
             }
             return Utils.processedZigbeeMessage("Write Attribute Response", "data=${msg.data}")
+
+        // Configure Reporting Response (0x07)
+        case { contains it, [isClusterSpecific:false, commandInt:0x07] }:
+            if (msg.data[0] != "00") {
+                return Utils.failedZclMessage("Configure Reporting Response", msg.data[0], msg)
+            }
+
+            return Utils.processedZigbeeMessage("Configure Reporting Response", "data=${msg.data}")
 
         // Read Reporting Configuration Response (0x09)
         case { contains it, [isClusterSpecific:false, commandInt:0x09] }:
