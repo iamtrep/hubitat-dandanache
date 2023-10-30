@@ -19,8 +19,9 @@ This driver has no registered fingerprints and no configuration / initialization
 3. No initialization / configuration is required.
 4. Cast whatever spells you want using the `Knockturn Alley` driver. Have the `Logs` section opened in a separate tab since the driver talks to you mostly via log entries.
 5. When you decided you had enough fun, cast the `Obliviate` spell with option `1` to get rid of the `ka_*` device state entries (we clean our own mess).
-6. From the device details page, change back to the original driver. Everything should work without the need to reconfigure / re-pair the device.
-7. Pick a new Zigbee device to torture and go back to Step 2 :)
+6. Seriously, do step 5. This driver creates multiple state entries, not to mention the generated report, and this will hit your Hubs RAM.
+7. From the device details page, change back to the original driver. Everything should work without the need to reconfigure / re-pair the device.
+8. Pick a new Zigbee device to torture and go back to Step 2 :)
 
 
 ## Spells
@@ -62,7 +63,9 @@ When the discovery process is complete, refresh the device details page to see w
 1. Read data gathered using the `Legilimens` spell. You need to first cast the `Legilimens`, otherwise nothing will happen.
 2. Use the raw data to create a friendly attributes report.
 
-After casting the spell, refresh the device details page to see the attributes report. Have fun!
+After casting the spell, refresh the device details page to see the generated report.
+
+You can Control + Click anywhere on the generated report to select all text, and now you're ready to share it using Copy / Paste.
 
 ### B01 - Accio
 <img src="img/Accio.gif" height="200px"/>

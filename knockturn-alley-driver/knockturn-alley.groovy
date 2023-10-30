@@ -1,7 +1,7 @@
 /**
  * Knockturn Alley - Simple toolkit driver to help developers peer deep into the guts of Zigbee devices.
  *
- * @version 1.6.0
+ * @version 2.0.0
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/CHANGELOG
  * @see https://community.hubitat.com/t/dev-knockturn-alley/125167
@@ -18,8 +18,8 @@ metadata {
         command "a01Legilimens"
         command "a02Scourgify", [
             [name: "Raw data", type: "ENUM", constraints: [
-                "1 - Keep raw data",
-                "2 - Remove raw data",
+                "1 - Remove raw data",
+                "2 - Keep raw data",
             ]],
         ]
         command "b01Accio", [
@@ -110,56 +110,85 @@ def a01Legilimens() {
     Utils.sendZigbeeCommands(cmds)
 }
 
+private String printSeparator(chars = "---") {
+    return "${chars * 32}\n"
+}
+
+private String printHeader(String header) {
+    return "${"===" * 32}\n${header}\n${"===" * 32}\n"
+}
+
+private String printList(String header, List<String> list) {
+    if (!list) return
+    Map<Integer, String> indexedList = list.indexed()
+    Integer maxKeyLen = indexedList.inject(0) { s, k, v -> k & 1 ? s : Math.max(s, v.size()) }
+    return indexedList.inject(printHeader(header)) { s, k, v -> s + (k & 1 ? " = ${v}\n" : "▸ " + v.padRight(maxKeyLen, " ")) }
+}
+
+private String printTable(List<List<String>> rows, Integer columnsNo) {
+    if (!rows) return
+
+    // Init columns width
+    Map<Integer, Integer> widths = [:]
+    (0..(columnsNo-1)).each { widths[it] = 0 }
+
+    // Calculate column widths
+    rows.each { row -> widths.each { widths[it.key] = Math.max(it.value, row[it.key].size()) }}
+
+    // Print table
+    return rows.inject("") { ts, row -> ts + widths.inject("▸ ") { s, k, v -> s + (k == 0 ? "" : " | ") + row[k].padRight(v, " ") } + "\n"}
+}
+
+private printWeirdTable(String header, List<List<String>> rows, Integer columnsNo) {
+    String data = printHeader(header)
+    if (!rows) {
+        data += "▸ Could not retrieve data"
+    } else {
+        List<List<String>> table = []
+        rows.each { row ->
+            List<String> record = []
+            (0..((row.size() / 2) - 1)).each { idx -> record += "${row[idx * 2]}:${row[idx * 2 + 1]}" }
+            table.add record
+        }
+        data += printTable(table, columnsNo)
+    }
+}
+
 def a02Scourgify(operation) {
     sendEvent name:"documentation", value:"<a href=\"https://dan-danache.github.io/hubitat/knockturn-alley-driver/\">README</a>", isStateChange:false
     Log.info "🪄 Scourgify: ${operation}"
     if (!state.ka_endpoints) {
         return Log.warn("Raw data is missing. Maybe you should run Legilimens first if you didn't do that already ...")
     }
-    
-    // Make data pretty
-    String table = "<style>#ka_report { border-collapse:collapse; font-weight:normal } #ka_report th { background-color:#F2F2F2 } #ka_report .pre { font-family: monospace, monospace } #ka_report pre { margin:0 } #ka_report_div { margin-left:-40px; width:calc(100% + 40px) } @media (max-width: 840px) { #ka_report_div { margin-left:-64px; width:calc(100% + 87px) } }</style>"
-    table += "<div id=ka_report_div style='overflow-x:scroll; padding:0 1px'><table id=ka_report class='cell-border nowrap hover stripe'>"
-    table += "<thead>"
-    //table += "<tr><th colspan=9><a href=\"javascript:void\" onclick=\"navigator.clipboard.writeText(document.getElementById('ka_report').outerHTML)\">Copy</a></tr>"
-    table += "<tr><th>ID</th><th>Name</th><th>Required</th><th>Access</th><th>Type</th><th>Bytes</th><th>Encoding</th><th>Value</th><th>Reporting</th></tr>"
-    table += "</thead><tbody>"
 
-    if (state.ka_nodeDescriptor) {
-        table += "<tr><th colspan=9 style='background-color:SteelBlue; color:White'>Node Descriptor</th></tr>"
-        (0..((state.ka_nodeDescriptor.size() / 2) - 1)).each { idx ->
-            table += "<tr>"
-            table += "<td>${state.ka_nodeDescriptor[idx * 2]}</td>"
-            table += "<td colspan=8>${state.ka_nodeDescriptor[idx * 2 + 1]}</td>"
-            table += "</tr>"
-        }
-    }
+    String data = "<style>#ka_div { margin-left:-40px; width:calc(100% + 40px) } @media (max-width: 840px) { #ka_div { overflow-x:scroll; padding:0 1px; margin-left:-64px; width:calc(100% + 87px) } }</style>"
+    data += "<script type=text/javascript>function selectCode(el) { if (!window.event.ctrlKey) return; var range = document.createRange(); range.selectNodeContents(el); var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range); }</script>"
+    data += "<div id=ka_div><pre onclick=\"selectCode(this)\">"
 
-    if (state.ka_powerDescriptor) {
-        table += "<tr><th colspan=9 style='background-color:SteelBlue; color:White'>Power Descriptor</th></tr>"
-        (0..((state.ka_powerDescriptor.size() / 2) - 1)).each { idx ->
-            table += "<tr>"
-            table += "<td>${state.ka_powerDescriptor[idx * 2]}</td>"
-            table += "<td colspan=8>${state.ka_powerDescriptor[idx * 2 + 1]}</td>"
-            table += "</tr>"
-        }
-    }
+    // Node & Power Descriptors
+    data += printList("Node Descriptor", state.ka_nodeDescriptor)
+    data += printList("Power Descriptor", state.ka_powerDescriptor)
 
+    // Endpoints
     state.ka_endpoints?.sort().each { endpoint ->
-        table += "<tr><th colspan=9 style='background-color:SteelBlue; color:White'>Endpoint: 0x${Utils.hex endpoint, 2}</th></tr>"
-        table += "<tr><th colspan=9>Out Clusters: ${state["ka_outClusters_${endpoint}"]?.sort().collect { "0x${Utils.hex it, 4} (${ZCL_CLUSTERS.get(it)?.name ?: "Unknown Cluster"})" }.join(", ")}</th></tr>"
-        state["ka_inClusters_${endpoint}"]?.sort().each { cluster ->
-            table += "<tr><th colspan=9>In Cluster: ${"0x${Utils.hex cluster, 4} (${ZCL_CLUSTERS.get(cluster)?.name ?: "Unknown Cluster"})"}</th></tr>"
+        data += printSeparator("===")
+        data += "Endpoint 0x${Utils.hex endpoint, 2} | Out Clusters: ${state["ka_outClusters_${endpoint}"]?.sort().collect { "0x${Utils.hex it, 4} (${ZCL_CLUSTERS.get(it)?.name ?: "Unknown Cluster"})" }.join(", ")}\n"
 
+        state["ka_inClusters_${endpoint}"]?.sort().each { cluster ->
+            data += printHeader("Endpoint 0x${Utils.hex endpoint, 2} | In Cluster: ${"0x${Utils.hex cluster, 4} (${ZCL_CLUSTERS.get(cluster)?.name ?: "Unknown Cluster"})"}")
+
+            // Attributes
             Set<Integer> attributes = []
             getState()?.each {
                 if (it.key.startsWith("ka_attribute_${endpoint}_${cluster}") || it.key.startsWith("ka_attributeValue_${endpoint}_${cluster}")) {
                     attributes += Integer.parseInt it.key.split("_").last()
                 }
             }
-           
-            if (attributes.size() > 0) {
-                table += "<tr><td colspan=9><b>Attributes</b></td></tr>"
+
+            if (attributes.size() == 0) {
+                data += "▸ No attributes found\n"
+            } else {
+                List<List<String>> table = []
                 attributes.sort().each { attribute ->
                     def attributeSpec = ZCL_CLUSTERS.get(cluster)?.get("attributes")?.get(attribute)
                     def attributeType = ZCL_DATA_TYPES[state["ka_attribute_${endpoint}_${cluster}_${attribute}"]]
@@ -168,7 +197,7 @@ def a02Scourgify(operation) {
                     
                     // Cluster Revision global attribute
                     if (attribute == 0xFFFD) {
-                        attributeSpec = [ type:0x21, req:"Yes", acc:"R--", name:"Cluster Revision" ]
+                        attributeSpec = [ type:0x21, req:"req", acc:"r--", name:"Cluster Revision" ]
                         attributeType = ZCL_DATA_TYPES[0x21]
                     }
 
@@ -183,100 +212,64 @@ def a02Scourgify(operation) {
                             value += " = ${attributeType.decorate(attributeValue.value)}"
                         }
                     }
-                    
-                    table += "<tr>"
-                    table += "<td><pre>0x${Utils.hex attribute, 4}</pre></td>"
-                    table += "<td>${attributeSpec?.name ?: "--"}</td>"
-                    table += "<td>${attributeSpec?.req ?: "--"}</td>"
-                    table += "<td><pre>${attributeSpec?.acc ?: "--"}</pre></td>"
-                    table += "<td>${attributeType?.name ?: "--"}</td>"
-                    table += "<td>${attributeType?.bytes ?: "--"}</td>"
-                    table += "<td>${attributeValue?.encoding ?: "--"}</td>"
-                    table += "<td><pre>${value}</pre></td>"
-                    table += "<td>${attributeReporting ?: "--"}</td>"
-                    table += "</tr>"
-                }
-            }
 
+                    List<String> row = [
+                        "0x${Utils.hex attribute, 4}",
+                        "${attributeSpec?.name ?: "--"}",
+                        "${attributeSpec?.req ?: "--"}",
+                        "${attributeSpec?.acc ?: "--"}",
+                        "${attributeType?.name ?: "--"}",
+                        "${value}",
+                        "${attributeReporting ?: "--"}"
+                    ]
+                    table.add row
+                }
+
+                data += printTable(table, 7)
+            }
+            data += printSeparator()
+
+            // Commands
             Set<Integer> commands = []
             getState()?.each {
                 if (it.key.startsWith("ka_command_${endpoint}_${cluster}")) {
                     commands += Integer.parseInt it.key.split("_").last()
                 }
             }
-            if (commands.size() > 0) {
-                table += "<tr><td colspan=9><b>Commands</b></td></tr>"
+
+            if (commands.size() == 0) {
+                data += "▸ No commands found\n"
+            } else {
+                List<List<String>> table = []
+
                 commands.sort().each { command ->
                     def commandSpec = ZCL_CLUSTERS.get(cluster)?.get("commands")?.get(command)
-                    table += "<tr>"
-                    table += "<td><pre>0x${Utils.hex command, 2}</pre></td>"
-                    table += "<td>${commandSpec?.name ?: "--"}</td>"
-                    table += "<td>${commandSpec?.req ?: "--"}</td>"
-                    table += "<td colspan=6></td>"
-                    table += "</tr>"
+
+                    List<String> row = [
+                        "0x${Utils.hex command, 2}",
+                        "${commandSpec?.name ?: "--"}",
+                        "${commandSpec?.req ?: "--"}"
+                    ]
+                    table.add row
                 }
+
+                data += printTable(table, 3)
             }
         }
     }
 
-    if (state.ka_neighbors) {
-        table += "<tr><th colspan=9 style='background-color:SteelBlue; color:White'>Neighbors Table</th></tr>"
-
-        state.ka_neighbors.each { neighbor ->
-            table += "<tr><td class=pre colspan=9> ▶ "
-            List<String> content = []
-            (0..((neighbor.size() / 2) - 1)).each { idx ->
-                if (neighbor[idx * 2] == "LQI") {
-                    Integer lqi = neighbor[idx * 2 + 1]
-                    String color = lqi > 200 ? "green" : (lqi > 150 ? "blue" : (lqi > 130 ? "orange" : "red"))
-                    content += "LQI:<b style='color:${color}'>${lqi}</b>"
-                    return
-                }
-                content += "${neighbor[idx * 2]}:<b>${neighbor[idx * 2 + 1]}</b>"
-            }
-            table += content.join(" | ")
-            table += "</td></tr>"
-        }
-    }
-
-    if (state.ka_routes) {
-        table += "<tr><th colspan=9 style='background-color:SteelBlue; color:White'>Routing Table</th></tr>"
-
-        state.ka_routes.each { route ->
-            table += "<tr><td class=pre colspan=9> ▶ "
-            List<String> content = []
-            (0..((route.size() / 2) - 1)).each { idx ->
-                content += "${route[idx * 2]}:<b>${route[idx * 2 + 1]}</b>"
-            }
-            table += content.join(" | ")
-            table += "</td></tr>"
-        }
-    }
-
-    if (state.ka_bindings) {
-        table += "<tr><th colspan=9 style='background-color:SteelBlue; color:White'>Bindings Table</th></tr>"
-
-        state.ka_bindings.each { binding ->
-            table += "<tr><td class=pre colspan=9> ▶ "
-            List<String> content = []
-            (0..((binding.size() / 2) - 1)).each { idx ->
-                content += "${binding[idx * 2]}:<b>${binding[idx * 2 + 1]}</b>"
-            }
-            table += content.join(" | ")
-            table += "</td></tr>"
-        }
-    }
-
-    table += "</tbody></table></div>"
-    table += "<script>window.addEventListener('load', () => { \$('#ka_report').dataTable() })</script>"
+    // ZDP tables
+    data += printWeirdTable("Neighbors Table", state.ka_neighbors, 6)
+    data += printWeirdTable("Routing Table", state.ka_routes, 3)
+    data += printWeirdTable("Bindings Table", state.ka_bindings, 5)
+    data += "</pre></div>"
 
     // Cleanup raw data?
-    if (operation.startsWith("2 - ")) {
+    if (operation == "1 - Remove raw data") {
        getState()?.findAll { it.key.startsWith("ka_") }?.collect { it.key }.each { state.remove it }
     }
-    
-    // Show report table
-    state.ka_report = table
+
+    state.ka_report = data
 }
 
 def b01Accio(operation, endpointHex, clusterHex, attributeHex, manufacturerHex="") {
@@ -861,7 +854,7 @@ def parse(String description) {
                         deviceType = "Zigbee End-Device"
                         break
                 }
-                neighbor += ["Device Type", deviceType]
+                neighbor += ["Type", deviceType]
 
                 String rxOnWhenIdleBinary = octet.substring(2, 4).reverse()
                 String rxOnWhenIdle = "Unknown"
@@ -894,7 +887,7 @@ def parse(String description) {
                         relationship = "Previous Child"
                         break
                 }
-                neighbor += ["Relationship", relationship]
+                neighbor += ["Rel", relationship]
 
                 // PermitJoining, Reserved
                 octet = Integer.toBinaryString(Integer.parseInt(msg.data[pos + 19], 16)).padLeft(8, "0").reverse()
@@ -913,7 +906,7 @@ def parse(String description) {
                         permitJoining = "Unknown"
                         break
                 }
-                neighbor += ["Permit Joining", permitJoining]
+                //neighbor += ["Permit Joining", permitJoining]
 
                 // Depth, LQI
                 neighbor += ["Depth", Integer.parseInt(msg.data[pos + 20], 16)]
@@ -1004,8 +997,8 @@ def parse(String description) {
                 List<String> binding = []
 
                 // SrcAddr, SrcEndpoint, ClusterId
-                binding += ["Source", msg.data[(pos)..(pos + 7)].reverse().join()]
-                binding += ["Source Endpoint", "0x" + msg.data[pos + 8]]
+                binding += ["Src", msg.data[(pos)..(pos + 7)].reverse().join()]
+                binding += ["Endpoint", "0x" + msg.data[pos + 8]]
                 binding += ["Cluster", "0x" + msg.data[(pos + 9)..(pos + 10)].reverse().join()]
 
                 // DstAddrMode
@@ -1014,11 +1007,11 @@ def parse(String description) {
 
                 // 16 bit DstAddr
                 if (dstAddrMode == "01") {
-                    binding += ["Destination", msg.data[(pos + 12)..(pos + 13)].reverse().join()]
+                    binding += ["Dest", msg.data[(pos + 12)..(pos + 13)].reverse().join()]
                     pos += 14
                 } else {
-                    binding += ["Destination", msg.data[(pos + 12)..(pos + 19)].reverse().join()]
-                    binding += ["Destination Endpoint", "0x" + msg.data[pos + 20]]
+                    binding += ["Dest", msg.data[(pos + 12)..(pos + 19)].reverse().join()]
+                    binding += ["Endpoint", "0x" + msg.data[pos + 20]]
                     pos += 21
                 }
 
@@ -1370,14 +1363,14 @@ private boolean contains(Map msg, Map spec) {
     0x0000: [
         name: "Basic Cluster",
         attributes: [
-            0x0000: [ type:0x20, req:"Yes", acc:"R--", name:"ZCL Version" ],
-            0x0001: [ type:0x20, req:"No",  acc:"R--", name:"Application Version" ],
-            0x0002: [ type:0x20, req:"No",  acc:"R--", name:"Stack Version" ],
-            0x0003: [ type:0x20, req:"No",  acc:"R--", name:"HW Version" ],
-            0x0004: [ type:0x42, req:"No",  acc:"R--", name:"Manufacturer Name" ],
-            0x0005: [ type:0x42, req:"No",  acc:"R--", name:"Model Identifier" ],
-            0x0006: [ type:0x42, req:"Yes", acc:"R--", name:"Date Code" ],
-            0x0007: [ type:0x30, req:"No",  acc:"R--", name:"Power Source", constraints: [
+            0x0000: [ type:0x20, req:"req", acc:"r--", name:"ZCL Version" ],
+            0x0001: [ type:0x20, req:"opt", acc:"r--", name:"Application Version" ],
+            0x0002: [ type:0x20, req:"opt", acc:"r--", name:"Stack Version" ],
+            0x0003: [ type:0x20, req:"opt", acc:"r--", name:"HW Version" ],
+            0x0004: [ type:0x42, req:"opt", acc:"r--", name:"Manufacturer Name" ],
+            0x0005: [ type:0x42, req:"opt", acc:"r--", name:"Model Identifier" ],
+            0x0006: [ type:0x42, req:"req", acc:"r--", name:"Date Code" ],
+            0x0007: [ type:0x30, req:"opt", acc:"r--", name:"Power Source", constraints: [
                 0x00: "Unknown",
                 0x01: "Mains (single phase)",
                 0x02: "Mains (3 phase)",
@@ -1386,8 +1379,8 @@ private boolean contains(Map msg, Map spec) {
                 0x05: "Emergency mains constantly powered",
                 0x06: "Emergency mains and transfer switch"
             ]],
-            0x0008: [ type:0x30, req:"No",  acc:"R--", name:"Generic Device Class" ],
-            0x0009: [ type:0x30, req:"No",  acc:"R--", name:"Generic Device Type", constraints: [
+            0x0008: [ type:0x30, req:"opt", acc:"r--", name:"Generic Device Class" ],
+            0x0009: [ type:0x30, req:"opt", acc:"r--", name:"Generic Device Type", constraints: [
                 0x00: "Incandescent",
                 0x01: "Spotlight Halogen",
                 0x02: "Halogen Bulb",
@@ -1412,41 +1405,41 @@ private boolean contains(Map msg, Map spec) {
                 0xF4: "Retrofit Actuator",
                 0xFF: "Unspecified"
             ]],
-            0x000A: [ type:0x41, req:"No",  acc:"R--", name:"Product Code" ],
-            0x000B: [ type:0x42, req:"No",  acc:"R--", name:"Product URL" ],
-            0x000C: [ type:0x42, req:"No",  acc:"R--", name:"Manufacturer Version Details" ],
-            0x000D: [ type:0x42, req:"No",  acc:"R--", name:"Serial Number" ],
-            0x000E: [ type:0x42, req:"No",  acc:"R--", name:"Product Label" ],
-            0x0010: [ type:0x42, req:"No",  acc:"RW-", name:"Location Description" ],
-            0x0011: [ type:0x30, req:"No",  acc:"RW-", name:"Physical Environment" ],
-            0x0012: [ type:0x10, req:"No",  acc:"RW-", name:"Device Enabled", constraints: [
+            0x000A: [ type:0x41, req:"opt", acc:"r--", name:"Product Code" ],
+            0x000B: [ type:0x42, req:"opt", acc:"r--", name:"Product URL" ],
+            0x000C: [ type:0x42, req:"opt", acc:"r--", name:"Manufacturer Version Details" ],
+            0x000D: [ type:0x42, req:"opt", acc:"r--", name:"Serial Number" ],
+            0x000E: [ type:0x42, req:"opt", acc:"r--", name:"Product Label" ],
+            0x0010: [ type:0x42, req:"opt", acc:"rw-", name:"Location Description" ],
+            0x0011: [ type:0x30, req:"opt", acc:"rw-", name:"Physical Environment" ],
+            0x0012: [ type:0x10, req:"opt", acc:"rw-", name:"Device Enabled", constraints: [
                 0x00: "Disabled",
                 0x01: "Enabled"
             ]],
-            0x0013: [ type:0x18, req:"No",  acc:"RW-", name:"Alarm Mask" ],
-            0x0014: [ type:0x18, req:"No",  acc:"RW-", name:"Disable Local Config" ],
-            0x4000: [ type:0x42, req:"No",  acc:"R--", name:"SW Build ID" ]
+            0x0013: [ type:0x18, req:"opt", acc:"rw-", name:"Alarm Mask" ],
+            0x0014: [ type:0x18, req:"opt", acc:"rw-", name:"Disable Local Config" ],
+            0x4000: [ type:0x42, req:"opt", acc:"r--", name:"SW Build ID" ]
         ],
         commands: [
-            0x00: [ req:"No", name:"Reset to Factory Defaults" ]
+            0x00: [ req:"opt", name:"Reset to Factory Defaults" ]
         ]
     ],
     0x0001: [
         name: "Power Configuration Cluster",
         attributes: [
-            0x0000: [ type:0x21, req:"No",  acc:"R--", name:"Mains Voltage" ],
-            0x0001: [ type:0x20, req:"No",  acc:"R--", name:"Mains Frequency" ],
+            0x0000: [ type:0x21, req:"opt", acc:"r--", name:"Mains Voltage" ],
+            0x0001: [ type:0x20, req:"opt", acc:"r--", name:"Mains Frequency" ],
             
-            0x0010: [ type:0x18, req:"No",  acc:"RW-", name:"Mains Alarm Mask" ],
-            0x0011: [ type:0x21, req:"No",  acc:"RW-", name:"Mains Voltage Min Threshold" ],
-            0x0012: [ type:0x21, req:"No",  acc:"RW-", name:"Mains Voltage Max Threshold" ],
-            0x0013: [ type:0x21, req:"No",  acc:"RW-", name:"Mains Voltage Dwell Trip Point" ],
+            0x0010: [ type:0x18, req:"opt", acc:"rw-", name:"Mains Alarm Mask" ],
+            0x0011: [ type:0x21, req:"opt", acc:"rw-", name:"Mains Voltage Min Threshold" ],
+            0x0012: [ type:0x21, req:"opt", acc:"rw-", name:"Mains Voltage Max Threshold" ],
+            0x0013: [ type:0x21, req:"opt", acc:"rw-", name:"Mains Voltage Dwell Trip Point" ],
             
-            0x0020: [ type:0x20, req:"No",  acc:"R--", name:"Battery Voltage", decorate: { value -> value == "00" ? "" : "${Integer.parseInt(value, 16) * 100}mV" } ],
-            0x0021: [ type:0x20, req:"No",  acc:"R-P", name:"Battery Percentage Remaining", decorate: { value -> "${Math.round(Integer.parseInt(value, 16) / 2) as Integer}% remaining" } ],
+            0x0020: [ type:0x20, req:"opt", acc:"r--", name:"Battery Voltage", decorate: { value -> value == "00" ? "" : "${Integer.parseInt(value, 16) * 100}mV" } ],
+            0x0021: [ type:0x20, req:"opt", acc:"r-p", name:"Battery Percentage Remaining", decorate: { value -> "${Math.round(Integer.parseInt(value, 16) / 2) as Integer}% remaining" } ],
 
-            0x0030: [ type:0x42, req:"No",  acc:"RW-", name:"Battery Manufacturer" ],
-            0x0031: [ type:0x30, req:"No",  acc:"RW-", name:"Battery Size", constraints: [
+            0x0030: [ type:0x42, req:"opt", acc:"rw-", name:"Battery Manufacturer" ],
+            0x0031: [ type:0x30, req:"opt", acc:"rw-", name:"Battery Size", constraints: [
                 0x00: "No battery",
                 0x01: "Built in",
                 0x02: "Other",
@@ -1458,115 +1451,115 @@ private boolean contains(Map msg, Map spec) {
                 0x08: "CR123A (IEC: CR17345 / ANSI: 5018LC",
                 0xFF: "Battery"
             ]],
-            0x0032: [ type:0x21, req:"No",  acc:"RW-", name:"Battery AH Rating" ],
-            0x0033: [ type:0x20, req:"No",  acc:"RW-", name:"Battery Quantity" ],
-            0x0034: [ type:0x20, req:"No",  acc:"RW-", name:"Battery Rated Voltage" ],
-            0x0035: [ type:0x18, req:"No",  acc:"RW-", name:"Battery Alarm Mask" ],
-            0x0036: [ type:0x20, req:"No",  acc:"RW-", name:"Battery Voltage Min Threshold" ],
-            0x0037: [ type:0x20, req:"No",  acc:"RW-", name:"Battery Voltage Threshold 1" ],
-            0x0038: [ type:0x20, req:"No",  acc:"RW-", name:"Battery Voltage Threshold 2" ],
-            0x0039: [ type:0x20, req:"No",  acc:"RW-", name:"Battery Voltage Threshold 3" ],
-            0x003A: [ type:0x20, req:"No",  acc:"RW-", name:"Battery Percentage Min Threshold" ],
-            0x003B: [ type:0x20, req:"No",  acc:"RW-", name:"Battery Percentage Threshold 1" ],
-            0x003C: [ type:0x20, req:"No",  acc:"RW-", name:"Battery Percentage Threshold 2" ],
-            0x003D: [ type:0x20, req:"No",  acc:"RW-", name:"Battery Percentage Threshold 3" ],
-            0x003E: [ type:0x1B, req:"No",  acc:"R--", name:"Battery Alarm State" ]
+            0x0032: [ type:0x21, req:"opt", acc:"rw-", name:"Battery AH Rating" ],
+            0x0033: [ type:0x20, req:"opt", acc:"rw-", name:"Battery Quantity" ],
+            0x0034: [ type:0x20, req:"opt", acc:"rw-", name:"Battery Rated Voltage" ],
+            0x0035: [ type:0x18, req:"opt", acc:"rw-", name:"Battery Alarm Mask" ],
+            0x0036: [ type:0x20, req:"opt", acc:"rw-", name:"Battery Voltage Min Threshold" ],
+            0x0037: [ type:0x20, req:"opt", acc:"rw-", name:"Battery Voltage Threshold 1" ],
+            0x0038: [ type:0x20, req:"opt", acc:"rw-", name:"Battery Voltage Threshold 2" ],
+            0x0039: [ type:0x20, req:"opt", acc:"rw-", name:"Battery Voltage Threshold 3" ],
+            0x003A: [ type:0x20, req:"opt", acc:"rw-", name:"Battery Percentage Min Threshold" ],
+            0x003B: [ type:0x20, req:"opt", acc:"rw-", name:"Battery Percentage Threshold 1" ],
+            0x003C: [ type:0x20, req:"opt", acc:"rw-", name:"Battery Percentage Threshold 2" ],
+            0x003D: [ type:0x20, req:"opt", acc:"rw-", name:"Battery Percentage Threshold 3" ],
+            0x003E: [ type:0x1B, req:"opt", acc:"r--", name:"Battery Alarm State" ]
         ]
     ],
     0x0002: [
         name: "Temperature Configuration Cluster",
         attributes: [
-            0x0000: [ type:0x29, req:"Yes", acc:"R--", name:"Current Temperature" ],
-            0x0001: [ type:0x29, req:"No",  acc:"R--", name:"Min Temp Experienced" ],
-            0x0002: [ type:0x29, req:"No",  acc:"R--", name:"Max Temp Experienced" ],
-            0x0003: [ type:0x21, req:"No",  acc:"R--", name:"Over Temp Total Dwell" ],
+            0x0000: [ type:0x29, req:"req", acc:"r--", name:"Current Temperature" ],
+            0x0001: [ type:0x29, req:"opt", acc:"r--", name:"Min Temp Experienced" ],
+            0x0002: [ type:0x29, req:"opt", acc:"r--", name:"Max Temp Experienced" ],
+            0x0003: [ type:0x21, req:"opt", acc:"r--", name:"Over Temp Total Dwell" ],
 
-            0x0010: [ type:0x18, req:"No",  acc:"RW-", name:"Device Temp Alarm Mask" ],
-            0x0011: [ type:0x29, req:"No",  acc:"RW-", name:"Low Temp Threshold" ],
-            0x0012: [ type:0x29, req:"No",  acc:"RW-", name:"High Temp Threshold" ],
-            0x0013: [ type:0x22, req:"No",  acc:"RW-", name:"Low Temp Dwell Trip Point" ],
-            0x0014: [ type:0x22, req:"No",  acc:"RW-", name:"High Temp Dwell Trip Point" ]
+            0x0010: [ type:0x18, req:"opt", acc:"rw-", name:"Device Temp Alarm Mask" ],
+            0x0011: [ type:0x29, req:"opt", acc:"rw-", name:"Low Temp Threshold" ],
+            0x0012: [ type:0x29, req:"opt", acc:"rw-", name:"High Temp Threshold" ],
+            0x0013: [ type:0x22, req:"opt", acc:"rw-", name:"Low Temp Dwell Trip Point" ],
+            0x0014: [ type:0x22, req:"opt", acc:"rw-", name:"High Temp Dwell Trip Point" ]
         ]
     ],
     0x0003: [
         name: "Identify Cluster",
         attributes: [
-            0x0000: [ type:0x21, req:"Yes", acc:"RW-", name:"Identify Time", decorate: { value -> "${Integer.parseInt(value, 16)} seconds" }],
+            0x0000: [ type:0x21, req:"req", acc:"rw-", name:"Identify Time", decorate: { value -> "${Integer.parseInt(value, 16)} seconds" }],
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Identify" ],
-            0x01: [ req:"Yes", name:"Identify Query" ],
-            0x40: [ req:"No",  name:"Trigger Effect" ]
+            0x00: [ req:"req", name:"Identify" ],
+            0x01: [ req:"req", name:"Identify Query" ],
+            0x40: [ req:"opt", name:"Trigger Effect" ]
         ]
     ],
     0x0004: [
         name: "Groups Cluster",
         attributes: [
-            0x0000: [ type:0x18, req:"Yes", acc:"R--", name:"Name Support" ]
+            0x0000: [ type:0x18, req:"req", acc:"r--", name:"Name Support" ]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Add Group" ],
-            0x01: [ req:"Yes", name:"View Group" ],
-            0x02: [ req:"Yes", name:"Get Group Membership" ],
-            0x03: [ req:"Yes", name:"Remove Group" ],
-            0x04: [ req:"Yes", name:"Remove All Groups" ],
-            0x05: [ req:"Yes", name:"Add Group If Identifying" ]
+            0x00: [ req:"req", name:"Add Group" ],
+            0x01: [ req:"req", name:"View Group" ],
+            0x02: [ req:"req", name:"Get Group Membership" ],
+            0x03: [ req:"req", name:"Remove Group" ],
+            0x04: [ req:"req", name:"Remove All Groups" ],
+            0x05: [ req:"req", name:"Add Group If Identifying" ]
         ]
     ],
     0x0005: [
         name: "Scenes Cluster",
         attributes: [
-            0x0000: [ type:0x20, req:"Yes", acc:"R--", name:"Scene Count" ],
-            0x0001: [ type:0x20, req:"Yes", acc:"R--", name:"Current Scene" ],
-            0x0002: [ type:0x21, req:"Yes", acc:"R--", name:"Current Group" ],
-            0x0003: [ type:0x10, req:"Yes", acc:"R--", name:"Scene Valid" ],
-            0x0004: [ type:0x18, req:"Yes", acc:"R--", name:"Name Support" ],
-            0x0005: [ type:0xf0, req:"No",  acc:"R--", name:"Last Configured By" ]
+            0x0000: [ type:0x20, req:"req", acc:"r--", name:"Scene Count" ],
+            0x0001: [ type:0x20, req:"req", acc:"r--", name:"Current Scene" ],
+            0x0002: [ type:0x21, req:"req", acc:"r--", name:"Current Group" ],
+            0x0003: [ type:0x10, req:"req", acc:"r--", name:"Scene Valid" ],
+            0x0004: [ type:0x18, req:"req", acc:"r--", name:"Name Support" ],
+            0x0005: [ type:0xf0, req:"opt", acc:"r--", name:"Last Configured By" ]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Add Scene" ],
-            0x01: [ req:"Yes", name:"View Scene" ],
-            0x02: [ req:"Yes", name:"Remove Scene" ],
-            0x03: [ req:"Yes", name:"Remove All Scenes" ],
-            0x04: [ req:"Yes", name:"Store Scene" ],
-            0x05: [ req:"Yes", name:"Recall Scene" ],
-            0x06: [ req:"Yes", name:"Get Scene Membership" ],
-            0x40: [ req:"No",  name:"Enhanced Add Scene" ],
-            0x41: [ req:"No",  name:"Enhanced View Scene" ],
-            0x42: [ req:"No",  name:"Copy Scene" ]
+            0x00: [ req:"req", name:"Add Scene" ],
+            0x01: [ req:"req", name:"View Scene" ],
+            0x02: [ req:"req", name:"Remove Scene" ],
+            0x03: [ req:"req", name:"Remove All Scenes" ],
+            0x04: [ req:"req", name:"Store Scene" ],
+            0x05: [ req:"req", name:"Recall Scene" ],
+            0x06: [ req:"req", name:"Get Scene Membership" ],
+            0x40: [ req:"opt", name:"Enhanced Add Scene" ],
+            0x41: [ req:"opt", name:"Enhanced View Scene" ],
+            0x42: [ req:"opt", name:"Copy Scene" ]
         ]
     ],
     0x0006: [
         name: "On/Off Cluster",
         attributes: [
-            0x0000: [ type:0x10, req:"Yes", acc:"R-P", name:"On Off", decorate: { value -> value == "00" ? "Off" : (value == "01" ? "On" : "Invalid value") }],
-            0x4000: [ type:0x10, req:"No",  acc:"R--", name:"Global Scene Control" ],
-            0x4001: [ type:0x21, req:"No",  acc:"RW-", name:"On Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
-            0x4002: [ type:0x21, req:"No",  acc:"RW-", name:"Off Wait Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
-            0x4003: [ type:0x21, req:"No",  acc:"RW-", name:"Power On Behavior", constraints: [
+            0x0000: [ type:0x10, req:"req", acc:"r-p", name:"On Off", decorate: { value -> value == "00" ? "Off" : (value == "01" ? "On" : "Invalid value") }],
+            0x4000: [ type:0x10, req:"opt", acc:"r--", name:"Global Scene Control" ],
+            0x4001: [ type:0x21, req:"opt", acc:"rw-", name:"On Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
+            0x4002: [ type:0x21, req:"opt", acc:"rw-", name:"Off Wait Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
+            0x4003: [ type:0x21, req:"opt", acc:"rw-", name:"Power On Behavior", constraints: [
                 0x00: "Turn power Off",
                 0x01: "Turn power On",
                 0xFF: "Restore previous state"
             ]]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Off" ],
-            0x01: [ req:"Yes", name:"On" ],
-            0x02: [ req:"Yes", name:"Toggle" ],
-            0x40: [ req:"No",  name:"Off With Effect" ],
-            0x41: [ req:"No",  name:"On With Recall Global Scene" ],
-            0x42: [ req:"No",  name:"On With Timed Off" ]
+            0x00: [ req:"req", name:"Off" ],
+            0x01: [ req:"req", name:"On" ],
+            0x02: [ req:"req", name:"Toggle" ],
+            0x40: [ req:"opt", name:"Off With Effect" ],
+            0x41: [ req:"opt", name:"On With Recall Global Scene" ],
+            0x42: [ req:"opt", name:"On With Timed Off" ]
         ]
     ],
     0x0007: [
         name: "On/Off Switch Configuration Cluster",
         attributes: [
-            0x0000: [ type:0x30, req:"Yes", acc:"R--", name:"Switch Type", constraints: [
+            0x0000: [ type:0x30, req:"req", acc:"r--", name:"Switch Type", constraints: [
                 0x00: "Toggle",
                 0x01: "Momentary",
                 0x02: "Multifunction"
             ]],
-            0x0010: [ type:0x30, req:"Yes", acc:"RW-", name:"Switch Actions", constraints: [
+            0x0010: [ type:0x30, req:"req", acc:"rw-", name:"Switch Actions", constraints: [
                 0x00: "On",
                 0x01: "Off",
                 0x02: "Toggle"
@@ -1576,283 +1569,283 @@ private boolean contains(Map msg, Map spec) {
     0x0008: [
         name: "Level Control Cluster",
         attributes: [
-            0x0000: [ type:0x20, req:"Yes", acc:"R-P", name:"Current Level", decorate: { value -> value == "FF" ? "Invalid value" : "${((Integer.parseInt(value, 16) * 100 / 0xFE) as Integer)}%" }],
-            0x0001: [ type:0x21, req:"No",  acc:"R--", name:"Remaining Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
-            0x0010: [ type:0x21, req:"No",  acc:"RW-", name:"On Off Transition Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
-            0x0011: [ type:0x20, req:"No",  acc:"RW-", name:"On Level", decorate: { value -> value == "FF" ? "Last level" : "${((Integer.parseInt(value, 16) * 100 / 0xFE) as Integer)}%" }],
-            0x0012: [ type:0x21, req:"No",  acc:"RW-", name:"On Transition Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
-            0x0013: [ type:0x21, req:"No",  acc:"RW-", name:"Off Transition Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
-            0x0014: [ type:0x21, req:"No",  acc:"RW-", name:"Default Move Rate" ],
-            0x4000: [ type:0x20, req:"No",  acc:"RW-", name:"StartUp Current Level" ]
+            0x0000: [ type:0x20, req:"req", acc:"r-p", name:"Current Level", decorate: { value -> value == "FF" ? "Invalid value" : "${((Integer.parseInt(value, 16) * 100 / 0xFE) as Integer)}%" }],
+            0x0001: [ type:0x21, req:"opt", acc:"r--", name:"Remaining Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
+            0x0010: [ type:0x21, req:"opt", acc:"rw-", name:"On Off Transition Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
+            0x0011: [ type:0x20, req:"opt", acc:"rw-", name:"On Level", decorate: { value -> value == "FF" ? "Last level" : "${((Integer.parseInt(value, 16) * 100 / 0xFE) as Integer)}%" }],
+            0x0012: [ type:0x21, req:"opt", acc:"rw-", name:"On Transition Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
+            0x0013: [ type:0x21, req:"opt", acc:"rw-", name:"Off Transition Time", decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
+            0x0014: [ type:0x21, req:"opt", acc:"rw-", name:"Default Move Rate" ],
+            0x4000: [ type:0x20, req:"opt", acc:"rw-", name:"StartUp Current Level" ]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Move To Level" ],
-            0x01: [ req:"Yes", name:"Move" ],
-            0x02: [ req:"Yes", name:"Step" ],
-            0x03: [ req:"Yes", name:"Stop" ],
-            0x04: [ req:"Yes", name:"Move To Level With On/Off" ],
-            0x05: [ req:"Yes", name:"Move With On/Off" ],
-            0x06: [ req:"Yes", name:"Step With On/Off" ],
-            0x07: [ req:"Yes", name:"Stop" ]
+            0x00: [ req:"req", name:"Move To Level" ],
+            0x01: [ req:"req", name:"Move" ],
+            0x02: [ req:"req", name:"Step" ],
+            0x03: [ req:"req", name:"Stop" ],
+            0x04: [ req:"req", name:"Move To Level With On/Off" ],
+            0x05: [ req:"req", name:"Move With On/Off" ],
+            0x06: [ req:"req", name:"Step With On/Off" ],
+            0x07: [ req:"req", name:"Stop" ]
         ]
     ],
     0x0009: [
         name: "Alarms Cluster",
         attributes: [
-            0x0000: [ type:0x21, req:"No",  acc:"R--", name:"Alarm Count" ]
+            0x0000: [ type:0x21, req:"opt", acc:"r--", name:"Alarm Count" ]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Move To Level" ],
-            0x01: [ req:"Yes", name:"Move" ],
-            0x02: [ req:"Yes", name:"Step" ],
-            0x03: [ req:"Yes", name:"Stop" ]
+            0x00: [ req:"req", name:"Move To Level" ],
+            0x01: [ req:"req", name:"Move" ],
+            0x02: [ req:"req", name:"Step" ],
+            0x03: [ req:"req", name:"Stop" ]
         ]
     ],
     0x000A: [
         name: "Time Cluster",
         attributes: [
-            0x0000: [ type:0xE2, req:"Yes", acc:"RW-", name:"Time" ],
-            0x0001: [ type:0x18, req:"Yes", acc:"RW-", name:"Time Status" ],
-            0x0002: [ type:0x2B, req:"No",  acc:"RW-", name:"Time Zone" ],
-            0x0003: [ type:0x23, req:"No",  acc:"RW-", name:"Dst Start" ],
-            0x0004: [ type:0x23, req:"No",  acc:"RW-", name:"Dst End" ],
-            0x0005: [ type:0x2B, req:"No",  acc:"RW-", name:"Dst Shift" ],
-            0x0006: [ type:0x23, req:"No",  acc:"R--", name:"Standard Time" ],
-            0x0007: [ type:0x23, req:"No",  acc:"R--", name:"Local Time" ],
-            0x0008: [ type:0xE2, req:"No",  acc:"R--", name:"Last Set Time" ],
-            0x0009: [ type:0xE2, req:"No",  acc:"RW-", name:"Valid Until Time" ]
+            0x0000: [ type:0xE2, req:"req", acc:"rw-", name:"Time" ],
+            0x0001: [ type:0x18, req:"req", acc:"rw-", name:"Time Status" ],
+            0x0002: [ type:0x2B, req:"opt", acc:"rw-", name:"Time Zone" ],
+            0x0003: [ type:0x23, req:"opt", acc:"rw-", name:"Dst Start" ],
+            0x0004: [ type:0x23, req:"opt", acc:"rw-", name:"Dst End" ],
+            0x0005: [ type:0x2B, req:"opt", acc:"rw-", name:"Dst Shift" ],
+            0x0006: [ type:0x23, req:"opt", acc:"r--", name:"Standard Time" ],
+            0x0007: [ type:0x23, req:"opt", acc:"r--", name:"Local Time" ],
+            0x0008: [ type:0xE2, req:"opt", acc:"r--", name:"Last Set Time" ],
+            0x0009: [ type:0xE2, req:"opt", acc:"rw-", name:"Valid Until Time" ]
         ]
     ],
     0x000B: [
         name: "RSSI Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"RW-", name:"Location Type" ],
-            0x0001: [ req:"Yes", acc:"RW-", name:"Location Method" ],
-            0x0002: [ req:"No",  acc:"R--", name:"Location Age" ],
-            0x0003: [ req:"No",  acc:"R--", name:"Quality Measure" ],
-            0x0004: [ req:"No",  acc:"R--", name:"Number Of Devices" ],
+            0x0000: [ req:"req", acc:"rw-", name:"Location Type" ],
+            0x0001: [ req:"req", acc:"rw-", name:"Location Method" ],
+            0x0002: [ req:"opt", acc:"r--", name:"Location Age" ],
+            0x0003: [ req:"opt", acc:"r--", name:"Quality Measure" ],
+            0x0004: [ req:"opt", acc:"r--", name:"Number Of Devices" ],
 
-            0x0010: [ req:"No",  acc:"RW-", name:"Coordinate 1" ],
-            0x0011: [ req:"No",  acc:"RW-", name:"Coordinate 2" ],
-            0x0012: [ req:"No",  acc:"RW-", name:"Coordinate 3" ],
-            0x0013: [ req:"Yes", acc:"RW-", name:"Power" ],
-            0x0014: [ req:"Yes", acc:"RW-", name:"Path Loss Exponent" ],
-            0x0015: [ req:"No",  acc:"RW-", name:"Reporting Period" ],
-            0x0016: [ req:"No",  acc:"RW-", name:"Calculation Period" ],
-            0x0017: [ req:"No",  acc:"RW-", name:"Number RSSI Measurements" ]
+            0x0010: [ req:"opt", acc:"rw-", name:"Coordinate 1" ],
+            0x0011: [ req:"opt", acc:"rw-", name:"Coordinate 2" ],
+            0x0012: [ req:"opt", acc:"rw-", name:"Coordinate 3" ],
+            0x0013: [ req:"req", acc:"rw-", name:"Power" ],
+            0x0014: [ req:"req", acc:"rw-", name:"Path Loss Exponent" ],
+            0x0015: [ req:"opt", acc:"rw-", name:"Reporting Period" ],
+            0x0016: [ req:"opt", acc:"rw-", name:"Calculation Period" ],
+            0x0017: [ req:"opt", acc:"rw-", name:"Number RSSI Measurements" ]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Set Absolute Location" ],
-            0x01: [ req:"Yes", name:"Set Device Configuration" ],
-            0x02: [ req:"Yes", name:"Get Device Configuration" ],
-            0x03: [ req:"Yes", name:"Get Location Data" ],
-            0x04: [ req:"No",  name:"RSSI Response" ],
-            0x05: [ req:"No",  name:"Send Pings" ],
-            0x06: [ req:"No",  name:"Anchor Node Announce" ]
+            0x00: [ req:"req", name:"Set Absolute Location" ],
+            0x01: [ req:"req", name:"Set Device Configuration" ],
+            0x02: [ req:"req", name:"Get Device Configuration" ],
+            0x03: [ req:"req", name:"Get Location Data" ],
+            0x04: [ req:"opt", name:"RSSI Response" ],
+            0x05: [ req:"opt", name:"Send Pings" ],
+            0x06: [ req:"opt", name:"Anchor Node Announce" ]
         ]
     ],
     0x000C: [
         name: "Analog Input Cluster",
         attributes: [
-            0x001C: [ req:"No",  acc:"Rw-", name:"Description" ],
-            0x0041: [ req:"No",  acc:"Rw-", name:"Max Present Value" ],
-            0x0045: [ req:"No",  acc:"Rw-", name:"Min Present Value" ],
-            0x0051: [ req:"Yes", acc:"Rw-", name:"Out Of Service" ],
-            0x0055: [ req:"Yes", acc:"RWP", name:"Present Value" ],
-            0x0067: [ req:"No",  acc:"Rw-", name:"Reliability" ],
-            0x006A: [ req:"No",  acc:"Rw-", name:"Resolution" ],
-            0x006F: [ req:"Yes", acc:"R-P", name:"Status Flags" ],
-            0x0075: [ req:"No",  acc:"Rw-", name:"Engineering Units" ],
-            0x0100: [ req:"No",  acc:"R--", name:"Application Type" ]
+            0x001C: [ req:"opt", acc:"rw-", name:"Description" ],
+            0x0041: [ req:"opt", acc:"rw-", name:"Max Present Value" ],
+            0x0045: [ req:"opt", acc:"rw-", name:"Min Present Value" ],
+            0x0051: [ req:"req", acc:"rw-", name:"Out Of Service" ],
+            0x0055: [ req:"req", acc:"RWP", name:"Present Value" ],
+            0x0067: [ req:"opt", acc:"rw-", name:"Reliability" ],
+            0x006A: [ req:"opt", acc:"rw-", name:"Resolution" ],
+            0x006F: [ req:"req", acc:"r-p", name:"Status Flags" ],
+            0x0075: [ req:"opt", acc:"rw-", name:"Engineering Units" ],
+            0x0100: [ req:"opt", acc:"r--", name:"Application Type" ]
         ]
     ],
     0x000D: [
         name: "Analog Output Cluster",
         attributes: [
-            0x001C: [ req:"No",  acc:"Rw-", name:"Description" ],
-            0x0041: [ req:"No",  acc:"Rw-", name:"Max Present Value" ],
-            0x0045: [ req:"No",  acc:"Rw-", name:"Min Present Value" ],
-            0x0051: [ req:"Yes", acc:"Rw-", name:"Out Of Service" ],
-            0x0055: [ req:"Yes", acc:"RWP", name:"Present Value" ],
-            0x0057: [ req:"No",  acc:"RW-", name:"Priority Array" ],
-            0x0067: [ req:"No",  acc:"Rw-", name:"Reliability" ],
-            0x0068: [ req:"No",  acc:"Rw-", name:"Relinquish Default" ],
-            0x006A: [ req:"No",  acc:"Rw-", name:"Resolution" ],
-            0x006F: [ req:"Yes", acc:"R-P", name:"Status Flags" ],
-            0x0075: [ req:"No",  acc:"Rw-", name:"Engineering Units" ],
-            0x0100: [ req:"No",  acc:"R--", name:"Application Type" ]
+            0x001C: [ req:"opt", acc:"rw-", name:"Description" ],
+            0x0041: [ req:"opt", acc:"rw-", name:"Max Present Value" ],
+            0x0045: [ req:"opt", acc:"rw-", name:"Min Present Value" ],
+            0x0051: [ req:"req", acc:"rw-", name:"Out Of Service" ],
+            0x0055: [ req:"req", acc:"RWP", name:"Present Value" ],
+            0x0057: [ req:"opt", acc:"rw-", name:"Priority Array" ],
+            0x0067: [ req:"opt", acc:"rw-", name:"Reliability" ],
+            0x0068: [ req:"opt", acc:"rw-", name:"Relinquish Default" ],
+            0x006A: [ req:"opt", acc:"rw-", name:"Resolution" ],
+            0x006F: [ req:"req", acc:"r-p", name:"Status Flags" ],
+            0x0075: [ req:"opt", acc:"rw-", name:"Engineering Units" ],
+            0x0100: [ req:"opt", acc:"r--", name:"Application Type" ]
         ]
     ],
     0x000E: [
         name: "Analog Value Cluster",
         attributes: [
-            0x001C: [ req:"No",  acc:"Rw-", name:"Description" ],
-            0x0051: [ req:"Yes", acc:"Rw-", name:"Out Of Service" ],
-            0x0055: [ req:"Yes", acc:"Rw-", name:"Present Value" ],
-            0x0057: [ req:"No",  acc:"Rw-", name:"Priority Array" ],
-            0x0067: [ req:"No",  acc:"Rw-", name:"Reliability" ],
-            0x0068: [ req:"No",  acc:"Rw-", name:"Relinquish Default" ],
-            0x006F: [ req:"Yes", acc:"R--", name:"Status Flags" ],
-            0x0075: [ req:"No",  acc:"Rw-", name:"Engineering Units" ],
-            0x0100: [ req:"No",  acc:"R--", name:"Application Type" ]
+            0x001C: [ req:"opt", acc:"rw-", name:"Description" ],
+            0x0051: [ req:"req", acc:"rw-", name:"Out Of Service" ],
+            0x0055: [ req:"req", acc:"rw-", name:"Present Value" ],
+            0x0057: [ req:"opt", acc:"rw-", name:"Priority Array" ],
+            0x0067: [ req:"opt", acc:"rw-", name:"Reliability" ],
+            0x0068: [ req:"opt", acc:"rw-", name:"Relinquish Default" ],
+            0x006F: [ req:"req", acc:"r--", name:"Status Flags" ],
+            0x0075: [ req:"opt", acc:"rw-", name:"Engineering Units" ],
+            0x0100: [ req:"opt", acc:"r--", name:"Application Type" ]
         ]
     ],
     0x000F: [
         name: "Binary Input Cluster",
         attributes: [
-            0x0004: [ req:"No",  acc:"Rw-", name:"Active Text" ],
-            0x001C: [ req:"No",  acc:"Rw-", name:"Description" ],
-            0x002E: [ req:"No",  acc:"Rw-", name:"Inactive Text" ],
-            0x0051: [ req:"Yes", acc:"Rw-", name:"Out Of Service" ],
-            0x0054: [ req:"Yes", acc:"R--", name:"Polarity" ],
-            0x0055: [ req:"Yes", acc:"Rw-", name:"Present Value" ],
-            0x0067: [ req:"No",  acc:"Rw-", name:"Reliability" ],
-            0x006F: [ req:"Yes", acc:"R--", name:"Status Flags" ],
-            0x0100: [ req:"No",  acc:"R--", name:"Application Type" ]
+            0x0004: [ req:"opt", acc:"rw-", name:"Active Text" ],
+            0x001C: [ req:"opt", acc:"rw-", name:"Description" ],
+            0x002E: [ req:"opt", acc:"rw-", name:"Inactive Text" ],
+            0x0051: [ req:"req", acc:"rw-", name:"Out Of Service" ],
+            0x0054: [ req:"req", acc:"r--", name:"Polarity" ],
+            0x0055: [ req:"req", acc:"rw-", name:"Present Value" ],
+            0x0067: [ req:"opt", acc:"rw-", name:"Reliability" ],
+            0x006F: [ req:"req", acc:"r--", name:"Status Flags" ],
+            0x0100: [ req:"opt", acc:"r--", name:"Application Type" ]
         ]
     ],
     0x0010: [
         name: "Binary Output Cluster",
         attributes: [
-            0x0004: [ req:"No",  acc:"Rw-", name:"Active Text" ],
-            0x001C: [ req:"No",  acc:"Rw-", name:"Description" ],
-            0x002E: [ req:"No",  acc:"Rw-", name:"Inactive Text" ],
-            0x0042: [ req:"No",  acc:"Rw-", name:"Minimum Off Time" ],
-            0x0043: [ req:"No",  acc:"Rw-", name:"Minimum On Time" ],
-            0x0051: [ req:"Yes", acc:"Rw-", name:"Out Of Service" ],
-            0x0054: [ req:"Yes", acc:"R--", name:"Polarity" ],
-            0x0055: [ req:"Yes", acc:"Rw-", name:"Present Value" ],
-            0x0057: [ req:"No",  acc:"RW-", name:"Priority Array" ],
-            0x0067: [ req:"No",  acc:"Rw-", name:"Reliability" ],
-            0x0068: [ req:"No",  acc:"Rw-", name:"Relinquish Default" ],
-            0x006F: [ req:"Yes", acc:"R--", name:"Status Flags" ],
-            0x0100: [ req:"No",  acc:"R--", name:"Application Type" ]
+            0x0004: [ req:"opt", acc:"rw-", name:"Active Text" ],
+            0x001C: [ req:"opt", acc:"rw-", name:"Description" ],
+            0x002E: [ req:"opt", acc:"rw-", name:"Inactive Text" ],
+            0x0042: [ req:"opt", acc:"rw-", name:"Minimum Off Time" ],
+            0x0043: [ req:"opt", acc:"rw-", name:"Minimum On Time" ],
+            0x0051: [ req:"req", acc:"rw-", name:"Out Of Service" ],
+            0x0054: [ req:"req", acc:"r--", name:"Polarity" ],
+            0x0055: [ req:"req", acc:"rw-", name:"Present Value" ],
+            0x0057: [ req:"opt", acc:"rw-", name:"Priority Array" ],
+            0x0067: [ req:"opt", acc:"rw-", name:"Reliability" ],
+            0x0068: [ req:"opt", acc:"rw-", name:"Relinquish Default" ],
+            0x006F: [ req:"req", acc:"r--", name:"Status Flags" ],
+            0x0100: [ req:"opt", acc:"r--", name:"Application Type" ]
         ]
     ],
     0x0011: [
         name: "Binary Value Cluster",
         attributes: [
-            0x0004: [ req:"No",  acc:"Rw-", name:"Active Text" ],
-            0x001C: [ req:"No",  acc:"Rw-", name:"Description" ],
-            0x002E: [ req:"No",  acc:"Rw-", name:"Inactive Text" ],
-            0x0042: [ req:"No",  acc:"Rw-", name:"Minimum Off Time" ],
-            0x0043: [ req:"No",  acc:"Rw-", name:"Minimum On Time" ],
-            0x0051: [ req:"Yes", acc:"Rw-", name:"Out Of Service" ],
-            0x0055: [ req:"Yes", acc:"Rw-", name:"Present Value" ],
-            0x0057: [ req:"No",  acc:"RW-", name:"Priority Array" ],
-            0x0067: [ req:"No",  acc:"Rw-", name:"Reliability" ],
-            0x0068: [ req:"No",  acc:"Rw-", name:"Relinquish Default" ],
-            0x006F: [ req:"Yes", acc:"R--", name:"Status Flags" ],
-            0x0100: [ req:"No",  acc:"R--", name:"Application Type" ]
+            0x0004: [ req:"opt", acc:"rw-", name:"Active Text" ],
+            0x001C: [ req:"opt", acc:"rw-", name:"Description" ],
+            0x002E: [ req:"opt", acc:"rw-", name:"Inactive Text" ],
+            0x0042: [ req:"opt", acc:"rw-", name:"Minimum Off Time" ],
+            0x0043: [ req:"opt", acc:"rw-", name:"Minimum On Time" ],
+            0x0051: [ req:"req", acc:"rw-", name:"Out Of Service" ],
+            0x0055: [ req:"req", acc:"rw-", name:"Present Value" ],
+            0x0057: [ req:"opt", acc:"rw-", name:"Priority Array" ],
+            0x0067: [ req:"opt", acc:"rw-", name:"Reliability" ],
+            0x0068: [ req:"opt", acc:"rw-", name:"Relinquish Default" ],
+            0x006F: [ req:"req", acc:"r--", name:"Status Flags" ],
+            0x0100: [ req:"opt", acc:"r--", name:"Application Type" ]
         ]
     ],
     0x0012: [
         name: "Multistate Input Cluster",
         attributes: [
-            0x000E: [ req:"No",  acc:"Rw-", name:"State Text" ],
-            0x001C: [ req:"No",  acc:"Rw-", name:"Description" ],
-            0x004A: [ req:"Yes", acc:"Rw-", name:"Number Of States" ],
-            0x0051: [ req:"Yes", acc:"Rw-", name:"Out Of Service" ],
-            0x0055: [ req:"Yes", acc:"Rw-", name:"Present Value" ],
-            0x0067: [ req:"No",  acc:"Rw-", name:"Reliability" ],
-            0x006F: [ req:"Yes", acc:"R--", name:"Status Flags" ],
-            0x0100: [ req:"No",  acc:"R--", name:"Application Type" ]
+            0x000E: [ req:"opt", acc:"rw-", name:"State Text" ],
+            0x001C: [ req:"opt", acc:"rw-", name:"Description" ],
+            0x004A: [ req:"req", acc:"rw-", name:"Number Of States" ],
+            0x0051: [ req:"req", acc:"rw-", name:"Out Of Service" ],
+            0x0055: [ req:"req", acc:"rw-", name:"Present Value" ],
+            0x0067: [ req:"opt", acc:"rw-", name:"Reliability" ],
+            0x006F: [ req:"req", acc:"r--", name:"Status Flags" ],
+            0x0100: [ req:"opt", acc:"r--", name:"Application Type" ]
         ]
     ],
     0x0013: [
         name: "Multistate Output Cluster",
         attributes: [
-            0x000E: [ req:"No",  acc:"Rw-", name:"State Text" ],
-            0x001C: [ req:"No",  acc:"Rw-", name:"Description" ],
-            0x004A: [ req:"Yes", acc:"Rw-", name:"Number Of States" ],
-            0x0051: [ req:"Yes", acc:"Rw-", name:"Out Of Service" ],
-            0x0055: [ req:"Yes", acc:"RW-", name:"Present Value" ],
-            0x0057: [ req:"No",  acc:"R--", name:"Priority Array" ],
-            0x0067: [ req:"No",  acc:"Rw-", name:"Reliability" ],
-            0x0068: [ req:"No",  acc:"Rw-", name:"Relinquish Default" ],
-            0x006F: [ req:"Yes", acc:"R--", name:"Status Flags" ],
-            0x0100: [ req:"No",  acc:"R--", name:"Application Type" ]
+            0x000E: [ req:"opt", acc:"rw-", name:"State Text" ],
+            0x001C: [ req:"opt", acc:"rw-", name:"Description" ],
+            0x004A: [ req:"req", acc:"rw-", name:"Number Of States" ],
+            0x0051: [ req:"req", acc:"rw-", name:"Out Of Service" ],
+            0x0055: [ req:"req", acc:"rw-", name:"Present Value" ],
+            0x0057: [ req:"opt", acc:"r--", name:"Priority Array" ],
+            0x0067: [ req:"opt", acc:"rw-", name:"Reliability" ],
+            0x0068: [ req:"opt", acc:"rw-", name:"Relinquish Default" ],
+            0x006F: [ req:"req", acc:"r--", name:"Status Flags" ],
+            0x0100: [ req:"opt", acc:"r--", name:"Application Type" ]
         ]
     ],
     0x0014: [
         name: "Multistate Value Cluster",
         attributes: [
-            0x000E: [ req:"No",  acc:"Rw-", name:"State Text" ],
-            0x001C: [ req:"No",  acc:"Rw-", name:"Description" ],
-            0x004A: [ req:"Yes", acc:"Rw-", name:"Number Of States" ],
-            0x0051: [ req:"Yes", acc:"Rw-", name:"Out Of Service" ],
-            0x0055: [ req:"Yes", acc:"RW-", name:"Present Value" ],
-            0x0057: [ req:"No",  acc:"RW-", name:"Priority Array" ],
-            0x0067: [ req:"No",  acc:"Rw-", name:"Reliability" ],
-            0x0068: [ req:"No",  acc:"Rw-", name:"Relinquish Default" ],
-            0x006F: [ req:"Yes", acc:"R--", name:"Status Flags" ],
-            0x0100: [ req:"No",  acc:"R--", name:"Application Type" ]
+            0x000E: [ req:"opt", acc:"rw-", name:"State Text" ],
+            0x001C: [ req:"opt", acc:"rw-", name:"Description" ],
+            0x004A: [ req:"req", acc:"rw-", name:"Number Of States" ],
+            0x0051: [ req:"req", acc:"rw-", name:"Out Of Service" ],
+            0x0055: [ req:"req", acc:"rw-", name:"Present Value" ],
+            0x0057: [ req:"opt", acc:"rw-", name:"Priority Array" ],
+            0x0067: [ req:"opt", acc:"rw-", name:"Reliability" ],
+            0x0068: [ req:"opt", acc:"rw-", name:"Relinquish Default" ],
+            0x006F: [ req:"req", acc:"r--", name:"Status Flags" ],
+            0x0100: [ req:"opt", acc:"r--", name:"Application Type" ]
         ]
     ],
     0x0015: [
         name: "Commissioning Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"RW-", name:"Short Address" ],
-            0x0001: [ req:"Yes", acc:"RW-", name:"Extended PAN ID" ],
-            0x0002: [ req:"Yes", acc:"RW-", name:"PAN ID" ],
-            0x0003: [ req:"Yes", acc:"RW-", name:"Channel Mask" ],
-            0x0004: [ req:"Yes", acc:"RW-", name:"Protocol Version" ],
-            0x0005: [ req:"Yes", acc:"RW-", name:"Stack Profile" ],
-            0x0006: [ req:"Yes", acc:"RW-", name:"Startup Control" ],
+            0x0000: [ req:"req", acc:"rw-", name:"Short Address" ],
+            0x0001: [ req:"req", acc:"rw-", name:"Extended PAN ID" ],
+            0x0002: [ req:"req", acc:"rw-", name:"PAN ID" ],
+            0x0003: [ req:"req", acc:"rw-", name:"Channel Mask" ],
+            0x0004: [ req:"req", acc:"rw-", name:"Protocol Version" ],
+            0x0005: [ req:"req", acc:"rw-", name:"Stack Profile" ],
+            0x0006: [ req:"req", acc:"rw-", name:"Startup Control" ],
             
-            0x0010: [ req:"Yes", acc:"RW-", name:"Trust Center Address" ],
-            0x0011: [ req:"Yes", acc:"RW-", name:"Trust Center Master Key" ],
-            0x0012: [ req:"Yes", acc:"RW-", name:"Network Key" ],
-            0x0013: [ req:"Yes", acc:"RW-", name:"Use Insecure Join" ],
-            0x0014: [ req:"Yes", acc:"RW-", name:"Preconfigured Link Key" ],
-            0x0015: [ req:"Yes", acc:"RW-", name:"Network Key Seq Num" ],
-            0x0016: [ req:"Yes", acc:"RW-", name:"Network Key Type" ],
-            0x0017: [ req:"Yes", acc:"RW-", name:"Network Manager Address" ],
+            0x0010: [ req:"req", acc:"rw-", name:"Trust Center Address" ],
+            0x0011: [ req:"req", acc:"rw-", name:"Trust Center Master Key" ],
+            0x0012: [ req:"req", acc:"rw-", name:"Network Key" ],
+            0x0013: [ req:"req", acc:"rw-", name:"Use Insecure Join" ],
+            0x0014: [ req:"req", acc:"rw-", name:"Preconfigured Link Key" ],
+            0x0015: [ req:"req", acc:"rw-", name:"Network Key Seq Num" ],
+            0x0016: [ req:"req", acc:"rw-", name:"Network Key Type" ],
+            0x0017: [ req:"req", acc:"rw-", name:"Network Manager Address" ],
             
-            0x0020: [ req:"No",  acc:"RW-", name:"Scan Attempts" ],
-            0x0021: [ req:"No",  acc:"RW-", name:"Time Between Scans" ],
-            0x0022: [ req:"No",  acc:"RW-", name:"Rejoin Interval" ],
+            0x0020: [ req:"opt", acc:"rw-", name:"Scan Attempts" ],
+            0x0021: [ req:"opt", acc:"rw-", name:"Time Between Scans" ],
+            0x0022: [ req:"opt", acc:"rw-", name:"Rejoin Interval" ],
             
-            0x0030: [ req:"No",  acc:"RW-", name:"Indirect Poll Rate" ],
-            0x0031: [ req:"No",  acc:"R--", name:"Parent Retry Threshold" ],
+            0x0030: [ req:"opt", acc:"rw-", name:"Indirect Poll Rate" ],
+            0x0031: [ req:"opt", acc:"r--", name:"Parent Retry Threshold" ],
             
-            0x0040: [ req:"No",  acc:"RW-", name:"Concentrator Flag" ],
-            0x0041: [ req:"No",  acc:"RW-", name:"Concentrator Radius" ],
-            0x0042: [ req:"No",  acc:"RW-", name:"Concentrator Discovery Time" ]
+            0x0040: [ req:"opt", acc:"rw-", name:"Concentrator Flag" ],
+            0x0041: [ req:"opt", acc:"rw-", name:"Concentrator Radius" ],
+            0x0042: [ req:"opt", acc:"rw-", name:"Concentrator Discovery Time" ]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Restart Device" ],
-            0x01: [ req:"No",  name:"Save Startup Parameters" ],
-            0x02: [ req:"No",  name:"Restore Startup Parameter" ],
-            0x03: [ req:"Yes", name:"Reset Startup Parameters" ]
+            0x00: [ req:"req", name:"Restart Device" ],
+            0x01: [ req:"opt", name:"Save Startup Parameters" ],
+            0x02: [ req:"opt", name:"Restore Startup Parameter" ],
+            0x03: [ req:"req", name:"Reset Startup Parameters" ]
         ]
     ],
     0x0019: [
         name: "OTA Upgrade Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R--", name:"Upgrade Server ID" ],
-            0x0001: [ req:"No",  acc:"R--", name:"File Offset" ],
-            0x0002: [ req:"No",  acc:"R--", name:"Current File Version" ],
-            0x0003: [ req:"No",  acc:"R--", name:"Current Zigbee Stack Version" ],
-            0x0004: [ req:"No",  acc:"R--", name:"Downloaded File Version" ],
-            0x0005: [ req:"No",  acc:"R--", name:"Downloaded Zigbee Stack Version" ],
-            0x0006: [ req:"Yes", acc:"R--", name:"Image Upgrade Status" ],
-            0x0007: [ req:"No",  acc:"R--", name:"Manufacturer ID" ],
-            0x0008: [ req:"No",  acc:"R--", name:"Image Type ID" ],
-            0x0009: [ req:"No",  acc:"R--", name:"Minimum Block Period" ],
-            0x000A: [ req:"No",  acc:"R--", name:"Image Stamp" ]
+            0x0000: [ req:"req", acc:"r--", name:"Upgrade Server ID" ],
+            0x0001: [ req:"opt", acc:"r--", name:"File Offset" ],
+            0x0002: [ req:"opt", acc:"r--", name:"Current File Version" ],
+            0x0003: [ req:"opt", acc:"r--", name:"Current Zigbee Stack Version" ],
+            0x0004: [ req:"opt", acc:"r--", name:"Downloaded File Version" ],
+            0x0005: [ req:"opt", acc:"r--", name:"Downloaded Zigbee Stack Version" ],
+            0x0006: [ req:"req", acc:"r--", name:"Image Upgrade Status" ],
+            0x0007: [ req:"opt", acc:"r--", name:"Manufacturer ID" ],
+            0x0008: [ req:"opt", acc:"r--", name:"Image Type ID" ],
+            0x0009: [ req:"opt", acc:"r--", name:"Minimum Block Period" ],
+            0x000A: [ req:"opt", acc:"r--", name:"Image Stamp" ]
         ],
         commands: [
-            0x00: [ req:"No",  name:"Image Notify" ],
-            0x01: [ req:"Yes", name:"Query Next Image Request" ],
-            0x02: [ req:"Yes", name:"Query Next Image Response" ],
-            0x03: [ req:"Yes", name:"Image Block Request" ],
-            0x04: [ req:"No",  name:"Image Page Request" ],
-            0x05: [ req:"Yes", name:"Image Block Response" ],
-            0x06: [ req:"Yes", name:"Upgrade End Request" ],
-            0x07: [ req:"Yes", name:"Upgrade End Response" ],
-            0x08: [ req:"No",  name:"Query Device Specific File Request" ],
-            0x09: [ req:"No",  name:"Query Device Specific File Response" ]
+            0x00: [ req:"opt", name:"Image Notify" ],
+            0x01: [ req:"req", name:"Query Next Image Request" ],
+            0x02: [ req:"req", name:"Query Next Image Response" ],
+            0x03: [ req:"req", name:"Image Block Request" ],
+            0x04: [ req:"opt", name:"Image Page Request" ],
+            0x05: [ req:"req", name:"Image Block Response" ],
+            0x06: [ req:"req", name:"Upgrade End Request" ],
+            0x07: [ req:"req", name:"Upgrade End Response" ],
+            0x08: [ req:"opt", name:"Query Device Specific File Request" ],
+            0x09: [ req:"opt", name:"Query Device Specific File Response" ]
         ]
     ],
     0x0021: [
@@ -1861,695 +1854,695 @@ private boolean contains(Map msg, Map spec) {
     0x001A: [
         name: "Power Profile Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R--", name:"Total Profile Num" ],
-            0x0001: [ req:"Yes", acc:"R--", name:"Multiple Scheduling" ],
-            0x0002: [ req:"Yes", acc:"R--", name:"Energy Formatting" ],
-            0x0003: [ req:"Yes", acc:"R-P", name:"Energy Remote" ],
-            0x0004: [ req:"Yes", acc:"RWP", name:"Schedule Mode" ]
+            0x0000: [ req:"req", acc:"r--", name:"Total Profile Num" ],
+            0x0001: [ req:"req", acc:"r--", name:"Multiple Scheduling" ],
+            0x0002: [ req:"req", acc:"r--", name:"Energy Formatting" ],
+            0x0003: [ req:"req", acc:"r-p", name:"Energy Remote" ],
+            0x0004: [ req:"req", acc:"RWP", name:"Schedule Mode" ]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Power Profile Request" ],
-            0x01: [ req:"Yes", name:"Power Profile State Request" ],
-            0x02: [ req:"Yes", name:"Get Power Profile Price Response" ],
-            0x03: [ req:"Yes", name:"Get Overall Schedule Price Response" ],
-            0x04: [ req:"Yes", name:"Energy Phases Schedule Notification" ],
-            0x05: [ req:"Yes", name:"Energy Phases Schedule Response" ],
-            0x06: [ req:"Yes", name:"Power Profile Schedule Constraints Request" ],
-            0x07: [ req:"Yes", name:"Energy Phases Schedule State Request" ],
-            0x08: [ req:"Yes", name:"Get Power Profile Price Extended Response" ]
+            0x00: [ req:"req", name:"Power Profile Request" ],
+            0x01: [ req:"req", name:"Power Profile State Request" ],
+            0x02: [ req:"req", name:"Get Power Profile Price Response" ],
+            0x03: [ req:"req", name:"Get Overall Schedule Price Response" ],
+            0x04: [ req:"req", name:"Energy Phases Schedule Notification" ],
+            0x05: [ req:"req", name:"Energy Phases Schedule Response" ],
+            0x06: [ req:"req", name:"Power Profile Schedule Constraints Request" ],
+            0x07: [ req:"req", name:"Energy Phases Schedule State Request" ],
+            0x08: [ req:"req", name:"Get Power Profile Price Extended Response" ]
         ]
     ],
     0x0020: [
         name: "Poll Cluster",
         attributes: [
-            0x0000: [ type:0x23, req:"Yes", acc:"RW-", name:"Check-in Interval", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
-            0x0001: [ type:0x23, req:"Yes", acc:"R--", name:"Long Poll Interval", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
-            0x0002: [ type:0x21, req:"Yes", acc:"R--", name:"Short Poll Interval", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
-            0x0003: [ type:0x21, req:"Yes", acc:"RW-", name:"Fast Poll Timeout", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
-            0x0004: [ type:0x23, req:"No",  acc:"R--", name:"Check-in Interval Min", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
-            0x0005: [ type:0x23, req:"No",  acc:"R--", name:"Long Poll Interval Min", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
-            0x0006: [ type:0x21, req:"No",  acc:"R--", name:"Fast Poll Timeout Max", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }]
+            0x0000: [ type:0x23, req:"req", acc:"rw-", name:"Check-in Interval", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
+            0x0001: [ type:0x23, req:"req", acc:"r--", name:"Long Poll Interval", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
+            0x0002: [ type:0x21, req:"req", acc:"r--", name:"Short Poll Interval", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
+            0x0003: [ type:0x21, req:"req", acc:"rw-", name:"Fast Poll Timeout", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
+            0x0004: [ type:0x23, req:"opt", acc:"r--", name:"Check-in Interval Min", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
+            0x0005: [ type:0x23, req:"opt", acc:"r--", name:"Long Poll Interval Min", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }],
+            0x0006: [ type:0x21, req:"opt", acc:"r--", name:"Fast Poll Timeout Max", decorate: { value -> "${((Integer.parseInt(value, 16) / 4) as Integer)} seconds" }]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Check-in" ],
-            0x01: [ req:"Yes", name:"Stop" ],
-            0x02: [ req:"No", name:"Set Long Poll Attribute" ],
-            0x03: [ req:"No", name:"Set Short Poll Attribute" ]
+            0x00: [ req:"req", name:"Check-in" ],
+            0x01: [ req:"req", name:"Stop" ],
+            0x02: [ req:"opt", name:"Set Long Poll Attribute" ],
+            0x03: [ req:"opt", name:"Set Short Poll Attribute" ]
         ]
     ],
     0x0100: [
         name: "Shade Configuration Cluster",
         attributes: [
-            0x0000: [ req:"No",  acc:"R--", name:"Physical Closed Limit" ],
-            0x0001: [ req:"No",  acc:"R--", name:"Motor Step Size" ],
-            0x0002: [ req:"Yes", acc:"RW-", name:"Status" ],
+            0x0000: [ req:"opt", acc:"r--", name:"Physical Closed Limit" ],
+            0x0001: [ req:"opt", acc:"r--", name:"Motor Step Size" ],
+            0x0002: [ req:"req", acc:"rw-", name:"Status" ],
             
-            0x0010: [ req:"Yes", acc:"RW-", name:"Closed Limit" ],
-            0x0011: [ req:"Yes", acc:"RW-", name:"Mode" ]
+            0x0010: [ req:"req", acc:"rw-", name:"Closed Limit" ],
+            0x0011: [ req:"req", acc:"rw-", name:"Mode" ]
         ]
     ],
     0x0101: [
         name: "Door Lock Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R-P", name:"Lock State" ],
-            0x0001: [ req:"Yes", acc:"R--", name:"Lock Type" ],
-            0x0002: [ req:"Yes", acc:"R--", name:"Actuator Enabled" ],
-            0x0003: [ req:"No",  acc:"R-P", name:"Door State" ],
-            0x0004: [ req:"No",  acc:"RW-", name:"Door Open Events" ],
-            0x0005: [ req:"No",  acc:"RW-", name:"Door Closed Events" ],
-            0x0006: [ req:"No",  acc:"RW-", name:"Open Period" ],
+            0x0000: [ req:"req", acc:"r-p", name:"Lock State" ],
+            0x0001: [ req:"req", acc:"r--", name:"Lock Type" ],
+            0x0002: [ req:"req", acc:"r--", name:"Actuator Enabled" ],
+            0x0003: [ req:"opt", acc:"r-p", name:"Door State" ],
+            0x0004: [ req:"opt", acc:"rw-", name:"Door Open Events" ],
+            0x0005: [ req:"opt", acc:"rw-", name:"Door Closed Events" ],
+            0x0006: [ req:"opt", acc:"rw-", name:"Open Period" ],
             
-            0x0010: [ req:"No",  acc:"R--", name:"Number Of Log Records Supported" ],
-            0x0011: [ req:"No",  acc:"R--", name:"Number Of Total Users Supported" ],
-            0x0012: [ req:"No",  acc:"R--", name:"Number Of PIN Users Supported" ],
-            0x0013: [ req:"No",  acc:"R--", name:"Number Of RFID Users Supported" ],
-            0x0014: [ req:"No",  acc:"R--", name:"Number Of Week Day Schedules Supported Per User" ],
-            0x0015: [ req:"No",  acc:"R--", name:"Number Of Year Day Schedules Supported Per User" ],
-            0x0016: [ req:"No",  acc:"R--", name:"Number Of Holiday Schedules Supported" ],
-            0x0017: [ req:"No",  acc:"R--", name:"Max PIN Code Length" ],
-            0x0018: [ req:"No",  acc:"R--", name:"Min PIN Code Length" ],
-            0x0019: [ req:"No",  acc:"R--", name:"Max RFID Code Length" ],
-            0x001A: [ req:"No",  acc:"R--", name:"Min RFID Code Length" ],
+            0x0010: [ req:"opt", acc:"r--", name:"Number Of Log Records Supported" ],
+            0x0011: [ req:"opt", acc:"r--", name:"Number Of Total Users Supported" ],
+            0x0012: [ req:"opt", acc:"r--", name:"Number Of PIN Users Supported" ],
+            0x0013: [ req:"opt", acc:"r--", name:"Number Of RFID Users Supported" ],
+            0x0014: [ req:"opt", acc:"r--", name:"Number Of Week Day Schedules Supported Per User" ],
+            0x0015: [ req:"opt", acc:"r--", name:"Number Of Year Day Schedules Supported Per User" ],
+            0x0016: [ req:"opt", acc:"r--", name:"Number Of Holiday Schedules Supported" ],
+            0x0017: [ req:"opt", acc:"r--", name:"Max PIN Code Length" ],
+            0x0018: [ req:"opt", acc:"r--", name:"Min PIN Code Length" ],
+            0x0019: [ req:"opt", acc:"r--", name:"Max RFID Code Length" ],
+            0x001A: [ req:"opt", acc:"r--", name:"Min RFID Code Length" ],
             
-            0x0020: [ req:"No",  acc:"RwP", name:"Enable Logging" ],
-            0x0021: [ req:"No",  acc:"RwP", name:"Language" ],
-            0x0022: [ req:"No",  acc:"RwP", name:"Settings" ],
-            0x0023: [ req:"No",  acc:"RwP", name:"Auto Relock Time" ],
-            0x0024: [ req:"No",  acc:"RwP", name:"Sound Volume" ],
-            0x0025: [ req:"No",  acc:"RwP", name:"Operating Mode" ],
-            0x0026: [ req:"No",  acc:"R--", name:"Supported Operating Modes" ],
-            0x0027: [ req:"No",  acc:"R-P", name:"Default Configuration Register" ],
-            0x0028: [ req:"No",  acc:"RwP", name:"Enable Local Programming" ],
-            0x0029: [ req:"No",  acc:"RWP", name:"Enable One Touch Locking" ],
-            0x002A: [ req:"No",  acc:"RWP", name:"Enable Inside Status LED" ],
-            0x002B: [ req:"No",  acc:"RWP", name:"Enable Privacy Mode Button" ],
+            0x0020: [ req:"opt", acc:"RwP", name:"Enable Logging" ],
+            0x0021: [ req:"opt", acc:"RwP", name:"Language" ],
+            0x0022: [ req:"opt", acc:"RwP", name:"Settings" ],
+            0x0023: [ req:"opt", acc:"RwP", name:"Auto Relock Time" ],
+            0x0024: [ req:"opt", acc:"RwP", name:"Sound Volume" ],
+            0x0025: [ req:"opt", acc:"RwP", name:"Operating Mode" ],
+            0x0026: [ req:"opt", acc:"r--", name:"Supported Operating Modes" ],
+            0x0027: [ req:"opt", acc:"r-p", name:"Default Configuration Register" ],
+            0x0028: [ req:"opt", acc:"RwP", name:"Enable Local Programming" ],
+            0x0029: [ req:"opt", acc:"RWP", name:"Enable One Touch Locking" ],
+            0x002A: [ req:"opt", acc:"RWP", name:"Enable Inside Status LED" ],
+            0x002B: [ req:"opt", acc:"RWP", name:"Enable Privacy Mode Button" ],
             
-            0x0030: [ req:"No",  acc:"RwP", name:"Wrong Code Entry Limit" ],
-            0x0031: [ req:"No",  acc:"RwP", name:"User Code Temporary Disable Time" ],
-            0x0032: [ req:"No",  acc:"RwP", name:"Send PIN Over The Air" ],
-            0x0033: [ req:"No",  acc:"RwP", name:"Require PIN For RF Operation" ],
-            0x0034: [ req:"No",  acc:"R-P", name:"Zigbee Security Level" ],
+            0x0030: [ req:"opt", acc:"RwP", name:"Wrong Code Entry Limit" ],
+            0x0031: [ req:"opt", acc:"RwP", name:"User Code Temporary Disable Time" ],
+            0x0032: [ req:"opt", acc:"RwP", name:"Send PIN Over The Air" ],
+            0x0033: [ req:"opt", acc:"RwP", name:"Require PIN For RF Operation" ],
+            0x0034: [ req:"opt", acc:"r-p", name:"Zigbee Security Level" ],
             
-            0x0040: [ req:"No",  acc:"RWP", name:"Alarm Mask" ],
-            0x0041: [ req:"No",  acc:"RWP", name:"Keypad Operation Event Mask" ],
-            0x0042: [ req:"No",  acc:"RWP", name:"RF Operation Event Mask" ],
-            0x0043: [ req:"No",  acc:"RWP", name:"Manual Operation Event Mask" ],
-            0x0044: [ req:"No",  acc:"RWP", name:"RFID Operation Event Mask" ],
-            0x0045: [ req:"No",  acc:"RWP", name:"Keypad Programming Event Mask" ],
-            0x0046: [ req:"No",  acc:"RWP", name:"RF Programming Event Mask" ],
-            0x0047: [ req:"No",  acc:"RWP", name:"RFID Programming Event Mask" ]
+            0x0040: [ req:"opt", acc:"RWP", name:"Alarm Mask" ],
+            0x0041: [ req:"opt", acc:"RWP", name:"Keypad Operation Event Mask" ],
+            0x0042: [ req:"opt", acc:"RWP", name:"RF Operation Event Mask" ],
+            0x0043: [ req:"opt", acc:"RWP", name:"Manual Operation Event Mask" ],
+            0x0044: [ req:"opt", acc:"RWP", name:"RFID Operation Event Mask" ],
+            0x0045: [ req:"opt", acc:"RWP", name:"Keypad Programming Event Mask" ],
+            0x0046: [ req:"opt", acc:"RWP", name:"RF Programming Event Mask" ],
+            0x0047: [ req:"opt", acc:"RWP", name:"RFID Programming Event Mask" ]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Lock Door" ],
-            0x01: [ req:"Yes", name:"Unlock Door" ],
-            0x02: [ req:"No",  name:"Toggle" ],
-            0x03: [ req:"No",  name:"Unlock with Timeout" ],
-            0x04: [ req:"No",  name:"Get Log Record" ],
-            0x05: [ req:"No",  name:"Set PIN Code" ],
-            0x06: [ req:"No",  name:"Get PIN Code" ],
-            0x07: [ req:"No",  name:"Clear PIN Code" ],
-            0x08: [ req:"No",  name:"Clear All PIN Codes" ],
-            0x09: [ req:"No",  name:"Set User Status" ],
-            0x0A: [ req:"No",  name:"Get User Status" ],
-            0x0B: [ req:"No",  name:"Set Weekday Schedule" ],
-            0x0C: [ req:"No",  name:"Get Weekday Schedule" ],
-            0x0D: [ req:"No",  name:"Clear Weekday Schedule" ],
-            0x0E: [ req:"No",  name:"Set Year Day Schedule" ],
-            0x0F: [ req:"No",  name:"Get Year Day Schedule" ],
-            0x10: [ req:"No",  name:"Clear Year Day Schedule" ],
-            0x11: [ req:"No",  name:"Set Holiday Schedule" ],
-            0x12: [ req:"No",  name:"Get Holiday Schedule" ],
-            0x13: [ req:"No",  name:"Clear Holiday Schedule" ],
-            0x14: [ req:"No",  name:"Set User Type" ],
-            0x15: [ req:"No",  name:"Get User Type" ],
-            0x16: [ req:"No",  name:"Set RFID Code" ],
-            0x17: [ req:"No",  name:"Get RFID Code" ],
-            0x18: [ req:"No",  name:"Clear RFID Code" ],
-            0x19: [ req:"No",  name:"Clear All RFID Codes" ]
+            0x00: [ req:"req", name:"Lock Door" ],
+            0x01: [ req:"req", name:"Unlock Door" ],
+            0x02: [ req:"opt", name:"Toggle" ],
+            0x03: [ req:"opt", name:"Unlock with Timeout" ],
+            0x04: [ req:"opt", name:"Get Log Record" ],
+            0x05: [ req:"opt", name:"Set PIN Code" ],
+            0x06: [ req:"opt", name:"Get PIN Code" ],
+            0x07: [ req:"opt", name:"Clear PIN Code" ],
+            0x08: [ req:"opt", name:"Clear All PIN Codes" ],
+            0x09: [ req:"opt", name:"Set User Status" ],
+            0x0A: [ req:"opt", name:"Get User Status" ],
+            0x0B: [ req:"opt", name:"Set Weekday Schedule" ],
+            0x0C: [ req:"opt", name:"Get Weekday Schedule" ],
+            0x0D: [ req:"opt", name:"Clear Weekday Schedule" ],
+            0x0E: [ req:"opt", name:"Set Year Day Schedule" ],
+            0x0F: [ req:"opt", name:"Get Year Day Schedule" ],
+            0x10: [ req:"opt", name:"Clear Year Day Schedule" ],
+            0x11: [ req:"opt", name:"Set Holiday Schedule" ],
+            0x12: [ req:"opt", name:"Get Holiday Schedule" ],
+            0x13: [ req:"opt", name:"Clear Holiday Schedule" ],
+            0x14: [ req:"opt", name:"Set User Type" ],
+            0x15: [ req:"opt", name:"Get User Type" ],
+            0x16: [ req:"opt", name:"Set RFID Code" ],
+            0x17: [ req:"opt", name:"Get RFID Code" ],
+            0x18: [ req:"opt", name:"Clear RFID Code" ],
+            0x19: [ req:"opt", name:"Clear All RFID Codes" ]
         ]
     ],
     0x0102: [
         name: "Window Covering Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R--", name:"Window Covering Type" ],
-            0x0001: [ req:"No",  acc:"R--", name:"Physical Closed Limit – Lift" ],
-            0x0002: [ req:"No",  acc:"R--", name:"Physical Closed Limit – Tilt" ],
-            0x0003: [ req:"No",  acc:"R--", name:"Current Position – Lift" ],
-            0x0004: [ req:"No",  acc:"R--", name:"Current Position – Tilt" ],
-            0x0005: [ req:"No",  acc:"R--", name:"Number Of Actuations – Lift" ],
-            0x0006: [ req:"No",  acc:"R--", name:"Number Of Actuations – Tilt" ],
-            0x0007: [ req:"Yes", acc:"R--", name:"Config/Status" ],
-            0x0008: [ req:"Yes", acc:"RSP", name:"Current Position Lift Percentage" ],
-            0x0009: [ req:"Yes", acc:"RSP", name:"Current Position Tilt Percentage" ],
+            0x0000: [ req:"req", acc:"r--", name:"Window Covering Type" ],
+            0x0001: [ req:"opt", acc:"r--", name:"Physical Closed Limit – Lift" ],
+            0x0002: [ req:"opt", acc:"r--", name:"Physical Closed Limit – Tilt" ],
+            0x0003: [ req:"opt", acc:"r--", name:"Current Position – Lift" ],
+            0x0004: [ req:"opt", acc:"r--", name:"Current Position – Tilt" ],
+            0x0005: [ req:"opt", acc:"r--", name:"Number Of Actuations – Lift" ],
+            0x0006: [ req:"opt", acc:"r--", name:"Number Of Actuations – Tilt" ],
+            0x0007: [ req:"req", acc:"r--", name:"Config/Status" ],
+            0x0008: [ req:"req", acc:"RSP", name:"Current Position Lift Percentage" ],
+            0x0009: [ req:"req", acc:"RSP", name:"Current Position Tilt Percentage" ],
 
-            0x0100: [ req:"Yes", acc:"R--", name:"Installed Open Limit – Lift" ],
-            0x0101: [ req:"Yes", acc:"R--", name:"Installed Closed Limit – Lift" ],
-            0x0102: [ req:"Yes", acc:"R--", name:"Installed Open Limit – Tilt" ],
-            0x0103: [ req:"Yes", acc:"R--", name:"Installed Closed Limit – Tilt" ],
-            0x0104: [ req:"No",  acc:"RW-", name:"Velocity – Lift" ],
-            0x0105: [ req:"No",  acc:"RW-", name:"Acceleration Time – Lift" ],
-            0x0106: [ req:"No",  acc:"RW-", name:"Deceleration Time – Lift" ],
-            0x0107: [ req:"Yes", acc:"RW-", name:"Mode" ],
-            0x0108: [ req:"No",  acc:"RW-", name:"Intermediate Setpoints – Lift" ],
-            0x0109: [ req:"No",  acc:"RW-", name:"Intermediate Setpoints – Tilt" ]
+            0x0100: [ req:"req", acc:"r--", name:"Installed Open Limit – Lift" ],
+            0x0101: [ req:"req", acc:"r--", name:"Installed Closed Limit – Lift" ],
+            0x0102: [ req:"req", acc:"r--", name:"Installed Open Limit – Tilt" ],
+            0x0103: [ req:"req", acc:"r--", name:"Installed Closed Limit – Tilt" ],
+            0x0104: [ req:"opt", acc:"rw-", name:"Velocity – Lift" ],
+            0x0105: [ req:"opt", acc:"rw-", name:"Acceleration Time – Lift" ],
+            0x0106: [ req:"opt", acc:"rw-", name:"Deceleration Time – Lift" ],
+            0x0107: [ req:"req", acc:"rw-", name:"Mode" ],
+            0x0108: [ req:"opt", acc:"rw-", name:"Intermediate Setpoints – Lift" ],
+            0x0109: [ req:"opt", acc:"rw-", name:"Intermediate Setpoints – Tilt" ]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Up / Open" ],
-            0x01: [ req:"Yes", name:"Down / Close" ],
-            0x02: [ req:"Yes", name:"Stop" ],
-            0x04: [ req:"No",  name:"Go To Lift Value" ],
-            0x05: [ req:"No",  name:"Go to Lift Percentage" ],
-            0x07: [ req:"No",  name:"Go to Tilt Value" ],
-            0x08: [ req:"No",  name:"Go to Tilt Percentage" ]
+            0x00: [ req:"req", name:"Up / Open" ],
+            0x01: [ req:"req", name:"Down / Close" ],
+            0x02: [ req:"req", name:"Stop" ],
+            0x04: [ req:"opt", name:"Go To Lift Value" ],
+            0x05: [ req:"opt", name:"Go to Lift Percentage" ],
+            0x07: [ req:"opt", name:"Go to Tilt Value" ],
+            0x08: [ req:"opt", name:"Go to Tilt Percentage" ]
         ]
     ],
     0x0200: [
         name: "Pump Configuration and Control Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R--", name:"Max Pressure" ],
-            0x0001: [ req:"Yes", acc:"R--", name:"Max Speed" ],
-            0x0002: [ req:"Yes", acc:"R--", name:"Max Flow" ],
-            0x0003: [ req:"No",  acc:"R--", name:"Min Const Pressure" ],
-            0x0004: [ req:"No",  acc:"R--", name:"Max Const Pressure" ],
-            0x0005: [ req:"No",  acc:"R--", name:"Min Comp Pressure" ],
-            0x0006: [ req:"No",  acc:"R--", name:"Max Comp Pressure" ],
-            0x0007: [ req:"No",  acc:"R--", name:"Min Const Speed" ],
-            0x0008: [ req:"No",  acc:"R--", name:"Max Const Speed" ],
-            0x0009: [ req:"No",  acc:"R--", name:"Min Const Flow" ],
-            0x000A: [ req:"No",  acc:"R--", name:"Max Const Flow" ],
-            0x000B: [ req:"No",  acc:"R--", name:"Min Const Temp" ],
-            0x000C: [ req:"No",  acc:"R--", name:"Max Const Temp" ],
+            0x0000: [ req:"req", acc:"r--", name:"Max Pressure" ],
+            0x0001: [ req:"req", acc:"r--", name:"Max Speed" ],
+            0x0002: [ req:"req", acc:"r--", name:"Max Flow" ],
+            0x0003: [ req:"opt", acc:"r--", name:"Min Const Pressure" ],
+            0x0004: [ req:"opt", acc:"r--", name:"Max Const Pressure" ],
+            0x0005: [ req:"opt", acc:"r--", name:"Min Comp Pressure" ],
+            0x0006: [ req:"opt", acc:"r--", name:"Max Comp Pressure" ],
+            0x0007: [ req:"opt", acc:"r--", name:"Min Const Speed" ],
+            0x0008: [ req:"opt", acc:"r--", name:"Max Const Speed" ],
+            0x0009: [ req:"opt", acc:"r--", name:"Min Const Flow" ],
+            0x000A: [ req:"opt", acc:"r--", name:"Max Const Flow" ],
+            0x000B: [ req:"opt", acc:"r--", name:"Min Const Temp" ],
+            0x000C: [ req:"opt", acc:"r--", name:"Max Const Temp" ],
 
-            0x0010: [ req:"No",  acc:"R-P", name:"Pump Status" ],
-            0x0011: [ req:"Yes", acc:"R--", name:"Effective Operation Mode" ],
-            0x0012: [ req:"Yes", acc:"R--", name:"Effective Control Mode" ],
-            0x0013: [ req:"Yes", acc:"R-P", name:"Capacity" ],
-            0x0014: [ req:"No",  acc:"R--", name:"Speed" ],
-            0x0015: [ req:"No",  acc:"RW-", name:"Lifetime Running Hours" ],
-            0x0016: [ req:"No",  acc:"RW-", name:"Power" ],
-            0x0017: [ req:"No",  acc:"R--", name:"Lifetime Energy Consumed" ],
+            0x0010: [ req:"opt", acc:"r-p", name:"Pump Status" ],
+            0x0011: [ req:"req", acc:"r--", name:"Effective Operation Mode" ],
+            0x0012: [ req:"req", acc:"r--", name:"Effective Control Mode" ],
+            0x0013: [ req:"req", acc:"r-p", name:"Capacity" ],
+            0x0014: [ req:"opt", acc:"r--", name:"Speed" ],
+            0x0015: [ req:"opt", acc:"rw-", name:"Lifetime Running Hours" ],
+            0x0016: [ req:"opt", acc:"rw-", name:"Power" ],
+            0x0017: [ req:"opt", acc:"r--", name:"Lifetime Energy Consumed" ],
 
-            0x0020: [ req:"Yes", acc:"RW-", name:"Operation Mode" ],
-            0x0021: [ req:"No",  acc:"RW-", name:"Control Mode" ],
-            0x0022: [ req:"No",  acc:"R--", name:"Alarm Mask" ]
+            0x0020: [ req:"req", acc:"rw-", name:"Operation Mode" ],
+            0x0021: [ req:"opt", acc:"rw-", name:"Control Mode" ],
+            0x0022: [ req:"opt", acc:"r--", name:"Alarm Mask" ]
         ]
     ],
     0x0201: [
         name: "Thermostat Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R-P", name:"Local Temperature" ],
-            0x0001: [ req:"No",  acc:"R--", name:"Outdoor Temperature" ],
-            0x0002: [ req:"No",  acc:"R--", name:"Occupancy" ],
-            0x0003: [ req:"No",  acc:"R--", name:"Abs Min Heat Setpoint Limit" ],
-            0x0004: [ req:"No",  acc:"R--", name:"Abs Max Heat Setpoint Limit" ],
-            0x0005: [ req:"No",  acc:"R--", name:"Abs Min Cool Setpoint Limit" ],
-            0x0006: [ req:"No",  acc:"R--", name:"Abs Max Cool Setpoint Limit" ],
-            0x0007: [ req:"No",  acc:"R-P", name:"PI Cooling Demand" ],
-            0x0008: [ req:"No",  acc:"R-P", name:"PI Heating Demand" ],
-            0x0009: [ req:"No",  acc:"RW-", name:"HVAC System Type Configuration" ],
+            0x0000: [ req:"req", acc:"r-p", name:"Local Temperature" ],
+            0x0001: [ req:"opt", acc:"r--", name:"Outdoor Temperature" ],
+            0x0002: [ req:"opt", acc:"r--", name:"Occupancy" ],
+            0x0003: [ req:"opt", acc:"r--", name:"Abs Min Heat Setpoint Limit" ],
+            0x0004: [ req:"opt", acc:"r--", name:"Abs Max Heat Setpoint Limit" ],
+            0x0005: [ req:"opt", acc:"r--", name:"Abs Min Cool Setpoint Limit" ],
+            0x0006: [ req:"opt", acc:"r--", name:"Abs Max Cool Setpoint Limit" ],
+            0x0007: [ req:"opt", acc:"r-p", name:"PI Cooling Demand" ],
+            0x0008: [ req:"opt", acc:"r-p", name:"PI Heating Demand" ],
+            0x0009: [ req:"opt", acc:"rw-", name:"HVAC System Type Configuration" ],
 
-            0x0010: [ req:"No",  acc:"RW-", name:"Local Temperature Calibration" ],
-            0x0011: [ req:"Yes", acc:"RW-", name:"Occupied Cooling Setpoint" ],
-            0x0012: [ req:"Yes", acc:"RWS", name:"Occupied Heating Setpoint" ],
-            0x0013: [ req:"No",  acc:"RW-", name:"Unoccupied Cooling Setpoint" ],
-            0x0014: [ req:"No",  acc:"RW-", name:"Unoccupied Heating Setpoint" ],
-            0x0015: [ req:"No",  acc:"RW-", name:"Min Heat Setpoint Limit" ],
-            0x0016: [ req:"No",  acc:"RW-", name:"Max Heat Setpoint Limit" ],
-            0x0017: [ req:"No",  acc:"RW-", name:"Min Cool Setpoint Limit" ],
-            0x0018: [ req:"No",  acc:"RW-", name:"Max Cool Setpoint Limit" ],
-            0x0019: [ req:"No",  acc:"RW-", name:"Min Setpoint Dead Band" ],
-            0x001A: [ req:"No",  acc:"RW-", name:"Remote Sensing" ],
-            0x001B: [ req:"Yes", acc:"RW-", name:"Control Sequence Of Operation" ],
-            0x001C: [ req:"Yes", acc:"RWS", name:"System Mode" ],
-            0x001D: [ req:"No",  acc:"R--", name:"Alarm Mask" ],
-            0x001E: [ req:"No",  acc:"R--", name:"Thermostat Running Mode" ],
+            0x0010: [ req:"opt", acc:"rw-", name:"Local Temperature Calibration" ],
+            0x0011: [ req:"req", acc:"rw-", name:"Occupied Cooling Setpoint" ],
+            0x0012: [ req:"req", acc:"rws", name:"Occupied Heating Setpoint" ],
+            0x0013: [ req:"opt", acc:"rw-", name:"Unoccupied Cooling Setpoint" ],
+            0x0014: [ req:"opt", acc:"rw-", name:"Unoccupied Heating Setpoint" ],
+            0x0015: [ req:"opt", acc:"rw-", name:"Min Heat Setpoint Limit" ],
+            0x0016: [ req:"opt", acc:"rw-", name:"Max Heat Setpoint Limit" ],
+            0x0017: [ req:"opt", acc:"rw-", name:"Min Cool Setpoint Limit" ],
+            0x0018: [ req:"opt", acc:"rw-", name:"Max Cool Setpoint Limit" ],
+            0x0019: [ req:"opt", acc:"rw-", name:"Min Setpoint Dead Band" ],
+            0x001A: [ req:"opt", acc:"rw-", name:"Remote Sensing" ],
+            0x001B: [ req:"req", acc:"rw-", name:"Control Sequence Of Operation" ],
+            0x001C: [ req:"req", acc:"rws", name:"System Mode" ],
+            0x001D: [ req:"opt", acc:"r--", name:"Alarm Mask" ],
+            0x001E: [ req:"opt", acc:"r--", name:"Thermostat Running Mode" ],
 
-            0x0020: [ req:"No",  acc:"R--", name:"Start Of Week" ],
-            0x0021: [ req:"No",  acc:"R--", name:"Number Of Weekly Transitions" ],
-            0x0022: [ req:"No",  acc:"R--", name:"Number Of Daily Transitions" ],
-            0x0023: [ req:"No",  acc:"RW-", name:"Temperature Setpoint Hold" ],
-            0x0024: [ req:"No",  acc:"RW-", name:"Temperature Setpoint Hold Duration" ],
-            0x0025: [ req:"No",  acc:"RW-", name:"Thermostat Programmin gOperation Mode" ],
-            0x0029: [ req:"No",  acc:"R--", name:"Thermostat Running State" ],
+            0x0020: [ req:"opt", acc:"r--", name:"Start Of Week" ],
+            0x0021: [ req:"opt", acc:"r--", name:"Number Of Weekly Transitions" ],
+            0x0022: [ req:"opt", acc:"r--", name:"Number Of Daily Transitions" ],
+            0x0023: [ req:"opt", acc:"rw-", name:"Temperature Setpoint Hold" ],
+            0x0024: [ req:"opt", acc:"rw-", name:"Temperature Setpoint Hold Duration" ],
+            0x0025: [ req:"opt", acc:"rw-", name:"Thermostat Programmin gOperation Mode" ],
+            0x0029: [ req:"opt", acc:"r--", name:"Thermostat Running State" ],
             
-            0x0030: [ req:"No",  acc:"R--", name:"Setpoint Change Source" ],
-            0x0031: [ req:"No",  acc:"R--", name:"Setpoint Change Amount" ],
-            0x0032: [ req:"No",  acc:"R--", name:"Setpoint Change Source Timestamp" ],
+            0x0030: [ req:"opt", acc:"r--", name:"Setpoint Change Source" ],
+            0x0031: [ req:"opt", acc:"r--", name:"Setpoint Change Amount" ],
+            0x0032: [ req:"opt", acc:"r--", name:"Setpoint Change Source Timestamp" ],
             
-            0x0040: [ req:"No",  acc:"RW-", name:"AC Type" ],
-            0x0041: [ req:"No",  acc:"RW-", name:"AC Capacity" ],
-            0x0042: [ req:"No",  acc:"RW-", name:"AC Refrigerant Type" ],
-            0x0043: [ req:"No",  acc:"RW-", name:"AC Compressor Type" ],
-            0x0044: [ req:"No",  acc:"RW-", name:"AC Error Code" ],
-            0x0045: [ req:"No",  acc:"RW-", name:"AC Louver Position" ],
-            0x0046: [ req:"No",  acc:"R--", name:"AC Coil Temperature" ],
-            0x0047: [ req:"No",  acc:"RW-", name:"AC Capacity Format" ]
+            0x0040: [ req:"opt", acc:"rw-", name:"AC Type" ],
+            0x0041: [ req:"opt", acc:"rw-", name:"AC Capacity" ],
+            0x0042: [ req:"opt", acc:"rw-", name:"AC Refrigerant Type" ],
+            0x0043: [ req:"opt", acc:"rw-", name:"AC Compressor Type" ],
+            0x0044: [ req:"opt", acc:"rw-", name:"AC Error Code" ],
+            0x0045: [ req:"opt", acc:"rw-", name:"AC Louver Position" ],
+            0x0046: [ req:"opt", acc:"r--", name:"AC Coil Temperature" ],
+            0x0047: [ req:"opt", acc:"rw-", name:"AC Capacity Format" ]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Setpoint Raise/Lower" ],
-            0x01: [ req:"No",  name:"Set Weekly Schedule" ],
-            0x02: [ req:"No",  name:"Get Weekly Schedule" ],
-            0x03: [ req:"No",  name:"Clear Weekly Schedule" ],
-            0x04: [ req:"No",  name:"Get Relay Status Log" ]
+            0x00: [ req:"req", name:"Setpoint Raise/Lower" ],
+            0x01: [ req:"opt", name:"Set Weekly Schedule" ],
+            0x02: [ req:"opt", name:"Get Weekly Schedule" ],
+            0x03: [ req:"opt", name:"Clear Weekly Schedule" ],
+            0x04: [ req:"opt", name:"Get Relay Status Log" ]
         ]
     ],
     0x0202: [
         name: "Fan Control Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"RW-", name:"Fan Mode" ],
-            0x0001: [ req:"Yes", acc:"RW-", name:"Fan Mode Sequence" ]
+            0x0000: [ req:"req", acc:"rw-", name:"Fan Mode" ],
+            0x0001: [ req:"req", acc:"rw-", name:"Fan Mode Sequence" ]
         ]
     ],
     0x0203: [
         name: "Dehumidification Control Cluster",
         attributes: [
-            0x0000: [ req:"No",  acc:"R--", name:"Relative Humidity" ],
-            0x0001: [ req:"Yes", acc:"R-P", name:"Dehumidificatio nCooling" ],
+            0x0000: [ req:"opt", acc:"r--", name:"Relative Humidity" ],
+            0x0001: [ req:"req", acc:"r-p", name:"Dehumidificatio nCooling" ],
             
-            0x0010: [ req:"Yes", acc:"RW-", name:"RH Dehumidification Setpoint" ],
-            0x0011: [ req:"No",  acc:"RW-", name:"Relative Humidity Mode" ],
-            0x0012: [ req:"No",  acc:"RW-", name:"Dehumidification Lockout" ],
-            0x0013: [ req:"Yes", acc:"RW-", name:"Dehumidification Hysteresis" ],
-            0x0014: [ req:"Yes", acc:"RW-", name:"Dehumidification Max Cool" ],
-            0x0015: [ req:"No",  acc:"RW-", name:"RelativeHumidity Display" ]
+            0x0010: [ req:"req", acc:"rw-", name:"RH Dehumidification Setpoint" ],
+            0x0011: [ req:"opt", acc:"rw-", name:"Relative Humidity Mode" ],
+            0x0012: [ req:"opt", acc:"rw-", name:"Dehumidification Lockout" ],
+            0x0013: [ req:"req", acc:"rw-", name:"Dehumidification Hysteresis" ],
+            0x0014: [ req:"req", acc:"rw-", name:"Dehumidification Max Cool" ],
+            0x0015: [ req:"opt", acc:"rw-", name:"RelativeHumidity Display" ]
         ]
     ],
     0x0204: [
         name: "Thermostat User Interface Configuration Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R--", name:"Temperature Display Mode" ],
-            0x0001: [ req:"Yes", acc:"RW-", name:"Keypad Lockout" ],
-            0x0002: [ req:"No",  acc:"RW-", name:"Schedule Programming Visibility" ]
+            0x0000: [ req:"req", acc:"r--", name:"Temperature Display Mode" ],
+            0x0001: [ req:"req", acc:"rw-", name:"Keypad Lockout" ],
+            0x0002: [ req:"opt", acc:"rw-", name:"Schedule Programming Visibility" ]
         ]
     ],
     0x0300: [
         name: "Color Control Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R-P", name:"CurrentHue" ],
-            0x0001: [ req:"Yes", acc:"R-P", name:"Current Saturation" ],
-            0x0002: [ req:"No",  acc:"R--", name:"Remaining Time" ],
-            0x0003: [ req:"Yes", acc:"R-P", name:"CurrentX" ],
-            0x0004: [ req:"Yes", acc:"R-P", name:"CurrentY" ],
-            0x0005: [ req:"No",  acc:"R--", name:"Drift Compensation" ],
-            0x0006: [ req:"No",  acc:"R--", name:"Compensation Text" ],
-            0x0007: [ req:"Yes", acc:"R-P", name:"Color Temperature Mireds" ],
-            0x0008: [ req:"Yes", acc:"R--", name:"Color Mode" ],
+            0x0000: [ req:"req", acc:"r-p", name:"CurrentHue" ],
+            0x0001: [ req:"req", acc:"r-p", name:"Current Saturation" ],
+            0x0002: [ req:"opt", acc:"r--", name:"Remaining Time" ],
+            0x0003: [ req:"req", acc:"r-p", name:"CurrentX" ],
+            0x0004: [ req:"req", acc:"r-p", name:"CurrentY" ],
+            0x0005: [ req:"opt", acc:"r--", name:"Drift Compensation" ],
+            0x0006: [ req:"opt", acc:"r--", name:"Compensation Text" ],
+            0x0007: [ req:"req", acc:"r-p", name:"Color Temperature Mireds" ],
+            0x0008: [ req:"req", acc:"r--", name:"Color Mode" ],
             
-            0x0010: [ req:"Yes", acc:"R--", name:"Number Of Primaries" ],
-            0x0011: [ req:"Yes", acc:"R--", name:"Primary 1 X" ],
-            0x0012: [ req:"No",  acc:"R--", name:"Primary 1 Y" ],
-            0x0013: [ req:"Yes", acc:"R--", name:"Primary 1 Intensity" ],
-            0x0015: [ req:"No",  acc:"R--", name:"Primary 2 X" ],
-            0x0016: [ req:"No",  acc:"R--", name:"Primary 2 Y" ],
-            0x0017: [ req:"Yes", acc:"R--", name:"Primary 2 Intensity" ],
-            0x0019: [ req:"Yes", acc:"R--", name:"Primary 3 X" ],
-            0x001A: [ req:"Yes", acc:"R--", name:"Primary 3 Y" ],
-            0x001B: [ req:"Yes", acc:"R--", name:"Primary 3 Intensity" ],
+            0x0010: [ req:"req", acc:"r--", name:"Number Of Primaries" ],
+            0x0011: [ req:"req", acc:"r--", name:"Primary 1 X" ],
+            0x0012: [ req:"opt", acc:"r--", name:"Primary 1 Y" ],
+            0x0013: [ req:"req", acc:"r--", name:"Primary 1 Intensity" ],
+            0x0015: [ req:"opt", acc:"r--", name:"Primary 2 X" ],
+            0x0016: [ req:"opt", acc:"r--", name:"Primary 2 Y" ],
+            0x0017: [ req:"req", acc:"r--", name:"Primary 2 Intensity" ],
+            0x0019: [ req:"req", acc:"r--", name:"Primary 3 X" ],
+            0x001A: [ req:"req", acc:"r--", name:"Primary 3 Y" ],
+            0x001B: [ req:"req", acc:"r--", name:"Primary 3 Intensity" ],
 
-            0x0020: [ req:"Yes", acc:"R--", name:"Primary 4 X" ],
-            0x0021: [ req:"Yes", acc:"R--", name:"Primary 4 Y" ],
-            0x0022: [ req:"No",  acc:"R--", name:"Primary 4 Intensity" ],
-            0x0024: [ req:"No",  acc:"R--", name:"Primary 2 X" ],
-            0x0025: [ req:"No",  acc:"R--", name:"Primary 2 Y" ],
-            0x0026: [ req:"Yes", acc:"R--", name:"Primary 2 Intensity" ],
-            0x0028: [ req:"Yes", acc:"R--", name:"Primary 3 X" ],
-            0x0029: [ req:"Yes", acc:"R--", name:"Primary 3 Y" ],
-            0x002A: [ req:"Yes", acc:"R--", name:"Primary 3 Intensity" ],
+            0x0020: [ req:"req", acc:"r--", name:"Primary 4 X" ],
+            0x0021: [ req:"req", acc:"r--", name:"Primary 4 Y" ],
+            0x0022: [ req:"opt", acc:"r--", name:"Primary 4 Intensity" ],
+            0x0024: [ req:"opt", acc:"r--", name:"Primary 2 X" ],
+            0x0025: [ req:"opt", acc:"r--", name:"Primary 2 Y" ],
+            0x0026: [ req:"req", acc:"r--", name:"Primary 2 Intensity" ],
+            0x0028: [ req:"req", acc:"r--", name:"Primary 3 X" ],
+            0x0029: [ req:"req", acc:"r--", name:"Primary 3 Y" ],
+            0x002A: [ req:"req", acc:"r--", name:"Primary 3 Intensity" ],
 
-            0x0030: [ req:"Yes", acc:"RW-", name:"White Point X" ],
-            0x0031: [ req:"Yes", acc:"RW-", name:"White Point Y" ],
-            0x0032: [ req:"No",  acc:"RW-", name:"Color Point R X" ],
-            0x0033: [ req:"No",  acc:"RW-", name:"Color Point R Y" ],
-            0x0034: [ req:"No",  acc:"RW-", name:"Color Point R Intensity" ],
-            0x0036: [ req:"Yes", acc:"RW-", name:"Color Point G X" ],
-            0x0037: [ req:"Yes", acc:"RW-", name:"Color Point G Y" ],
-            0x0038: [ req:"Yes", acc:"RW-", name:"Color Point G Intensity" ],
-            0x003A: [ req:"Yes", acc:"RW-", name:"Color Point B X" ],
-            0x003B: [ req:"Yes", acc:"RW-", name:"Color Point B Y" ],
-            0x003C: [ req:"Yes", acc:"RW-", name:"Color Point B Intensity" ],
+            0x0030: [ req:"req", acc:"rw-", name:"White Point X" ],
+            0x0031: [ req:"req", acc:"rw-", name:"White Point Y" ],
+            0x0032: [ req:"opt", acc:"rw-", name:"Color Point R X" ],
+            0x0033: [ req:"opt", acc:"rw-", name:"Color Point R Y" ],
+            0x0034: [ req:"opt", acc:"rw-", name:"Color Point R Intensity" ],
+            0x0036: [ req:"req", acc:"rw-", name:"Color Point G X" ],
+            0x0037: [ req:"req", acc:"rw-", name:"Color Point G Y" ],
+            0x0038: [ req:"req", acc:"rw-", name:"Color Point G Intensity" ],
+            0x003A: [ req:"req", acc:"rw-", name:"Color Point B X" ],
+            0x003B: [ req:"req", acc:"rw-", name:"Color Point B Y" ],
+            0x003C: [ req:"req", acc:"rw-", name:"Color Point B Intensity" ],
 
-            0x4000: [ req:"Yes", acc:"R--", name:"Enhanced Current Hue" ],
-            0x4001: [ req:"Yes", acc:"R--", name:"Enhanced Color Mode" ],
-            0x4002: [ req:"Yes", acc:"R--", name:"Color Loop Active" ],
-            0x4003: [ req:"Yes", acc:"R--", name:"Color Loop Direction" ],
-            0x4004: [ req:"Yes", acc:"R--", name:"Color Loop Time" ],
-            0x4005: [ req:"Yes", acc:"R--", name:"Color Loop Start Enhanced Hue" ],
-            0x4006: [ req:"Yes", acc:"R--", name:"Color Loop Stored Enhanced Hue" ],
-            0x400A: [ req:"Yes", acc:"R--", name:"Color Capabilities" ],
-            0x400B: [ req:"Yes", acc:"R--", name:"Color Temp Physical Min Mireds" ],
-            0x400C: [ req:"Yes", acc:"R--", name:"Color Temp Physical Max Mireds" ],
-            0x4010: [ req:"No", acc:"RW-", name:"StartUp Color Temperature Mireds" ]
+            0x4000: [ req:"req", acc:"r--", name:"Enhanced Current Hue" ],
+            0x4001: [ req:"req", acc:"r--", name:"Enhanced Color Mode" ],
+            0x4002: [ req:"req", acc:"r--", name:"Color Loop Active" ],
+            0x4003: [ req:"req", acc:"r--", name:"Color Loop Direction" ],
+            0x4004: [ req:"req", acc:"r--", name:"Color Loop Time" ],
+            0x4005: [ req:"req", acc:"r--", name:"Color Loop Start Enhanced Hue" ],
+            0x4006: [ req:"req", acc:"r--", name:"Color Loop Stored Enhanced Hue" ],
+            0x400A: [ req:"req", acc:"r--", name:"Color Capabilities" ],
+            0x400B: [ req:"req", acc:"r--", name:"Color Temp Physical Min Mireds" ],
+            0x400C: [ req:"req", acc:"r--", name:"Color Temp Physical Max Mireds" ],
+            0x4010: [ req:"opt", acc:"rw-", name:"StartUp Color Temperature Mireds" ]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Move to Hue" ],
-            0x01: [ req:"Yes", name:"Move Hue" ],
-            0x02: [ req:"Yes", name:"Step Hue" ],
-            0x03: [ req:"Yes", name:"Move to Saturation" ],
-            0x04: [ req:"Yes", name:"Move Saturation" ],
-            0x05: [ req:"Yes", name:"Step Saturation" ],
-            0x06: [ req:"Yes", name:"Move to Hue and Saturation" ],
-            0x07: [ req:"Yes", name:"Move to Color" ],
-            0x08: [ req:"Yes", name:"Move Color" ],
-            0x09: [ req:"Yes", name:"Step Color" ],
-            0x0A: [ req:"Yes", name:"Move to Color Temperature" ],
+            0x00: [ req:"req", name:"Move to Hue" ],
+            0x01: [ req:"req", name:"Move Hue" ],
+            0x02: [ req:"req", name:"Step Hue" ],
+            0x03: [ req:"req", name:"Move to Saturation" ],
+            0x04: [ req:"req", name:"Move Saturation" ],
+            0x05: [ req:"req", name:"Step Saturation" ],
+            0x06: [ req:"req", name:"Move to Hue and Saturation" ],
+            0x07: [ req:"req", name:"Move to Color" ],
+            0x08: [ req:"req", name:"Move Color" ],
+            0x09: [ req:"req", name:"Step Color" ],
+            0x0A: [ req:"req", name:"Move to Color Temperature" ],
             
-            0x40: [ req:"Yes", name:"Enhanced Move to Hue" ],
-            0x41: [ req:"Yes", name:"Enhanced Move Hue" ],
-            0x42: [ req:"Yes", name:"Enhanced Step Hue" ],
-            0x43: [ req:"Yes", name:"Enhanced Move to Hue and Saturation" ],
-            0x44: [ req:"Yes", name:"Color Loop Set" ],
-            0x47: [ req:"Yes", name:"Stop Move Step" ],
-            0x4B: [ req:"Yes", name:"Move Color Temperature" ],
-            0x4C: [ req:"Yes", name:"Step Color Temperature" ]
+            0x40: [ req:"req", name:"Enhanced Move to Hue" ],
+            0x41: [ req:"req", name:"Enhanced Move Hue" ],
+            0x42: [ req:"req", name:"Enhanced Step Hue" ],
+            0x43: [ req:"req", name:"Enhanced Move to Hue and Saturation" ],
+            0x44: [ req:"req", name:"Color Loop Set" ],
+            0x47: [ req:"req", name:"Stop Move Step" ],
+            0x4B: [ req:"req", name:"Move Color Temperature" ],
+            0x4C: [ req:"req", name:"Step Color Temperature" ]
         ]
     ],
     0x0301: [
         name: "Ballast Configuration Cluster",
         attributes: [
-            0x0000: [ req:"No",  acc:"R--", name:"Physical Min Level" ],
-            0x0001: [ req:"No",  acc:"R--", name:"Physical Max Level" ],
-            0x0002: [ req:"Yes", acc:"R--", name:"Ballast Status" ],
+            0x0000: [ req:"opt", acc:"r--", name:"Physical Min Level" ],
+            0x0001: [ req:"opt", acc:"r--", name:"Physical Max Level" ],
+            0x0002: [ req:"req", acc:"r--", name:"Ballast Status" ],
 
-            0x0010: [ req:"No",  acc:"RW-", name:"Min Level" ],
-            0x0011: [ req:"No",  acc:"RW-", name:"Max Level" ],
-            0x0012: [ req:"No",  acc:"RW-", name:"Power On Level" ],
-            0x0013: [ req:"No",  acc:"RW-", name:"Power On Fade Time" ],
-            0x0014: [ req:"No",  acc:"RW-", name:"Intrinsic Ballast Factor" ],
-            0x0015: [ req:"No",  acc:"RW-", name:"Ballast Factor Adjustment" ],
+            0x0010: [ req:"opt", acc:"rw-", name:"Min Level" ],
+            0x0011: [ req:"opt", acc:"rw-", name:"Max Level" ],
+            0x0012: [ req:"opt", acc:"rw-", name:"Power On Level" ],
+            0x0013: [ req:"opt", acc:"rw-", name:"Power On Fade Time" ],
+            0x0014: [ req:"opt", acc:"rw-", name:"Intrinsic Ballast Factor" ],
+            0x0015: [ req:"opt", acc:"rw-", name:"Ballast Factor Adjustment" ],
             
-            0x0020: [ req:"No",  acc:"R--", name:"Lamp Quantity" ],
+            0x0020: [ req:"opt", acc:"r--", name:"Lamp Quantity" ],
             
-            0x0030: [ req:"No",  acc:"RW-", name:"Lamp Type" ],
-            0x0031: [ req:"No",  acc:"RW-", name:"Lamp Manufacturer" ],
-            0x0032: [ req:"No",  acc:"RW-", name:"Lamp Rated Hours" ],
-            0x0033: [ req:"No",  acc:"RW-", name:"Lamp Burn Hours" ],
-            0x0034: [ req:"No",  acc:"RW-", name:"Lamp Alarm Mode" ],
-            0x0035: [ req:"No",  acc:"RW-", name:"Lamp Burn Hours Trip Point" ]
+            0x0030: [ req:"opt", acc:"rw-", name:"Lamp Type" ],
+            0x0031: [ req:"opt", acc:"rw-", name:"Lamp Manufacturer" ],
+            0x0032: [ req:"opt", acc:"rw-", name:"Lamp Rated Hours" ],
+            0x0033: [ req:"opt", acc:"rw-", name:"Lamp Burn Hours" ],
+            0x0034: [ req:"opt", acc:"rw-", name:"Lamp Alarm Mode" ],
+            0x0035: [ req:"opt", acc:"rw-", name:"Lamp Burn Hours Trip Point" ]
         ]
     ],
     0x0400: [
         name: "Illuminance Measurement Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R--", name:"Measured Value" ],
-            0x0001: [ req:"Yes", acc:"RP-", name:"Min Measured Value" ],
-            0x0002: [ req:"Yes", acc:"R--", name:"Max Measured Value" ],
-            0x0003: [ req:"No",  acc:"R--", name:"Tolerance" ],
-            0x0004: [ req:"No",  acc:"R--", name:"Light Sensor Type" ]
+            0x0000: [ req:"req", acc:"r--", name:"Measured Value" ],
+            0x0001: [ req:"req", acc:"RP-", name:"Min Measured Value" ],
+            0x0002: [ req:"req", acc:"r--", name:"Max Measured Value" ],
+            0x0003: [ req:"opt", acc:"r--", name:"Tolerance" ],
+            0x0004: [ req:"opt", acc:"r--", name:"Light Sensor Type" ]
         ]
     ],
     0x0401: [
         name: "Illuminance Level Sensing Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R-P", name:"Level Status" ],
-            0x0001: [ req:"No",  acc:"R--", name:"Light Sensor Type" ],
+            0x0000: [ req:"req", acc:"r-p", name:"Level Status" ],
+            0x0001: [ req:"opt", acc:"r--", name:"Light Sensor Type" ],
 
-            0x0010: [ req:"Yes", acc:"RW-", name:"Illuminance Target Level" ]
+            0x0010: [ req:"req", acc:"rw-", name:"Illuminance Target Level" ]
         ]
     ],
     0x0402: [
         name: "Temperature Measurement Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R-P", name:"MeasuredValue", decorate: { value -> "${(Integer.parseInt(value, 16) / 100)} °C" }],
-            0x0001: [ req:"Yes", acc:"R--", name:"MinMeasuredValue" ],
-            0x0002: [ req:"Yes", acc:"R--", name:"MaxMeasuredValue" ],
-            0x0003: [ req:"No",  acc:"R-P", name:"Tolerance" ]
+            0x0000: [ req:"req", acc:"r-p", name:"MeasuredValue", decorate: { value -> "${(Integer.parseInt(value, 16) / 100)} °C" }],
+            0x0001: [ req:"req", acc:"r--", name:"MinMeasuredValue" ],
+            0x0002: [ req:"req", acc:"r--", name:"MaxMeasuredValue" ],
+            0x0003: [ req:"opt", acc:"r-p", name:"Tolerance" ]
         ]
     ],
     0x0403: [
         name: "Pressure Measurement Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R-P", name:"Measured Value" ],
-            0x0001: [ req:"Yes", acc:"R--", name:"Min Measured Value" ],
-            0x0002: [ req:"Yes", acc:"R--", name:"Max Measured Value" ],
-            0x0003: [ req:"No",  acc:"R-P", name:"Tolerance" ],
+            0x0000: [ req:"req", acc:"r-p", name:"Measured Value" ],
+            0x0001: [ req:"req", acc:"r--", name:"Min Measured Value" ],
+            0x0002: [ req:"req", acc:"r--", name:"Max Measured Value" ],
+            0x0003: [ req:"opt", acc:"r-p", name:"Tolerance" ],
 
-            0x0010: [ req:"No",  acc:"R--", name:"Scaled Value" ],
-            0x0011: [ req:"No",  acc:"R--", name:"Min Scaled Value" ],
-            0x0012: [ req:"No",  acc:"R--", name:"Max Scaled Value" ],
-            0x0013: [ req:"No",  acc:"R--", name:"Scaled Tolerance" ],
-            0x0014: [ req:"No",  acc:"R--", name:"Scale" ]
+            0x0010: [ req:"opt", acc:"r--", name:"Scaled Value" ],
+            0x0011: [ req:"opt", acc:"r--", name:"Min Scaled Value" ],
+            0x0012: [ req:"opt", acc:"r--", name:"Max Scaled Value" ],
+            0x0013: [ req:"opt", acc:"r--", name:"Scaled Tolerance" ],
+            0x0014: [ req:"opt", acc:"r--", name:"Scale" ]
         ]
     ],
     0x0404: [
         name: "Flow Measurement Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R-P", name:"Measured Value" ],
-            0x0001: [ req:"Yes", acc:"R--", name:"Min Measured Value" ],
-            0x0002: [ req:"Yes", acc:"R--", name:"Max Measured Value" ],
-            0x0003: [ req:"No",  acc:"R-P", name:"Tolerance" ]
+            0x0000: [ req:"req", acc:"r-p", name:"Measured Value" ],
+            0x0001: [ req:"req", acc:"r--", name:"Min Measured Value" ],
+            0x0002: [ req:"req", acc:"r--", name:"Max Measured Value" ],
+            0x0003: [ req:"opt", acc:"r-p", name:"Tolerance" ]
         ]
     ],
     0x0405: [
         name: "Relative Humidity Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R-P", name:"Measured Value", decorate: { value -> "${(Integer.parseInt(value, 16) / 100)}% RH" }],
-            0x0001: [ req:"Yes", acc:"R--", name:"Min Measured Value" ],
-            0x0002: [ req:"Yes", acc:"R--", name:"Max Measured Value" ],
-            0x0003: [ req:"No",  acc:"R-P", name:"Tolerance" ]
+            0x0000: [ req:"req", acc:"r-p", name:"Measured Value", decorate: { value -> "${(Integer.parseInt(value, 16) / 100)}% RH" }],
+            0x0001: [ req:"req", acc:"r--", name:"Min Measured Value" ],
+            0x0002: [ req:"req", acc:"r--", name:"Max Measured Value" ],
+            0x0003: [ req:"opt", acc:"r-p", name:"Tolerance" ]
         ]
     ],
     0x0406: [
         name: "Occupancy Sensing Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R-P", name:"Occupancy" ],
-            0x0001: [ req:"Yes", acc:"R--", name:"Occupancy Sensor Type" ],
+            0x0000: [ req:"req", acc:"r-p", name:"Occupancy" ],
+            0x0001: [ req:"req", acc:"r--", name:"Occupancy Sensor Type" ],
 
-            0x0010: [ req:"Yes", acc:"RW-", name:"PIR Occupied To Unoccupied Delay" ],
-            0x0011: [ req:"Yes", acc:"RW-", name:"PIR Unoccupied To Occupied Delay" ],
-            0x0012: [ req:"Yes", acc:"RW-", name:"PIR Unoccupied To Occupied Threshold" ],
+            0x0010: [ req:"req", acc:"rw-", name:"PIR Occupied To Unoccupied Delay" ],
+            0x0011: [ req:"req", acc:"rw-", name:"PIR Unoccupied To Occupied Delay" ],
+            0x0012: [ req:"req", acc:"rw-", name:"PIR Unoccupied To Occupied Threshold" ],
 
-            0x0020: [ req:"Yes", acc:"RW-", name:"Ultrasonic Occupied To Unoccupied Delay" ],
-            0x0021: [ req:"Yes", acc:"RW-", name:"Ultrasonic Unoccupied To Occupied Delay" ],
-            0x0022: [ req:"Yes", acc:"RW-", name:"Ultrasonic Unoccupied To Occupied Threshold" ]
+            0x0020: [ req:"req", acc:"rw-", name:"Ultrasonic Occupied To Unoccupied Delay" ],
+            0x0021: [ req:"req", acc:"rw-", name:"Ultrasonic Unoccupied To Occupied Delay" ],
+            0x0022: [ req:"req", acc:"rw-", name:"Ultrasonic Unoccupied To Occupied Threshold" ]
         ]
     ],
     0x0500: [
         name: "IAS Zone Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R--", name:"Zone State" ],
-            0x0001: [ req:"Yes", acc:"R--", name:"Zone Type" ],
-            0x0002: [ req:"Yes", acc:"R--", name:"Zone Status" ],
+            0x0000: [ req:"req", acc:"r--", name:"Zone State" ],
+            0x0001: [ req:"req", acc:"r--", name:"Zone Type" ],
+            0x0002: [ req:"req", acc:"r--", name:"Zone Status" ],
             
-            0x0010: [ req:"Yes", acc:"RW-", name:"IAS CIE Address" ],
-            0x0011: [ req:"Yes", acc:"R--", name:"Zone ID" ],
-            0x0012: [ req:"No",  acc:"R--", name:"Number Of Zone Sensitivity Levels Supported" ],
-            0x0013: [ req:"No",  acc:"RW-", name:"Current Zone Sensitivity Level" ]
+            0x0010: [ req:"req", acc:"rw-", name:"IAS CIE Address" ],
+            0x0011: [ req:"req", acc:"r--", name:"Zone ID" ],
+            0x0012: [ req:"opt", acc:"r--", name:"Number Of Zone Sensitivity Levels Supported" ],
+            0x0013: [ req:"opt", acc:"rw-", name:"Current Zone Sensitivity Level" ]
         ],
         commands: [
-            0x00: [ req:"Yes", name:"Zone Enroll Response" ],
-            0x01: [ req:"No",  name:"Initiate Normal Operation Mode" ],
-            0x02: [ req:"No",  name:"Initiate Test Mode" ]
+            0x00: [ req:"req", name:"Zone Enroll Response" ],
+            0x01: [ req:"opt", name:"Initiate Normal Operation Mode" ],
+            0x02: [ req:"opt", name:"Initiate Test Mode" ]
         ]
     ],
     0x0502: [
         name: "IAS WD Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"RW-", name:"Max Duration" ]
+            0x0000: [ req:"req", acc:"rw-", name:"Max Duration" ]
         ]
     ],
     0x0B01: [
         name: "Meter Identification Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R--", name:"Company Name" ],
-            0x0001: [ req:"Yes", acc:"R--", name:"Meter Type ID" ],
-            0x0004: [ req:"Yes", acc:"R--", name:"Data Quality ID" ],
-            0x0005: [ req:"No",  acc:"RW-", name:"Customer Name" ],
-            0x0006: [ req:"No",  acc:"R--", name:"Model" ],
-            0x0007: [ req:"No",  acc:"R--", name:"Part Number" ],
-            0x0008: [ req:"No",  acc:"R--", name:"Product Revision" ],
-            0x000A: [ req:"Yes", acc:"R--", name:"Software Revision" ],
-            0x000B: [ req:"No",  acc:"R--", name:"Utility Name" ],
-            0x000C: [ req:"Yes", acc:"R--", name:"POD" ],
-            0x000D: [ req:"Yes", acc:"R--", name:"Available Power" ],
-            0x000E: [ req:"Yes", acc:"R--", name:"Power Threshold" ]
+            0x0000: [ req:"req", acc:"r--", name:"Company Name" ],
+            0x0001: [ req:"req", acc:"r--", name:"Meter Type ID" ],
+            0x0004: [ req:"req", acc:"r--", name:"Data Quality ID" ],
+            0x0005: [ req:"opt", acc:"rw-", name:"Customer Name" ],
+            0x0006: [ req:"opt", acc:"r--", name:"Model" ],
+            0x0007: [ req:"opt", acc:"r--", name:"Part Number" ],
+            0x0008: [ req:"opt", acc:"r--", name:"Product Revision" ],
+            0x000A: [ req:"req", acc:"r--", name:"Software Revision" ],
+            0x000B: [ req:"opt", acc:"r--", name:"Utility Name" ],
+            0x000C: [ req:"req", acc:"r--", name:"POD" ],
+            0x000D: [ req:"req", acc:"r--", name:"Available Power" ],
+            0x000E: [ req:"req", acc:"r--", name:"Power Threshold" ]
         ]
     ],
     0x0B04: [
         name: "Electrical Measurement Cluster",
         attributes: [
-            0x0000: [ req:"Yes", acc:"R--", name:"Measurement Type" ],
+            0x0000: [ req:"req", acc:"r--", name:"Measurement Type" ],
             
-            0x0100: [ req:"No",  acc:"R--", name:"DC Voltage" ],
-            0x0101: [ req:"No",  acc:"R--", name:"DC Voltage Min" ],
-            0x0102: [ req:"No",  acc:"R--", name:"DC Voltage Max" ],
-            0x0103: [ req:"No",  acc:"R--", name:"DC Current" ],
-            0x0104: [ req:"No",  acc:"R--", name:"DC Current Min" ],
-            0x0105: [ req:"No",  acc:"R--", name:"DC Current Max" ],
-            0x0106: [ req:"No",  acc:"R--", name:"DC Power" ],
-            0x0107: [ req:"No",  acc:"R--", name:"DC Power Min" ],
-            0x0108: [ req:"No",  acc:"R--", name:"DC Power Max" ],
+            0x0100: [ req:"opt", acc:"r--", name:"DC Voltage" ],
+            0x0101: [ req:"opt", acc:"r--", name:"DC Voltage Min" ],
+            0x0102: [ req:"opt", acc:"r--", name:"DC Voltage Max" ],
+            0x0103: [ req:"opt", acc:"r--", name:"DC Current" ],
+            0x0104: [ req:"opt", acc:"r--", name:"DC Current Min" ],
+            0x0105: [ req:"opt", acc:"r--", name:"DC Current Max" ],
+            0x0106: [ req:"opt", acc:"r--", name:"DC Power" ],
+            0x0107: [ req:"opt", acc:"r--", name:"DC Power Min" ],
+            0x0108: [ req:"opt", acc:"r--", name:"DC Power Max" ],
             
-            0x0200: [ req:"No",  acc:"R--", name:"DC Voltage Multiplier" ],
-            0x0201: [ req:"No",  acc:"R--", name:"DC Voltage Divisor" ],
-            0x0202: [ req:"No",  acc:"R--", name:"DC Current Multiplier" ],
-            0x0203: [ req:"No",  acc:"R--", name:"DC Current Divisor" ],
-            0x0204: [ req:"No",  acc:"R--", name:"DC Power Multiplier" ],
-            0x0205: [ req:"No",  acc:"R--", name:"DC Power Divisor" ],
+            0x0200: [ req:"opt", acc:"r--", name:"DC Voltage Multiplier" ],
+            0x0201: [ req:"opt", acc:"r--", name:"DC Voltage Divisor" ],
+            0x0202: [ req:"opt", acc:"r--", name:"DC Current Multiplier" ],
+            0x0203: [ req:"opt", acc:"r--", name:"DC Current Divisor" ],
+            0x0204: [ req:"opt", acc:"r--", name:"DC Power Multiplier" ],
+            0x0205: [ req:"opt", acc:"r--", name:"DC Power Divisor" ],
             
-            0x0300: [ req:"No",  acc:"R--", name:"ACFrequency" ],
-            0x0301: [ req:"No",  acc:"R--", name:"ACFrequencyMin" ],
-            0x0302: [ req:"No",  acc:"R--", name:"ACFrequencyMax" ],
-            0x0303: [ req:"No",  acc:"R--", name:"NeutralCurrent" ],
-            0x0304: [ req:"No",  acc:"R--", name:"TotalActivePower" ],
-            0x0305: [ req:"No",  acc:"R--", name:"TotalReactivePower" ],
-            0x0306: [ req:"No",  acc:"R--", name:"TotalApparentPower" ],
+            0x0300: [ req:"opt", acc:"r--", name:"ACFrequency" ],
+            0x0301: [ req:"opt", acc:"r--", name:"ACFrequencyMin" ],
+            0x0302: [ req:"opt", acc:"r--", name:"ACFrequencyMax" ],
+            0x0303: [ req:"opt", acc:"r--", name:"NeutralCurrent" ],
+            0x0304: [ req:"opt", acc:"r--", name:"TotalActivePower" ],
+            0x0305: [ req:"opt", acc:"r--", name:"TotalReactivePower" ],
+            0x0306: [ req:"opt", acc:"r--", name:"TotalApparentPower" ],
             
-            0x0400: [ req:"No",  acc:"R--", name:"AC Frequency Multiplier" ],
-            0x0401: [ req:"No",  acc:"R--", name:"AC Frequency Divisor" ],
-            0x0402: [ req:"No",  acc:"R--", name:"Power Multiplier" ],
-            0x0403: [ req:"No",  acc:"R--", name:"Power Divisor" ],
-            0x0404: [ req:"No",  acc:"R--", name:"Harmonic Current Multiplier" ],
-            0x0405: [ req:"No",  acc:"R--", name:"Phase Harmonic Current Multiplier" ],
+            0x0400: [ req:"opt", acc:"r--", name:"AC Frequency Multiplier" ],
+            0x0401: [ req:"opt", acc:"r--", name:"AC Frequency Divisor" ],
+            0x0402: [ req:"opt", acc:"r--", name:"Power Multiplier" ],
+            0x0403: [ req:"opt", acc:"r--", name:"Power Divisor" ],
+            0x0404: [ req:"opt", acc:"r--", name:"Harmonic Current Multiplier" ],
+            0x0405: [ req:"opt", acc:"r--", name:"Phase Harmonic Current Multiplier" ],
             
-            0x0500: [ req:"No",  acc:"R--", name:"Reserved" ],
-            0x0501: [ req:"No",  acc:"R--", name:"Line Current" ],
-            0x0502: [ req:"No",  acc:"R--", name:"Active Current" ],
-            0x0503: [ req:"No",  acc:"R--", name:"Reactive Current" ],
-            0x0505: [ req:"No",  acc:"R--", name:"RMS Voltage" ],
-            0x0506: [ req:"No",  acc:"R--", name:"RMS Voltag eMin" ],
-            0x0507: [ req:"No",  acc:"R--", name:"RMS Voltage Max" ],
-            0x0508: [ req:"No",  acc:"R--", name:"RMS Current" ],
-            0x0509: [ req:"No",  acc:"R--", name:"RMS Current Min" ],
-            0x050A: [ req:"No",  acc:"R--", name:"RMS Current Max" ],
-            0x050B: [ req:"No",  acc:"R--", name:"Active Power" ],
-            0x050C: [ req:"No",  acc:"R--", name:"Active Power Min" ],
-            0x050D: [ req:"No",  acc:"R--", name:"Active Power Max" ],
-            0x050E: [ req:"No",  acc:"R--", name:"Reactive Power" ],
-            0x050F: [ req:"No",  acc:"R--", name:"Apparent Power" ],
-            0x0510: [ req:"No",  acc:"R--", name:"Power Factor" ],
-            0x0511: [ req:"No",  acc:"RW-", name:"Average RMS Voltage Measurement Period" ],
-            0x0512: [ req:"No",  acc:"RW-", name:"Average RMS Over Voltage Counter" ],
-            0x0513: [ req:"No",  acc:"RW-", name:"Average RMS Under Voltage Counter" ],
-            0x0514: [ req:"No",  acc:"RW-", name:"RMS Extreme Over Voltage Period" ],
-            0x0515: [ req:"No",  acc:"RW-", name:"RMS Extreme Under Voltage Period" ],
-            0x0516: [ req:"No",  acc:"RW-", name:"RMS Voltage Sag Period" ],
-            0x0517: [ req:"No",  acc:"RW-", name:"RMS Voltage Swell Period" ],
+            0x0500: [ req:"opt", acc:"r--", name:"Reserved" ],
+            0x0501: [ req:"opt", acc:"r--", name:"Line Current" ],
+            0x0502: [ req:"opt", acc:"r--", name:"Active Current" ],
+            0x0503: [ req:"opt", acc:"r--", name:"Reactive Current" ],
+            0x0505: [ req:"opt", acc:"r--", name:"RMS Voltage" ],
+            0x0506: [ req:"opt", acc:"r--", name:"RMS Voltag eMin" ],
+            0x0507: [ req:"opt", acc:"r--", name:"RMS Voltage Max" ],
+            0x0508: [ req:"opt", acc:"r--", name:"RMS Current" ],
+            0x0509: [ req:"opt", acc:"r--", name:"RMS Current Min" ],
+            0x050A: [ req:"opt", acc:"r--", name:"RMS Current Max" ],
+            0x050B: [ req:"opt", acc:"r--", name:"Active Power" ],
+            0x050C: [ req:"opt", acc:"r--", name:"Active Power Min" ],
+            0x050D: [ req:"opt", acc:"r--", name:"Active Power Max" ],
+            0x050E: [ req:"opt", acc:"r--", name:"Reactive Power" ],
+            0x050F: [ req:"opt", acc:"r--", name:"Apparent Power" ],
+            0x0510: [ req:"opt", acc:"r--", name:"Power Factor" ],
+            0x0511: [ req:"opt", acc:"rw-", name:"Average RMS Voltage Measurement Period" ],
+            0x0512: [ req:"opt", acc:"rw-", name:"Average RMS Over Voltage Counter" ],
+            0x0513: [ req:"opt", acc:"rw-", name:"Average RMS Under Voltage Counter" ],
+            0x0514: [ req:"opt", acc:"rw-", name:"RMS Extreme Over Voltage Period" ],
+            0x0515: [ req:"opt", acc:"rw-", name:"RMS Extreme Under Voltage Period" ],
+            0x0516: [ req:"opt", acc:"rw-", name:"RMS Voltage Sag Period" ],
+            0x0517: [ req:"opt", acc:"rw-", name:"RMS Voltage Swell Period" ],
 
-            0x0600: [ req:"No",  acc:"R--", name:"AC Voltage Multiplier" ],
-            0x0601: [ req:"No",  acc:"R--", name:"AC Voltage Divisor" ],
-            0x0602: [ req:"No",  acc:"R--", name:"AC Current Multiplier" ],
-            0x0603: [ req:"No",  acc:"R--", name:"AC Current Divisor" ],
-            0x0604: [ req:"No",  acc:"R--", name:"AC Power Multiplier" ],
-            0x0605: [ req:"No",  acc:"R--", name:"AC Power Divisor" ],
+            0x0600: [ req:"opt", acc:"r--", name:"AC Voltage Multiplier" ],
+            0x0601: [ req:"opt", acc:"r--", name:"AC Voltage Divisor" ],
+            0x0602: [ req:"opt", acc:"r--", name:"AC Current Multiplier" ],
+            0x0603: [ req:"opt", acc:"r--", name:"AC Current Divisor" ],
+            0x0604: [ req:"opt", acc:"r--", name:"AC Power Multiplier" ],
+            0x0605: [ req:"opt", acc:"r--", name:"AC Power Divisor" ],
 
-            0x0700: [ req:"No",  acc:"RW-", name:"DC Overload Alarms Mask" ],
-            0x0701: [ req:"No",  acc:"R--", name:"DC Voltage Overload" ],
-            0x0702: [ req:"No",  acc:"R--", name:"DC Current Overload" ],
+            0x0700: [ req:"opt", acc:"rw-", name:"DC Overload Alarms Mask" ],
+            0x0701: [ req:"opt", acc:"r--", name:"DC Voltage Overload" ],
+            0x0702: [ req:"opt", acc:"r--", name:"DC Current Overload" ],
 
-            0x0800: [ req:"No",  acc:"RW-", name:"AC Alarms Mask" ],
-            0x0801: [ req:"No",  acc:"R--", name:"AC Voltage Overload" ],
-            0x0802: [ req:"No",  acc:"R--", name:"AC Current Overload" ],
-            0x0803: [ req:"No",  acc:"R--", name:"AC Active Power Overload" ],
-            0x0804: [ req:"No",  acc:"R--", name:"AC Reactive Power Overload" ],
-            0x0805: [ req:"No",  acc:"R--", name:"Average RMS Over Voltage" ],
-            0x0806: [ req:"No",  acc:"R--", name:"Average RMS Under Voltage" ],
-            0x0807: [ req:"No",  acc:"RW-", name:"RMS Extreme Over Voltage" ],
-            0x0808: [ req:"No",  acc:"RW-", name:"RMS Extreme Unde rVoltage" ],
-            0x0809: [ req:"No",  acc:"RW-", name:"RMS Voltage Sag" ],
-            0x080A: [ req:"No",  acc:"RW-", name:"RMS Voltage Swell" ],
+            0x0800: [ req:"opt", acc:"rw-", name:"AC Alarms Mask" ],
+            0x0801: [ req:"opt", acc:"r--", name:"AC Voltage Overload" ],
+            0x0802: [ req:"opt", acc:"r--", name:"AC Current Overload" ],
+            0x0803: [ req:"opt", acc:"r--", name:"AC Active Power Overload" ],
+            0x0804: [ req:"opt", acc:"r--", name:"AC Reactive Power Overload" ],
+            0x0805: [ req:"opt", acc:"r--", name:"Average RMS Over Voltage" ],
+            0x0806: [ req:"opt", acc:"r--", name:"Average RMS Under Voltage" ],
+            0x0807: [ req:"opt", acc:"rw-", name:"RMS Extreme Over Voltage" ],
+            0x0808: [ req:"opt", acc:"rw-", name:"RMS Extreme Unde rVoltage" ],
+            0x0809: [ req:"opt", acc:"rw-", name:"RMS Voltage Sag" ],
+            0x080A: [ req:"opt", acc:"rw-", name:"RMS Voltage Swell" ],
 
-            0x0901: [ req:"No",  acc:"R--", name:"Line Current PhB" ],
-            0x0902: [ req:"No",  acc:"R--", name:"Active Current PhB" ],
-            0x0903: [ req:"No",  acc:"R--", name:"Reactive Current PhB" ],
-            0x0905: [ req:"No",  acc:"R--", name:"RMS Voltage PhB" ],
-            0x0906: [ req:"No",  acc:"R--", name:"RMS Voltage Min PhB" ],
-            0x0907: [ req:"No",  acc:"R--", name:"RMS Voltage Max PhB" ],
-            0x0908: [ req:"No",  acc:"R--", name:"RMS Current PhB" ],
-            0x0909: [ req:"No",  acc:"R--", name:"RMS Current Min PhB" ],
-            0x090A: [ req:"No",  acc:"R--", name:"RMS Current Max PhB" ],
-            0x090B: [ req:"No",  acc:"R--", name:"Active Power PhB" ],
-            0x090C: [ req:"No",  acc:"R--", name:"Active PowerMin PhB" ],
-            0x090D: [ req:"No",  acc:"R--", name:"Active PowerMax PhB" ],
-            0x090E: [ req:"No",  acc:"R--", name:"Reactive Power PhB" ],
-            0x090F: [ req:"No",  acc:"R--", name:"Apparent Power PhB" ],
-            0x0910: [ req:"No",  acc:"R--", name:"Power Factor PhB" ],
-            0x0911: [ req:"No",  acc:"RW-", name:"Average RMS Voltage Measurement Period PhB" ],
-            0x0912: [ req:"No",  acc:"RW-", name:"Average RMS Over Voltage Counter PhB" ],
-            0x0913: [ req:"No",  acc:"RW-", name:"Average RMS Under Voltage Counter PhB" ],
-            0x0914: [ req:"No",  acc:"RW-", name:"RMS Extreme Over Voltage Period PhB" ],
-            0x0915: [ req:"No",  acc:"RW-", name:"RMS Extreme Under Voltage Period PhB" ],
-            0x0916: [ req:"No",  acc:"RW-", name:"RMS Voltage Sag Period PhB" ],
-            0x0917: [ req:"No",  acc:"RW-", name:"RMS Voltage Swell Period PhB" ],
+            0x0901: [ req:"opt", acc:"r--", name:"Line Current PhB" ],
+            0x0902: [ req:"opt", acc:"r--", name:"Active Current PhB" ],
+            0x0903: [ req:"opt", acc:"r--", name:"Reactive Current PhB" ],
+            0x0905: [ req:"opt", acc:"r--", name:"RMS Voltage PhB" ],
+            0x0906: [ req:"opt", acc:"r--", name:"RMS Voltage Min PhB" ],
+            0x0907: [ req:"opt", acc:"r--", name:"RMS Voltage Max PhB" ],
+            0x0908: [ req:"opt", acc:"r--", name:"RMS Current PhB" ],
+            0x0909: [ req:"opt", acc:"r--", name:"RMS Current Min PhB" ],
+            0x090A: [ req:"opt", acc:"r--", name:"RMS Current Max PhB" ],
+            0x090B: [ req:"opt", acc:"r--", name:"Active Power PhB" ],
+            0x090C: [ req:"opt", acc:"r--", name:"Active PowerMin PhB" ],
+            0x090D: [ req:"opt", acc:"r--", name:"Active PowerMax PhB" ],
+            0x090E: [ req:"opt", acc:"r--", name:"Reactive Power PhB" ],
+            0x090F: [ req:"opt", acc:"r--", name:"Apparent Power PhB" ],
+            0x0910: [ req:"opt", acc:"r--", name:"Power Factor PhB" ],
+            0x0911: [ req:"opt", acc:"rw-", name:"Average RMS Voltage Measurement Period PhB" ],
+            0x0912: [ req:"opt", acc:"rw-", name:"Average RMS Over Voltage Counter PhB" ],
+            0x0913: [ req:"opt", acc:"rw-", name:"Average RMS Under Voltage Counter PhB" ],
+            0x0914: [ req:"opt", acc:"rw-", name:"RMS Extreme Over Voltage Period PhB" ],
+            0x0915: [ req:"opt", acc:"rw-", name:"RMS Extreme Under Voltage Period PhB" ],
+            0x0916: [ req:"opt", acc:"rw-", name:"RMS Voltage Sag Period PhB" ],
+            0x0917: [ req:"opt", acc:"rw-", name:"RMS Voltage Swell Period PhB" ],
 
-            0x0A01: [ req:"No",  acc:"R--", name:"Line Current PhC" ],
-            0x0A02: [ req:"No",  acc:"R--", name:"Active Current PhC" ],
-            0x0A03: [ req:"No",  acc:"R--", name:"Reactive Current PhC" ],
-            0x0A05: [ req:"No",  acc:"R--", name:"RMS Voltage PhC" ],
-            0x0A06: [ req:"No",  acc:"R--", name:"RMS Voltage Min PhC" ],
-            0x0A07: [ req:"No",  acc:"R--", name:"RMS Voltage Max PhC" ],
-            0x0A08: [ req:"No",  acc:"R--", name:"RMS Current PhC" ],
-            0x0A09: [ req:"No",  acc:"R--", name:"RMS Current Min PhC" ],
-            0x0A0A: [ req:"No",  acc:"R--", name:"RMS Current Max PhC" ],
-            0x0A0B: [ req:"No",  acc:"R--", name:"Active Power PhC" ],
-            0x0A0C: [ req:"No",  acc:"R--", name:"Active Power Min PhC" ],
-            0x0A0D: [ req:"No",  acc:"R--", name:"Active Power Max PhC" ],
-            0x0A0E: [ req:"No",  acc:"R--", name:"Reactive Power PhC" ],
-            0x0A0F: [ req:"No",  acc:"R--", name:"Apparent Power PhC" ],
-            0x0A10: [ req:"No",  acc:"R--", name:"Power Factor PhC" ],
-            0x0A11: [ req:"No",  acc:"RW-", name:"Average RMS Voltage Measurement Period PhC" ],
-            0x0A12: [ req:"No",  acc:"RW-", name:"Average RMS Over Voltage Counter PhC" ],
-            0x0A13: [ req:"No",  acc:"RW-", name:"Average RMS Under Voltage Counter PhC" ],
-            0x0A14: [ req:"No",  acc:"RW-", name:"RMS Extreme Over Voltage Period PhC" ],
-            0x0A15: [ req:"No",  acc:"RW-", name:"RMS Extreme Under Voltage Period PhC" ],
-            0x0A16: [ req:"No",  acc:"RW-", name:"RMS Voltage Sag Period PhC" ],
-            0x0A17: [ req:"No",  acc:"RW-", name:"RMS Voltage Swell Period PhC" ]
+            0x0A01: [ req:"opt", acc:"r--", name:"Line Current PhC" ],
+            0x0A02: [ req:"opt", acc:"r--", name:"Active Current PhC" ],
+            0x0A03: [ req:"opt", acc:"r--", name:"Reactive Current PhC" ],
+            0x0A05: [ req:"opt", acc:"r--", name:"RMS Voltage PhC" ],
+            0x0A06: [ req:"opt", acc:"r--", name:"RMS Voltage Min PhC" ],
+            0x0A07: [ req:"opt", acc:"r--", name:"RMS Voltage Max PhC" ],
+            0x0A08: [ req:"opt", acc:"r--", name:"RMS Current PhC" ],
+            0x0A09: [ req:"opt", acc:"r--", name:"RMS Current Min PhC" ],
+            0x0A0A: [ req:"opt", acc:"r--", name:"RMS Current Max PhC" ],
+            0x0A0B: [ req:"opt", acc:"r--", name:"Active Power PhC" ],
+            0x0A0C: [ req:"opt", acc:"r--", name:"Active Power Min PhC" ],
+            0x0A0D: [ req:"opt", acc:"r--", name:"Active Power Max PhC" ],
+            0x0A0E: [ req:"opt", acc:"r--", name:"Reactive Power PhC" ],
+            0x0A0F: [ req:"opt", acc:"r--", name:"Apparent Power PhC" ],
+            0x0A10: [ req:"opt", acc:"r--", name:"Power Factor PhC" ],
+            0x0A11: [ req:"opt", acc:"rw-", name:"Average RMS Voltage Measurement Period PhC" ],
+            0x0A12: [ req:"opt", acc:"rw-", name:"Average RMS Over Voltage Counter PhC" ],
+            0x0A13: [ req:"opt", acc:"rw-", name:"Average RMS Under Voltage Counter PhC" ],
+            0x0A14: [ req:"opt", acc:"rw-", name:"RMS Extreme Over Voltage Period PhC" ],
+            0x0A15: [ req:"opt", acc:"rw-", name:"RMS Extreme Under Voltage Period PhC" ],
+            0x0A16: [ req:"opt", acc:"rw-", name:"RMS Voltage Sag Period PhC" ],
+            0x0A17: [ req:"opt", acc:"rw-", name:"RMS Voltage Swell Period PhC" ]
         ],
         commands: [
-            0x00: [ req:"No",  name:"Get Profile Info Response" ],
-            0x01: [ req:"No",  name:"Get Measurement Profile Response" ]
+            0x00: [ req:"opt", name:"Get Profile Info Response" ],
+            0x01: [ req:"opt", name:"Get Measurement Profile Response" ]
         ]
     ],
     0x0B05: [
         name: "Diagnostics Cluster",
         attributes: [
-            0x0000: [ req:"No",  acc:"R--", name:"Number Of Resets" ],
-            0x0001: [ req:"No",  acc:"R--", name:"Persistent Memory Writes" ],
+            0x0000: [ req:"opt", acc:"r--", name:"Number Of Resets" ],
+            0x0001: [ req:"opt", acc:"r--", name:"Persistent Memory Writes" ],
 
-            0x0100: [ req:"No",  acc:"R--", name:"Mac Rx Bcast" ],
-            0x0101: [ req:"No",  acc:"R--", name:"Mac Tx Bcast" ],
-            0x0102: [ req:"No",  acc:"R--", name:"Mac Rx Ucast" ],
-            0x0103: [ req:"No",  acc:"R--", name:"Mac Tx Ucast" ],
-            0x0104: [ req:"No",  acc:"R--", name:"Mac Tx Ucast Retry" ],
-            0x0105: [ req:"No",  acc:"R--", name:"Mac Tx Ucast Fail" ],
-            0x0106: [ req:"No",  acc:"R--", name:"APS Rx Bcast" ],
-            0x0107: [ req:"No",  acc:"R--", name:"APS Tx Bcast" ],
-            0x0108: [ req:"No",  acc:"R--", name:"APS Rx Ucast" ],
-            0x0109: [ req:"No",  acc:"R--", name:"APS Tx Ucast Success" ],
-            0x010A: [ req:"No",  acc:"R--", name:"APS Tx Ucast Retry" ],
-            0x010B: [ req:"No",  acc:"R--", name:"APS Tx Ucast Fail" ],
-            0x010C: [ req:"No",  acc:"R--", name:"Route Disc Initiated" ],
-            0x010D: [ req:"No",  acc:"R--", name:"Neighbor Added" ],
-            0x010E: [ req:"No",  acc:"R--", name:"Neighbor Removed" ],
-            0x010F: [ req:"No",  acc:"R--", name:"Neighbor Stale" ],
-            0x0110: [ req:"No",  acc:"R--", name:"Join Indication" ],
-            0x0111: [ req:"No",  acc:"R--", name:"Child Moved" ],
-            0x0112: [ req:"No",  acc:"R--", name:"NWK FC Failure" ],
-            0x0113: [ req:"No",  acc:"R--", name:"APS FC Failure" ],
-            0x0114: [ req:"No",  acc:"R--", name:"APS Unauthorized Key" ],
-            0x0115: [ req:"No",  acc:"R--", name:"NWK Decrypt Failures" ],
-            0x0116: [ req:"No",  acc:"R--", name:"APS Decrypt Failures" ],
-            0x0117: [ req:"No",  acc:"R--", name:"Packet Buffer Allocate Failures" ],
-            0x0118: [ req:"No",  acc:"R--", name:"Relayed Ucast" ],
-            0x0119: [ req:"No",  acc:"R--", name:"Phyto MAC Queue Limit Reached" ],
-            0x011A: [ req:"No",  acc:"R--", name:"Packet Validate Drop Count" ],
-            0x011B: [ req:"No",  acc:"R--", name:"Average MAC Retry Per APS Message Sent" ],
-            0x011C: [ req:"No",  acc:"R--", name:"Last Message LQI" ],
-            0x011D: [ req:"No",  acc:"R--", name:"Last Message RSSI" ]
+            0x0100: [ req:"opt", acc:"r--", name:"Mac Rx Bcast" ],
+            0x0101: [ req:"opt", acc:"r--", name:"Mac Tx Bcast" ],
+            0x0102: [ req:"opt", acc:"r--", name:"Mac Rx Ucast" ],
+            0x0103: [ req:"opt", acc:"r--", name:"Mac Tx Ucast" ],
+            0x0104: [ req:"opt", acc:"r--", name:"Mac Tx Ucast Retry" ],
+            0x0105: [ req:"opt", acc:"r--", name:"Mac Tx Ucast Fail" ],
+            0x0106: [ req:"opt", acc:"r--", name:"APS Rx Bcast" ],
+            0x0107: [ req:"opt", acc:"r--", name:"APS Tx Bcast" ],
+            0x0108: [ req:"opt", acc:"r--", name:"APS Rx Ucast" ],
+            0x0109: [ req:"opt", acc:"r--", name:"APS Tx Ucast Success" ],
+            0x010A: [ req:"opt", acc:"r--", name:"APS Tx Ucast Retry" ],
+            0x010B: [ req:"opt", acc:"r--", name:"APS Tx Ucast Fail" ],
+            0x010C: [ req:"opt", acc:"r--", name:"Route Disc Initiated" ],
+            0x010D: [ req:"opt", acc:"r--", name:"Neighbor Added" ],
+            0x010E: [ req:"opt", acc:"r--", name:"Neighbor Removed" ],
+            0x010F: [ req:"opt", acc:"r--", name:"Neighbor Stale" ],
+            0x0110: [ req:"opt", acc:"r--", name:"Join Indication" ],
+            0x0111: [ req:"opt", acc:"r--", name:"Child Moved" ],
+            0x0112: [ req:"opt", acc:"r--", name:"NWK FC Failure" ],
+            0x0113: [ req:"opt", acc:"r--", name:"APS FC Failure" ],
+            0x0114: [ req:"opt", acc:"r--", name:"APS Unauthorized Key" ],
+            0x0115: [ req:"opt", acc:"r--", name:"NWK Decrypt Failures" ],
+            0x0116: [ req:"opt", acc:"r--", name:"APS Decrypt Failures" ],
+            0x0117: [ req:"opt", acc:"r--", name:"Packet Buffer Allocate Failures" ],
+            0x0118: [ req:"opt", acc:"r--", name:"Relayed Ucast" ],
+            0x0119: [ req:"opt", acc:"r--", name:"Phyto MAC Queue Limit Reached" ],
+            0x011A: [ req:"opt", acc:"r--", name:"Packet Validate Drop Count" ],
+            0x011B: [ req:"opt", acc:"r--", name:"Average MAC Retry Per APS Message Sent" ],
+            0x011C: [ req:"opt", acc:"r--", name:"Last Message LQI" ],
+            0x011D: [ req:"opt", acc:"r--", name:"Last Message RSSI" ]
         ]
     ],
     0x1000: [
         name: "ZLL/Touchlink Commissioning Cluster",
         commands: [
-            0x00: [ req:"Yes", name:"Scan" ],
-            0x02: [ req:"Yes", name:"Device Information" ],
-            0x06: [ req:"Yes", name:"Identify" ],
-            0x07: [ req:"Yes", name:"Reset to Factory New" ],
-            0x10: [ req:"Yes", name:"Network Start" ],
-            0x12: [ req:"Yes", name:"Network Join Router" ],
-            0x14: [ req:"Yes", name:"Network Join End-Device" ],
-            0x16: [ req:"Yes", name:"Network Update" ],
-            0x41: [ req:"No",  name:"Get Group Identifiers" ],
-            0x42: [ req:"No",  name:"Get Endpoint List" ]
+            0x00: [ req:"req", name:"Scan" ],
+            0x02: [ req:"req", name:"Device Information" ],
+            0x06: [ req:"req", name:"Identify" ],
+            0x07: [ req:"req", name:"Reset to Factory New" ],
+            0x10: [ req:"req", name:"Network Start" ],
+            0x12: [ req:"req", name:"Network Join Router" ],
+            0x14: [ req:"req", name:"Network Join End-Device" ],
+            0x16: [ req:"req", name:"Network Update" ],
+            0x41: [ req:"opt", name:"Get Group Identifiers" ],
+            0x42: [ req:"opt", name:"Get Endpoint List" ]
         ]
     ]
 ]

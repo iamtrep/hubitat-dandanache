@@ -1,10 +1,10 @@
 {
     "packageName": "Knockturn Alley",
-    "version": "1.6.0",
-    "releaseNotes": "v1.6.0\n - Add \"Oppugno\" spell to configure attribute reporting",
+    "version": "2.0.0",
+    "releaseNotes": "v2.0.0\n - The generated report is now text only (no pretty HTML anymore). The good part is that you can now share it using copy/paste.",
     "minimumHEVersion": "2.1.9",
     "author": "Dan Danache (@dandanache)",
-    "dateReleased": "2023-10-28",
+    "dateReleased": "2023-10-30",
     "documentationLink": "https://dan-danache.github.io/hubitat/knockturn-alley-driver/",
     "communityLink": "https://community.hubitat.com/t/dev-knockturn-alley/125167/3",
     "licenseFile": "https://raw.githubusercontent.com/dan-danache/hubitat/master/LICENSE",
