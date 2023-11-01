@@ -1,7 +1,7 @@
 /**
  * Knockturn Alley - Simple toolkit driver to help developers peer deep into the guts of Zigbee devices.
  *
- * @version 2.0.0
+ * @version 2.1.0
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/CHANGELOG
  * @see https://community.hubitat.com/t/dev-knockturn-alley/125167
@@ -15,7 +15,9 @@ metadata {
     definition(name:"Knockturn Alley", namespace:"dandanache", singleThreaded:true, author:"Dan Danache", importUrl:"https://raw.githubusercontent.com/dan-danache/hubitat/master/knockturn-alley-driver/knockturn-alley.groovy") {
         attribute "documentation", "STRING"
         
-        command "a01Legilimens"
+        command "a01Legilimens", [
+            [name: "Manufacturer", description: "Manufacturer Code - hex format (e.g.: 0x117C)", type: "STRING"],
+        ]
         command "a02Scourgify", [
             [name: "Raw data", type: "ENUM", constraints: [
                 "1 - Remove raw data",
@@ -76,6 +78,29 @@ metadata {
                 "5 - Everything",
             ]],
         ]
+
+        command "d01Revelio", [
+            [name: "What to reveal", type: "ENUM", constraints: [
+                "1 - Neighbors Table",
+                "2 - Routing Table",
+                "3 - Bindings Table",
+            ]],
+        ]
+        command "d02UnbreakableVow", [
+            [name: "What to do", type: "ENUM", constraints: [
+                "1 - Make the Unbreakable Vow",
+                "2 - Break the Unbreakable Vow",
+            ]],
+            [name: "Source Addr*", description: "The IEEE address for the source - 8 bytes", type: "STRING", default: "caca"],
+            [name: "Source Endpoint*", description: "Endpoint ID - hex format (e.g.: 0x01)", type: "STRING"],
+            [name: "Cluster*", description: "Cluster ID - hex format (e.g.: 0x0001)", type: "STRING"],
+            [name: "Addr Mode*", description: "Addressing mode for Destination Address", type: "ENUM", constraints: [
+                "0x03 = 64-bit extended address",
+                "0x01 = 16-bit group address",
+            ]],
+            [name: "Destination Addr*", description: "The IEEE/group address for the destination - 8/2 bytes", type: "STRING"],
+            [name: "Destination Endpoint", description: "Endpoint ID - hex format (e.g.: 0x01), required when Addr Mode = 0x03", type: "STRING"],
+        ]
     }
 }
 
@@ -83,20 +108,23 @@ metadata {
 // Spells
 // ===================================================================================================================
 
-def a01Legilimens() {
+def a01Legilimens(manufacturerHex="0x0000") {
     sendEvent name:"documentation", value:"<a href=\"https://dan-danache.github.io/hubitat/knockturn-alley-driver/\" target=\"_blank\">README</a>", isStateChange:false
-    Log.info "🪄 Legilimens"
-  
+    Log.info "🪄 Legilimens: manufacturer=${manufacturerHex}"
+
+    if (!manufacturerHex.startsWith("0x") || manufacturerHex.size() != 6) return Log.error("Invalid Manufacturer Code: ${manufacturerHex}")
+    State.setManufacturer(manufacturerHex.substring(2))
+
     List<String> cmds = []
 
     // Active_EP_req
-    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0005 {42 ${zigbee.swapOctets(device.deviceNetworkId)}} {0x0000}"
+    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0005 {42 ${Utils.flip device.deviceNetworkId}} {0x0000}"
 
     // Node_Desc_req
-    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0002 {43 ${zigbee.swapOctets(device.deviceNetworkId)}} {0x0000}"
+    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0002 {43 ${Utils.flip device.deviceNetworkId}} {0x0000}"
 
     // Power_Desc_req
-    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0003 {44 ${zigbee.swapOctets(device.deviceNetworkId)}} {0x0000}"
+    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0003 {44 ${Utils.flip device.deviceNetworkId}} {0x0000}"
 
     // Mgmt_Lqi_req
     cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0031 {45 00} {0x0000}"
@@ -133,16 +161,16 @@ private String printTable(List<List<String>> rows, Integer columnsNo) {
     (0..(columnsNo-1)).each { widths[it] = 0 }
 
     // Calculate column widths
-    rows.each { row -> widths.each { widths[it.key] = Math.max(it.value, row[it.key].size()) }}
+    rows.each { row -> widths.each { widths[it.key] = Math.max(it.value, row[it.key]?.size() ?: 0) }}
 
     // Print table
-    return rows.inject("") { ts, row -> ts + widths.inject("▸ ") { s, k, v -> s + (k == 0 ? "" : " | ") + row[k].padRight(v, " ") } + "\n"}
+    return rows.inject("") { ts, row -> ts + widths.inject("▸ ") { s, k, v -> s + (k == 0 ? "" : " | ") + (row[k] ?: "--").padRight(v, " ") } + "\n"}
 }
 
 private printWeirdTable(String header, List<List<String>> rows, Integer columnsNo) {
     String data = printHeader(header)
     if (!rows) {
-        data += "▸ Could not retrieve data"
+        data += "▸ Could not retrieve data\n"
     } else {
         List<List<String>> table = []
         rows.each { row ->
@@ -180,7 +208,7 @@ def a02Scourgify(operation) {
             // Attributes
             Set<Integer> attributes = []
             getState()?.each {
-                if (it.key.startsWith("ka_attribute_${endpoint}_${cluster}") || it.key.startsWith("ka_attributeValue_${endpoint}_${cluster}")) {
+                if (it.key.startsWith("ka_attribute_${endpoint}_${cluster}_") || it.key.startsWith("ka_attributeValue_${endpoint}_${cluster}_")) {
                     attributes += Integer.parseInt it.key.split("_").last()
                 }
             }
@@ -191,36 +219,49 @@ def a02Scourgify(operation) {
                 List<List<String>> table = []
                 attributes.sort().each { attribute ->
                     def attributeSpec = ZCL_CLUSTERS.get(cluster)?.get("attributes")?.get(attribute)
-                    def attributeType = ZCL_DATA_TYPES[state["ka_attribute_${endpoint}_${cluster}_${attribute}"]]
-                    def attributeValue = state["ka_attributeValue_${endpoint}_${cluster}_${attribute}"]
-                    def attributeReporting = state["ka_attributeReporting_${endpoint}_${cluster}_${attribute}"]
-                    
+
                     // Cluster Revision global attribute
                     if (attribute == 0xFFFD) {
                         attributeSpec = [ type:0x21, req:"req", acc:"r--", name:"Cluster Revision" ]
                         attributeType = ZCL_DATA_TYPES[0x21]
                     }
 
+                    String aName = attributeSpec?.name ?: "--"
+                    String aRequired = attributeSpec?.req ?: "--"
+                    String aAccess = attributeSpec?.acc ?: "---"
+
+                    List<String> attributeInfo = state["ka_attribute_${endpoint}_${cluster}_${attribute}"]
+                    def attributeType = ZCL_DATA_TYPES[Integer.parseInt(attributeInfo[0], 16)]
+                    if (aAccess == "---" && attributeInfo[1] != "---") aAccess = attributeInfo[1]
+
+                    String aManufacturer = attributeInfo[2]
+                    String aType = attributeType?.name ?: "--"
+
+                    def attributeValue = state["ka_attributeValue_${endpoint}_${cluster}_${attribute}"]
+                    def attributeReporting = state["ka_attributeReporting_${endpoint}_${cluster}_${attribute}"]
+
+                    String aReporting = attributeReporting ? "${attributeReporting.min}..${attributeReporting.max}" : "--"
+
                     // Pretty value
-                    String value = "${attributeValue?.value ?: "--"}"
+                    String aValue = "${attributeValue?.value ?: "--"}"
                     if (attributeValue?.value) {
                         if (attributeValue?.value && attributeSpec?.constraints) {
-                            value += " = ${attributeSpec.constraints[Utils.dec(attributeValue.value)]}"
+                            aValue += " = ${attributeSpec.constraints[Utils.dec(attributeValue.value)]}"
                         } else if (attributeValue?.value && attributeSpec?.decorate) {
-                            value += " = ${attributeSpec.decorate(attributeValue.value)}"
+                            aValue += " = ${attributeSpec.decorate(attributeValue.value)}"
                         } else if (attributeType?.decorate) {
-                            value += " = ${attributeType.decorate(attributeValue.value)}"
+                            aValue += " = ${attributeType.decorate(attributeValue.value)}"
                         }
                     }
 
                     List<String> row = [
-                        "0x${Utils.hex attribute, 4}",
-                        "${attributeSpec?.name ?: "--"}",
-                        "${attributeSpec?.req ?: "--"}",
-                        "${attributeSpec?.acc ?: "--"}",
-                        "${attributeType?.name ?: "--"}",
-                        "${value}",
-                        "${attributeReporting ?: "--"}"
+                        "0${aManufacturer == "0000" ? "x" : "_"}${Utils.hex attribute, 4}",
+                        "${aName}",
+                        "${aRequired}",
+                        "${aAccess}",
+                        "${aType}",
+                        "${aValue}",
+                        "${aReporting}"
                     ]
                     table.add row
                 }
@@ -232,7 +273,7 @@ def a02Scourgify(operation) {
             // Commands
             Set<Integer> commands = []
             getState()?.each {
-                if (it.key.startsWith("ka_command_${endpoint}_${cluster}")) {
+                if (it.key.startsWith("ka_command_${endpoint}_${cluster}_")) {
                     commands += Integer.parseInt it.key.split("_").last()
                 }
             }
@@ -245,10 +286,14 @@ def a02Scourgify(operation) {
                 commands.sort().each { command ->
                     def commandSpec = ZCL_CLUSTERS.get(cluster)?.get("commands")?.get(command)
 
+                    String cManufacturer = state["ka_command_${endpoint}_${cluster}_${command}"]
+                    String cName = commandSpec?.name ?: "--"
+                    String cReq = commandSpec?.req ?: "--"
+
                     List<String> row = [
-                        "0x${Utils.hex command, 2}",
-                        "${commandSpec?.name ?: "--"}",
-                        "${commandSpec?.req ?: "--"}"
+                        "0${cManufacturer == "0000" ? "x" : "_"}${Utils.hex command, 2}",
+                        "${cName}",
+                        "${cReq}"
                     ]
                     table.add row
                 }
@@ -280,6 +325,7 @@ def b01Accio(operation, endpointHex, clusterHex, attributeHex, manufacturerHex="
     if (!clusterHex.startsWith("0x") || clusterHex.size() != 6) return Log.error("Invalid Cluster ID: ${clusterHex}")
     if (!attributeHex.startsWith("0x") || attributeHex.size() != 6) return Log.error("Invalid Attribute ID: ${clusterHex}")
     if (manufacturerHex && (!manufacturerHex.startsWith("0x") || manufacturerHex.size() != 6)) return Log.error("Invalid Manufacturer Code: ${manufacturerHex}")
+
     Integer endpoint = Integer.parseInt endpointHex.substring(2), 16
     Integer cluster = Integer.parseInt clusterHex.substring(2), 16
     Integer attribute = Integer.parseInt attributeHex.substring(2), 16
@@ -324,13 +370,10 @@ def b02EverteStatum(endpointHex, clusterHex, attributeHex, manufacturerHex="", t
     }
  
     Integer type = Integer.parseInt typeStr.substring(2, 4), 16
-    String value = valueHex.replaceAll " ", ""
+    String value = Utils.flip valueHex
     Integer typeLen = Integer.parseInt ZCL_DATA_TYPES[type].bytes
     if (value.size() != typeLen * 2) return Log.error("Invalid Value: It must have exactly ${typeLen} bytes but you provided ${value.size()}: ${valueHex}")
 
-    // Transform BE -> LE: "123456" -> ["1", "2", "3", "4", "5", "6"] -> [["1", "2"], ["3", "4"], ["5", "6"]] -> ["12", "34", "56"] -> ["56", "34", "12"] -> "563412"
-    value = (value.split("") as List).collate(2).collect { it.join() }.reverse().join()
-    
     // Send zigbee command
     String command = "02"
     String payload = "${Utils.payload attribute} ${typeStr.substring(2, 4)} ${value}"
@@ -360,12 +403,9 @@ def b03Oppugno(endpointHex, clusterHex, attributeHex, manufacturerHex="", typeSt
     }
 
     Integer type = Integer.parseInt typeStr.substring(2, 4), 16
-    String reportableChange = reportableChangeHex.replaceAll " ", ""
+    String reportableChange = Utils.flip reportableChangeHex
     Integer typeLen = Integer.parseInt ZCL_DATA_TYPES[type].bytes
     if (reportableChange.size() != typeLen * 2) return Log.error("Invalid Reportable Change: It must have exactly ${typeLen} bytes but you provided ${reportableChange.size()}: ${valueHex}")
-
-    // Transform BE -> LE: "123456" -> ["1", "2", "3", "4", "5", "6"] -> [["1", "2"], ["3", "4"], ["5", "6"]] -> ["12", "34", "56"] -> ["56", "34", "12"] -> "563412"
-    reportableChange = (reportableChange.split("") as List).collate(2).collect { it.join() }.reverse().join()
 
     // Send zigbee command
     String command = "06"
@@ -422,6 +462,49 @@ def c02Obliviate(operation) {
         default:
             Log.error "Don't know how to ${operation}"
     }
+}
+
+def d01Revelio(operation) {
+    sendEvent name:"documentation", value:"<a href=\"https://dan-danache.github.io/hubitat/knockturn-alley-driver/\" target=\"_blank\">README</a>", isStateChange:false
+    Log.info "🪄 Revelio: ${operation}"
+
+    switch (operation) {
+        case "1 - Neighbors Table":
+            return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0031 {55 00} {0x0000}"])
+
+        case "2 - Routing Table":
+            return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0032 {56 00} {0x0000}"])
+
+        case "3 - Bindings Table":
+            return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0033 {57 00} {0x0000}"])
+    }
+}
+
+def d02UnbreakableVow(operation, srcAddrHex, srcEndpointHex, clusterHex, addrModeValue, dstAddrHex, dstEndpointHex="") {
+    sendEvent name:"documentation", value:"<a href=\"https://dan-danache.github.io/hubitat/knockturn-alley-driver/\" target=\"_blank\">README</a>", isStateChange:false
+    Log.info "🪄 Unbreakable Vow: ${operation}: srcAddr=${srcAddrHex}, srcEndpoint=${srcEndpointHex}, cluster=${clusterHex}, addrMode=${addrModeValue}, dstAddr=${dstAddrHex}, dstEndpoint=${dstEndpointHex}"
+
+    if (!srcAddrHex || srcAddrHex.size() != 16 || !HEXADECIMAL_PATTERN.matcher(srcAddrHex).matches()) return Log.error("Invalid Source Addr: ${srcAddrHex}")
+    if (!srcEndpointHex.startsWith("0x") || srcEndpointHex.size() != 4) return Log.error("Invalid Source Endpoint: ${srcEndpointHex}")
+    if (!clusterHex.startsWith("0x") || clusterHex.size() != 6) return Log.error("Invalid Cluster ID: ${clusterHex}")
+    String addrMode = addrModeValue.substring 2, 4
+    if (addrMode == "03") {
+        if (!dstAddrHex || dstAddrHex.size() != 16 || !HEXADECIMAL_PATTERN.matcher(dstAddrHex).matches()) return Log.error("Invalid Destination Addr: ${dstAddrHex}")
+        if (!dstEndpointHex.startsWith("0x") || dstEndpointHex.size() != 4) return Log.error("Invalid Destination Endpoint: ${dstEndpointHex}")
+    } else {
+        if (!dstAddrHex || dstAddrHex.size() != 4 || !HEXADECIMAL_PATTERN.matcher(dstAddrHex).matches()) return Log.error("Invalid Destination Addr: ${dstAddrHex}")
+    }
+
+    String srcAddr = Utils.flip srcAddrHex
+    String srcEndpoint = srcEndpointHex.substring 2
+    String cluster = Utils.flip clusterHex.substring(2)
+    String dstAddr = Utils.flip dstAddrHex
+    String dstEndpoint = dstEndpointHex ? dstEndpointHex.substring(2) : ""
+
+    // Send ZDP command
+    String zdpCluster = operation == "1 - Make the Unbreakable Vow" ? "0x0021" : "0x0022"
+    String payload = "${srcAddr} ${srcEndpoint} ${cluster} ${addrMode} ${dstAddr}${addrMode == "03" ? " ${dstEndpoint}" : ""}"
+    Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x00 0x00 ${zdpCluster} {49 ${payload}} {0x0000}"])
 }
 
 // ===================================================================================================================
@@ -514,41 +597,62 @@ def parse(String description) {
         // AttributeInformation := { 16:AttributeIdentifier, 08:AttributeDataType }
         // AttributeDataType := @see @Field ZCL_DATA_TYPES
         // Example: [01, 00, 00, 20, 01, 00, 20, 02, 00, 20, 03, 00, 20, 04, 00, 42, 05, 00, 42, 06, 00, 42, 07, 00, 30, 08, 00, 30, 09, 00, 30, 0A, 00, 41, 00, 40, 42, FD, FF, 21]
+        //
+        // DiscoverAttributesExtendedResponse := { 08:Complete?, n*24:AttributeInformation }
+        // AttributeInformation := { 16:AttributeIdentifier, 08:AttributeDataType, 08:AttributeAccessControl }
+        // AttributeDataType := @see @Field ZCL_DATA_TYPES
+        // Example: [01, 20, 00, 20, 05, 21, 00, 20, 05, FD, FF, 21, 05]
         case { contains it, [isClusterSpecific:false, commandInt:0x0D] }:
+        case { contains it, [isClusterSpecific:false, commandInt:0x16] }:
             Integer endpoint = Utils.dec msg.sourceEndpoint
             Integer cluster = msg.clusterInt
+            String manufacturer = msg.manufacturerId
+
+            boolean isExtended = msg.commandInt == 0x16
+            Integer attrInfoBytes = isExtended ? 4 : 3
 
             List<String> data = msg.data.drop 1
-            Map<Integer, Integer> attributes = [:]
-            Map<Integer, Integer> varAttributes = [:]
-            while (data.size() >= 3) {
-                List<String> chunk = data.take 3
+            Map<Integer, List<String>> attributes = [:]
+            Map<Integer, List<String>> varAttributes = [:]
+            while (data.size() >= attrInfoBytes) {
+                List<String> chunk = data.take attrInfoBytes
+                //Log.info("isExtended=${isExtended}, attrInfoBytes=${attrInfoBytes}, chunk=${chunk}")
                 Integer attribute = Utils.dec chunk.take(2).reverse().join()
                 Integer type = Utils.dec chunk[2]
-                data = data.drop 3
+                String acc = "---"
+                if (isExtended) {
+                    String octet = Integer.toBinaryString(Integer.parseInt(chunk[3], 16)).padLeft(8, "0").reverse()
+                    //acc = "${octet[0] == "1" ? "r" : "-"}${octet[1] == "1" ? "w" : "-"}${octet[2] == "1" ? "p" : "-"}" // Bit 2 (reportable) is always 1
+                    acc = "${octet[0] == "1" ? "r" : "-"}${octet[1] == "1" ? "w" : "-"}-"
+                }
+                data = data.drop attrInfoBytes
 
                 // Ignore trailing AttributeReportingStatus
                 if (attribute == 0xFFFE) continue
 
                 def zclType = ZCL_DATA_TYPES[type]
                 if (zclType?.bytes == "var") {
-                    varAttributes[attribute] = type
+                    varAttributes[attribute] = [chunk[2], acc, manufacturer]
                 } else {
-                    attributes[attribute] = type
+                    attributes[attribute] = [chunk[2], acc, manufacturer]
                 }
             }
+
+            String framestart = manufacturer == "0000" ? "1043" : "04${Utils.flip manufacturer}43"
 
             List<String> cmds = []
             if (attributes.size() != 0) {
                 attributes.keySet().collate(3).each { attrs ->
 
                     // Read attribute value (use batches of 3 to reduce mesh traffic)
-                    cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {104300 ${attrs.collect { Utils.payload it }.join()}}"
+                    String payload = "${attrs.collect { Utils.payload it }.join()}"
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${framestart}00 ${payload}}"
 
                     // If attribute is reportable, also inquire its reporting status
                     attrs.each {
-                        if (ZCL_CLUSTERS.get(cluster)?.get("attributes")?.get(it)?.get("acc")?.endsWith("P")) {
-                            cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {104308 00${Utils.payload it}}"
+                        String acc = ZCL_CLUSTERS.get(cluster)?.get("attributes")?.get(it)?.get("acc") ?: attributes[it][1]
+                        if (acc?.endsWith("p")) {
+                            cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${framestart}08 00${Utils.payload it}}"
                         }
                     }
                 }
@@ -558,11 +662,11 @@ def parse(String description) {
             varAttributes.keySet().each { attr ->
 
                 // Read attribute value (use batches of 3 to reduce mesh traffic)
-                cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {104300 ${Utils.payload attr}}"
+                cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${framestart}00 ${Utils.payload attr}}"
 
                 // If attribute is reportable, also inquire its reporting status
-                if (ZCL_CLUSTERS.get(cluster)?.get("attributes")?.get(attr)?.get("acc")?.endsWith("P")) {
-                    cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {104308 00${Utils.payload attr}}"
+                if (ZCL_CLUSTERS.get(cluster)?.get("attributes")?.get(attr)?.get("acc")?.endsWith("p")) {
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${framestart}08 00${Utils.payload attr}}"
                 }
             }
 
@@ -579,9 +683,11 @@ def parse(String description) {
         case { contains it, [isClusterSpecific:false, commandInt:0x12] }:
             Integer endpoint = Utils.dec msg.sourceEndpoint
             Integer cluster = msg.clusterInt
+            String manufacturer = msg.manufacturerId
 
             List<String> data = msg.data.drop 1
-            List<Integer> commands = data.collect {Utils.dec it  }
+            Map<Integer, String> commands = [:]
+            data.each { commands[Utils.dec(it)] = manufacturer }
 
             State.addCommands endpoint, cluster, commands
             return Utils.processedZigbeeMessage("Discover Commands Received Response", "endpoint=0x${Utils.hex endpoint, 2}, cluster=0x${Utils.hex cluster}, commands=${commands}")
@@ -753,6 +859,8 @@ def parse(String description) {
                 return Utils.failedZclMessage("Simple Descriptor Response", msg.data[1], msg)
             }
 
+            String manufacturer = Utils.flip state.ka_manufacturer
+
             Integer endpoint = Utils.dec msg.data[5]
             Integer count = Utils.dec msg.data[11]
             Integer position = 12
@@ -766,10 +874,19 @@ def parse(String description) {
                     inClusters += cluster
 
                     // Discover cluster attributes
-                    cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {10 00 0C 00 00 FF}"
-                    
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {104315 0000 FF}"
+                    if (manufacturer != "0000") {
+                        cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {04${manufacturer}4315 0000 FF}"
+                    }
+
+                    //cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {10430C 0000 FF}"
+                    //cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {04FFFF430C 0000 FF}"
+
                     // Discover cluster commands
-                    cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {10 00 11 00 FF}"
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {104311 00 FF}"
+                    if (manufacturer != "0000") {
+                        cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {04${manufacturer}4311 00 FF}"
+                    }
                 }
                 State.addInClusters endpoint, inClusters
             }
@@ -815,6 +932,21 @@ def parse(String description) {
                 return Utils.processedZigbeeMessage("Active Endpoints Response", "endpoints=${Utils.hexs endpoints, 2}")
             }
 
+        // Bind_rsp := { 08:Status }
+        case { contains it, [endpointInt:0x00, clusterInt:0x8021] }:
+            if (msg.data[1] != "00") {
+                return Utils.failedZdpMessage("Bind Response", msg.data[1], msg)
+            }
+
+            return Utils.processedZigbeeMessage("Bind Response", "data=${msg.data}")
+
+        // Unbind_rsp := { 08:Status }
+        case { contains it, [endpointInt:0x00, clusterInt:0x8022] }:
+            if (msg.data[1] != "00") {
+                return Utils.failedZdpMessage("Unbind Response", msg.data[1], msg)
+            }
+
+            return Utils.processedZigbeeMessage("Unbind Response", "data=${msg.data}")
 
         // Mgmt_Lqi_rsp := { 08:Status, 08:NeighborTableEntriesTotal, 08:StartIndex, 08:NeighborTableEntriesIncluded, 176*n:NeighborTableList }
         // NeighborTableList: { 64:ExtendedPANId, 64:IEEEAddress, 16:NetworkAddress, 02:DeviceType, 02:RxOnWhenIdle, 03:Relationship, 01:Reserved, 02:PermitJoining, 06:Reserved, 08:Depth, 08:LQI }
@@ -1049,6 +1181,7 @@ def parse(String description) {
     hex: { Integer value, Integer chars = 4 -> "${zigbee.convertToHexString value, chars}" },
     hexs: { Collection<Integer> values, Integer chars = 4 -> values.collect { "0x${zigbee.convertToHexString it, chars}" } },
     payload: { Integer value -> zigbee.swapOctets(zigbee.convertToHexString(value, 4)) },
+    flip: { String value -> (value.replaceAll(" ", "").split("") as List).collate(2).collect { it.join() }.reverse().join() },
 
     sendZigbeeCommands: { List<String> cmds ->
         if (cmds.size() == 0) return
@@ -1094,6 +1227,10 @@ private boolean contains(Map msg, Map spec) {
 // ===================================================================================================================
 
 @Field Map<String, Closure> State = [
+    setManufacturer: { String manufacturer ->
+        state.ka_manufacturer = manufacturer
+    },
+
     addEndpoints: { Set<Integer> endpoints ->
         state.ka_endpoints = endpoints
     },
@@ -1112,9 +1249,9 @@ private boolean contains(Map msg, Map spec) {
         }
     },
 
-    addCommands: { Integer endpoint, Integer cluster, List<Integer> commands ->
+    addCommands: { Integer endpoint, Integer cluster, Map<Integer, String> commands ->
         commands.each {
-            state["ka_command_${endpoint}_${cluster}_${it}"] = ZCL_CLUSTERS.get(cluster)?.get("commands")?.get(it) ?: [:]
+            state["ka_command_${endpoint}_${cluster}_${it.key}"] = it.value
         }
     },
     

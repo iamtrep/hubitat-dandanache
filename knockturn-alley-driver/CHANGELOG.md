@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2023-11-01
+### Added
+- `Legilimens` spell now also discovers attributes and commands for a specific manufacturer
+- Add `Revelio` spell to retrieve data from Neighbors Table (LQI), Routing Table and Bindings Table
+- Add `Unbreakable Vow` spell to add/remove entries to/from the Bindings Table
+
 ## [2.0.0] - 2023-10-30
 ### Changed
 - Breaking change: The generated report is now text only (no pretty HTML anymore). The good part is that you can now share it using copy/paste.

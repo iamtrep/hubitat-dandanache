@@ -39,6 +39,10 @@ Spells for executing Zigbee Commands and managing driver state:
 - [C01 - Imperio](#c01---imperio)
 - [C02 - Obliviate](#c02---obliviate)
 
+Spells for handling Neighbors Table (LQI), Routing Table and Bindings Table:
+- [D01 - Revelio](#d01---revelio)
+- [D02 - Unbreakable Vow](#d02---unbreakable-vow)
+
 
 ### A01 - Legilimens
 <img src="img/Legilimens.gif" height="200px"/>
@@ -49,6 +53,8 @@ Spells for executing Zigbee Commands and managing driver state:
 3. For each in cluster, discover attributes (e.g.: 0x0400 = SWBuildID - for cluster 0x0000)
 4. For each attribute, ask the device to send its current value
 5. If an attribute is known to be reportable, ask the device to send its current reporting configuration
+
+Note: If you specify a manufacturer code (optional), the spell will try to also discover attributes and commands specific to that manufacturer. In the generated report, manufacturer specific attributes and commands are prefixed by `0_` (e.g.: attribute `0_0043`, command `0_01`).
 
 Before casting the spell, have the Logs section open in order to take a peak at the chatty conversation that the driver is having with the device. Be patient, the discovering process will take about 1 minute to finish (depending on the number of endpoints/clusters/attributes). Keep your eyes on the Logs to see when the driver stops adding log entries.
 
@@ -112,6 +118,22 @@ After casting the spell, you may want to cast `Accio` to query the device for th
 
 After casting the spell, refresh the device details page to see that the specified information vanished into the void.
 
+### D01 - Revelio
+<img src="img/Revelio.webp" height="200px"/>
+
+`Revelio` spell retrieves information about the:
+1. Neighbors Table (LQI)
+2. Routing Table
+3. Bindings Table
+
+Before casting the spell, have the Logs section open in order to see the device response.
+
+### D02 - Unbreakable Vow
+<img src="img/Unbreakable_Vow.gif" height="200px"/>
+
+`Unbreakable Vow` spell will help you to add/remove entries to/from the Bindings Table.
+
+After casting the spell, you may want to cast `Revelio` to query the device for the updated Bindings Table.
 
 ---
 [<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px !important;width: 162px !important">](https://www.buymeacoffee.com/dandanache)
