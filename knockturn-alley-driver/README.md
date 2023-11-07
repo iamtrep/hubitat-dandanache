@@ -38,7 +38,7 @@ Spells for handling Zigbee Attributes:
 
 Spells for executing Zigbee Commands and managing driver state:
 - [C01 - Imperio](#c01---imperio)
-- [C02 - Bombarda Maxima](#c02---bombarda-maxima)
+- [C02 - Bombarda](#c02---bombarda)
 
 Spells for handling Neighbors Table (LQI), Routing Table and Bindings Table:
 - [D01 - Revelio](#d01---revelio)
