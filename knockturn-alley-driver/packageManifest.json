@@ -1,10 +1,10 @@
 {
     "packageName": "Knockturn Alley",
-    "version": "2.1.0",
-    "releaseNotes": "v2.1.0\n - \"Legilimens\" spell now also discovers attributes and commands for a specific manufacturer\n - Add \"Revelio\" spell to retrieve data from Neighbors Table (LQI), Routing Table and Bindings Table\n - Add \"Unbreakable Vow\" spell to add/remove entries to/from the Bindings Table",
+    "version": "2.2.0",
+    "releaseNotes": "v2.2.0\n - Add \"Bombarda\" spell to execute raw Zigbee commands",
     "minimumHEVersion": "2.1.9",
     "author": "Dan Danache (@dandanache)",
-    "dateReleased": "2023-11-01",
+    "dateReleased": "2023-11-07",
     "documentationLink": "https://dan-danache.github.io/hubitat/knockturn-alley-driver/",
     "communityLink": "https://community.hubitat.com/t/dev-knockturn-alley/125167/3",
     "licenseFile": "https://raw.githubusercontent.com/dan-danache/hubitat/master/LICENSE",

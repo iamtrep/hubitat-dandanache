@@ -1,7 +1,7 @@
 /**
  * Knockturn Alley - Simple toolkit driver to help developers peer deep into the guts of Zigbee devices.
  *
- * @version 2.1.0
+ * @version 2.2.0
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/CHANGELOG
  * @see https://community.hubitat.com/t/dev-knockturn-alley/125167
@@ -24,6 +24,16 @@ metadata {
                 "2 - Keep raw data",
             ]],
         ]
+        command "a03Obliviate", [
+            [name: "What to forget", type: "ENUM", constraints: [
+                "1 - Our state variables (ka_*) - Restore previous driver state",
+                "2 - All state variables",
+                "3 - Device data",
+                "4 - Scheduled jobs configured by the previous driver",
+                "5 - Everything",
+            ]],
+        ]
+
         command "b01Accio", [
             [name: "What to retrieve", type: "ENUM", constraints: [
                 "1 - Get attribute current value",
@@ -69,14 +79,8 @@ metadata {
             [name: "Manufacturer", description: "Manufacturer Code - hex format (e.g.: 0x117C)", type: "STRING"],
             [name: "Payload", description: "Raw payload - sent as is, spaces are removed", type: "STRING"],
         ]
-        command "c02Obliviate", [
-            [name: "What to forget", type: "ENUM", constraints: [
-                "1 - Our state variables (ka_*) - Restore previous driver state",
-                "2 - All state variables",
-                "3 - Device data",
-                "4 - Scheduled jobs configured by the previous driver",
-                "5 - Everything",
-            ]],
+        command "c02Bombarda", [
+            [name: "Zigbee command", description: "Enter raw command to execute (e.g. for toggle on/off: he raw .addr 0x01 0x01 0x0006 {114302})", type: "STRING"]
         ]
 
         command "d01Revelio", [
@@ -143,7 +147,7 @@ private String printSeparator(chars = "---") {
 }
 
 private String printHeader(String header) {
-    return "${"===" * 32}\n${header}\n${"===" * 32}\n"
+    return "${"===" * 32}\n${header}\n${"---" * 32}\n"
 }
 
 private String printList(String header, List<String> list) {
@@ -200,10 +204,45 @@ def a02Scourgify(operation) {
     // Endpoints
     state.ka_endpoints?.sort().each { endpoint ->
         data += printSeparator("===")
-        data += "Endpoint 0x${Utils.hex endpoint, 2} | Out Clusters: ${state["ka_outClusters_${endpoint}"]?.sort().collect { "0x${Utils.hex it, 4} (${ZCL_CLUSTERS.get(it)?.name ?: "Unknown Cluster"})" }.join(", ")}\n"
+        data += "Endpoint 0x${Utils.hex endpoint, 2}\n"
+
+        state["ka_outClusters_${endpoint}"]?.sort().each { cluster ->
+            data += printHeader("Out Cluster: ${"0x${Utils.hex cluster, 4} (${ZCL_CLUSTERS.get(cluster)?.name ?: "Unknown Cluster"})"}")
+
+            // Commands
+            Set<Integer> commands = []
+            getState()?.each {
+                if (it.key.startsWith("ka_outCommand_${endpoint}_${cluster}_")) {
+                    commands += Integer.parseInt it.key.split("_").last()
+                }
+            }
+
+            if (commands.size() == 0) {
+                data += "▸ No generated commands\n"
+            } else {
+                List<List<String>> table = []
+
+                commands.sort().each { command ->
+                    def commandSpec = ZCL_CLUSTERS.get(cluster)?.get("commands")?.get(command)
+
+                    String cManufacturer = state["ka_outCommand_${endpoint}_${cluster}_${command}"]
+                    String cName = commandSpec?.name ?: "--"
+                    String cReq = commandSpec?.req ?: "--"
+
+                    List<String> row = [
+                        "0${cManufacturer == "0000" ? "x" : "_"}${Utils.hex command, 2}",
+                        "${cName}",
+                        "${cReq}"
+                    ]
+                    table.add row
+                }
+
+                data += printTable(table, 3)
+            }
+        }
 
         state["ka_inClusters_${endpoint}"]?.sort().each { cluster ->
-            data += printHeader("Endpoint 0x${Utils.hex endpoint, 2} | In Cluster: ${"0x${Utils.hex cluster, 4} (${ZCL_CLUSTERS.get(cluster)?.name ?: "Unknown Cluster"})"}")
+            data += printHeader("In Cluster: ${"0x${Utils.hex cluster, 4} (${ZCL_CLUSTERS.get(cluster)?.name ?: "Unknown Cluster"})"}")
 
             // Attributes
             Set<Integer> attributes = []
@@ -214,7 +253,7 @@ def a02Scourgify(operation) {
             }
 
             if (attributes.size() == 0) {
-                data += "▸ No attributes found\n"
+                data += "▸ No attributes\n"
             } else {
                 List<List<String>> table = []
                 attributes.sort().each { attribute ->
@@ -273,20 +312,20 @@ def a02Scourgify(operation) {
             // Commands
             Set<Integer> commands = []
             getState()?.each {
-                if (it.key.startsWith("ka_command_${endpoint}_${cluster}_")) {
+                if (it.key.startsWith("ka_inCommand_${endpoint}_${cluster}_")) {
                     commands += Integer.parseInt it.key.split("_").last()
                 }
             }
 
             if (commands.size() == 0) {
-                data += "▸ No commands found\n"
+                data += "▸ No received commands\n"
             } else {
                 List<List<String>> table = []
 
                 commands.sort().each { command ->
                     def commandSpec = ZCL_CLUSTERS.get(cluster)?.get("commands")?.get(command)
 
-                    String cManufacturer = state["ka_command_${endpoint}_${cluster}_${command}"]
+                    String cManufacturer = state["ka_inCommand_${endpoint}_${cluster}_${command}"]
                     String cName = commandSpec?.name ?: "--"
                     String cReq = commandSpec?.req ?: "--"
 
@@ -315,6 +354,33 @@ def a02Scourgify(operation) {
     }
 
     state.ka_report = data
+}
+
+def a03Obliviate(operation) {
+    sendEvent name:"documentation", value:"<a href=\"https://dan-danache.github.io/hubitat/knockturn-alley-driver/\" target=\"_blank\">README</a>", isStateChange:false
+    Log.info "🪄 Obliviate: ${operation}"
+
+    switch (operation) {
+        case { it.startsWith("5 - ") }:
+            state.clear()
+            device.getData().collect { it.key }.each { device.removeDataValue it }
+            return unschedule()
+
+        case { it.startsWith("4 - ") }:
+            return unschedule()
+
+        case { it.startsWith("3 - ") }:
+            return device.getData()?.collect { it.key }.each { device.removeDataValue it }
+
+        case { it.startsWith("2 - ") }:
+            return state.clear()
+        
+        case { it.startsWith("1 - ") }:
+            return getState()?.findAll { it.key.startsWith("ka_") }?.collect { it.key }.each { state.remove it }
+
+        default:
+            Log.error "Don't know how to ${operation}"
+    }
 }
 
 def b01Accio(operation, endpointHex, clusterHex, attributeHex, manufacturerHex="") {
@@ -437,31 +503,12 @@ def c01Imperio(endpointHex, clusterHex, commandHex, manufacturerHex="", payload=
     Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {${frameStart}${Utils.hex command, 2} ${payload}}"])
 }
 
-def c02Obliviate(operation) {
+def c02Bombarda(command) {
     sendEvent name:"documentation", value:"<a href=\"https://dan-danache.github.io/hubitat/knockturn-alley-driver/\" target=\"_blank\">README</a>", isStateChange:false
-    Log.info "🪄 Obliviate: ${operation}"
+    Log.info "🪄 Bombarda: command=${command}"
 
-    switch (operation) {
-        case { it.startsWith("5 - ") }:
-            state.clear()
-            device.getData().collect { it.key }.each { device.removeDataValue it }
-            return unschedule()
-
-        case { it.startsWith("4 - ") }:
-            return unschedule()
-
-        case { it.startsWith("3 - ") }:
-            return device.getData()?.collect { it.key }.each { device.removeDataValue it }
-
-        case { it.startsWith("2 - ") }:
-            return state.clear()
-        
-        case { it.startsWith("1 - ") }:
-            return getState()?.findAll { it.key.startsWith("ka_") }?.collect { it.key }.each { state.remove it }
-
-        default:
-            Log.error "Don't know how to ${operation}"
-    }
+    String cmd = command.replace(".addr", "0x${device.deviceNetworkId}")
+    Utils.sendZigbeeCommands([cmd])
 }
 
 def d01Revelio(operation) {
@@ -689,8 +736,22 @@ def parse(String description) {
             Map<Integer, String> commands = [:]
             data.each { commands[Utils.dec(it)] = manufacturer }
 
-            State.addCommands endpoint, cluster, commands
+            State.addInCommands endpoint, cluster, commands
             return Utils.processedZigbeeMessage("Discover Commands Received Response", "endpoint=0x${Utils.hex endpoint, 2}, cluster=0x${Utils.hex cluster}, commands=${commands}")
+
+        // DiscoverCommandsGeneratedResponse := { 08:Complete?, n*08:CommandIdentifier }
+        // Example: [01, 00, 01, 40] -> commands: 0x00, 0x01, 0x40
+        case { contains it, [isClusterSpecific:false, commandInt:0x14] }:
+            Integer endpoint = Utils.dec msg.sourceEndpoint
+            Integer cluster = msg.clusterInt
+            String manufacturer = msg.manufacturerId
+
+            List<String> data = msg.data.drop 1
+            Map<Integer, String> commands = [:]
+            data.each { commands[Utils.dec(it)] = manufacturer }
+
+            State.addOutCommands endpoint, cluster, commands
+            return Utils.processedZigbeeMessage("Discover Commands Generated Response", "endpoint=0x${Utils.hex endpoint, 2}, cluster=0x${Utils.hex cluster}, commands=${commands}")
 
         // ===================================================================================================================
         // Zigbee Device Profile (ZDP)
@@ -882,7 +943,7 @@ def parse(String description) {
                     //cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {10430C 0000 FF}"
                     //cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {04FFFF430C 0000 FF}"
 
-                    // Discover cluster commands
+                    // Discover cluster received commands
                     cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {104311 00 FF}"
                     if (manufacturer != "0000") {
                         cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {04${manufacturer}4311 00 FF}"
@@ -900,6 +961,12 @@ def parse(String description) {
                     positionCounter = position + ((b - 1) * 2)
                     Integer cluster = Utils.dec msg.data[positionCounter..positionCounter+1].reverse().join()
                     outClusters += cluster
+
+                    // Discover cluster generated commands
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {104313 00 FF}"
+                    if (manufacturer != "0000") {
+                        cmds += "he raw 0x${device.deviceNetworkId} 0x${Utils.hex endpoint, 2} 0x01 0x${Utils.hex cluster} {04${manufacturer}4313 00 FF}"
+                    }
                 }
                 State.addOutClusters endpoint, outClusters
             }
@@ -1249,12 +1316,18 @@ private boolean contains(Map msg, Map spec) {
         }
     },
 
-    addCommands: { Integer endpoint, Integer cluster, Map<Integer, String> commands ->
+    addInCommands: { Integer endpoint, Integer cluster, Map<Integer, String> commands ->
         commands.each {
-            state["ka_command_${endpoint}_${cluster}_${it.key}"] = it.value
+            state["ka_inCommand_${endpoint}_${cluster}_${it.key}"] = it.value
         }
     },
-    
+
+    addOutCommands: { Integer endpoint, Integer cluster, Map<Integer, String> commands ->
+        commands.each {
+            state["ka_outCommand_${endpoint}_${cluster}_${it.key}"] = it.value
+        }
+    },
+
     addAttributesValues: { Integer endpoint, Integer cluster, Map<Integer, Map<String, String>> attributesValues ->
         attributesValues.each {
             state["ka_attributeValue_${endpoint}_${cluster}_${it.key}"] = it.value
@@ -2671,13 +2744,19 @@ private boolean contains(Map msg, Map spec) {
         name: "ZLL/Touchlink Commissioning Cluster",
         commands: [
             0x00: [ req:"req", name:"Scan" ],
+            0x01: [ req:"req", name:"Scan Response" ],
             0x02: [ req:"req", name:"Device Information" ],
+            0x03: [ req:"req", name:"Device Information Response" ],
             0x06: [ req:"req", name:"Identify" ],
             0x07: [ req:"req", name:"Reset to Factory New" ],
-            0x10: [ req:"req", name:"Network Start" ],
-            0x12: [ req:"req", name:"Network Join Router" ],
-            0x14: [ req:"req", name:"Network Join End-Device" ],
+            0x10: [ req:"req", name:"Network Start Request" ],
+            0x11: [ req:"req", name:"Network Start Response" ],
+            0x12: [ req:"req", name:"Network Join Router Request" ],
+            0x13: [ req:"req", name:"Network Join Router Response" ],
+            0x14: [ req:"req", name:"Network Join End-Device Request" ],
+            0x15: [ req:"req", name:"Network Join End-Device Response" ],
             0x16: [ req:"req", name:"Network Update" ],
+            0x40: [ req:"opt", name:"Endpoint Information" ],
             0x41: [ req:"opt", name:"Get Group Identifiers" ],
             0x42: [ req:"opt", name:"Get Endpoint List" ]
         ]

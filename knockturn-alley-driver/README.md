@@ -29,6 +29,7 @@ This driver has no registered fingerprints and no configuration / initialization
 Spells for auto discovering Zigbee features:
 - [A01 - Legilimens](#a01---legilimens)
 - [A02 - Scourgify](#a02---scourgify)
+- [A03 - Obliviate](#a03---obliviate)
 
 Spells for handling Zigbee Attributes:
 - [B01 - Accio](#b01---accio)
@@ -37,7 +38,7 @@ Spells for handling Zigbee Attributes:
 
 Spells for executing Zigbee Commands and managing driver state:
 - [C01 - Imperio](#c01---imperio)
-- [C02 - Obliviate](#c02---obliviate)
+- [C02 - Bombarda Maxima](#c02---bombarda-maxima)
 
 Spells for handling Neighbors Table (LQI), Routing Table and Bindings Table:
 - [D01 - Revelio](#d01---revelio)
@@ -73,6 +74,18 @@ After casting the spell, refresh the device details page to see the generated re
 
 You can Control + Click anywhere on the generated report to select all text, and now you're ready to share it using Copy / Paste.
 
+### A03 - Obliviate
+<img src="img/Obliviate.gif" height="200px"/>
+
+`Obliviate` spell is used to forget specific information present in the device details page. When cast, it can remove:
+1. Our state variables (ka_*) - Remove only information that was added by this driver, so that you can go back to using the original driver.
+2. All state variables - Remove all stored state data. You may use this if you want to switch drivers and start with a clean state.
+3. Device data - Remove all information present in the `Device Details -> Data` section. Useful when switching drivers.
+4. Scheduled jobs configured by the previous driver. Useful when switching drivers.
+5. Everything - Forget everything, start anew.
+
+After casting the spell, refresh the device details page to see that the specified information vanished into the void.
+
 ### B01 - Accio
 <img src="img/Accio.gif" height="200px"/>
 
@@ -106,17 +119,13 @@ After casting the spell, you may want to cast `Accio` to query the device for th
 
 `Imperio` spell executes the specified Zigbee command. Keep an eye on the Logs section to see if you got the command payload right!
 
-### C02 - Obliviate
-<img src="img/Obliviate.gif" height="200px"/>
+### C02 - Bombarda
+<img src="img/Bombarda.gif" height="200px"/>
 
-`Obliviate` spell is used to forget specific information present in the device details page. When cast, it can remove:
-1. Our state variables (ka_*) - Remove only information that was added by this driver, so that you can go back to using the original driver.
-2. All state variables - Remove all stored state data. You may use this if you want to switch drivers and start with a clean state.
-3. Device data - Remove all information present in the `Device Details -> Data` section. Useful when switching drivers.
-4. Scheduled jobs configured by the previous driver. Useful when switching drivers.
-5. Everything - Forget everything, start anew.
+`Bombarda` spell executes the specified raw Zigbee command. Keep an eye on the Logs section to see if you got it right!
 
-After casting the spell, refresh the device details page to see that the specified information vanished into the void.
+Note: the following string replacements happen before the command is sent to the Zigbee layer:
+- `.replace(".addr", "0x${device.deviceNetworkId}")`
 
 ### D01 - Revelio
 <img src="img/Revelio.webp" height="200px"/>
