@@ -1,6 +1,7 @@
 /**
  * Download Zigbee OTA images for IKEA devices
  * 
+ * @see https://ww8.ikea.com/ikeahomesmart/releasenotes/releasenotes.html
  * @see http://fw.ota.homesmart.ikea.net/feed/version_info.json
  * @see https://github.com/Koenkk/zigbee-OTA/blob/master/lib/ota.js
  */
@@ -124,16 +125,23 @@ const main = async () => {
         // Build output file name
         const fwVersion = filename.replaceAll('-prod', '').replaceAll('.ota.ota.signed', '').split('-').pop()
         const manufacturerCode = parsed.header.manufacturerCode.toString(16).toUpperCase();
-        const imageType = parsed.header.imageType.toString(16).toUpperCase();
-        const fileVersion = parsed.header.fileVersion.toString(16).toUpperCase().padStart(8, 0);
+        const imageType = parsed.header.imageType.toString(16).toUpperCase().padStart(4, 0);
+        let fileVersion = parsed.header.fileVersion.toString(16).toUpperCase().padStart(8, 0);
+
+        // Styrbar fix
+        if (imageType == '11CB' && fileVersion == '00000245') {
+            fileVersion = '02040005'
+        }
+
         const deviceName = parsed.header.otaHeaderString.replaceAll('EBL ', '').replaceAll('GBL ', '').replaceAll('GBL_', '').replaceAll("\x00", '')
         const outputName = `images/${manufacturerCode}-${imageType}-${fileVersion}-${deviceName}-${fwVersion}.zigbee`
+        //const outputName = `images2/${manufacturerCode}-${imageType}-${fileVersion}`
         console.log(`output = ${outputName}`)
 
         // Write to output file
         fs.writeFileSync(outputName, parsed.raw);
         delete(parsed.header.otaUpgradeFileIdentifier);
-        fs.writeFileSync(`${outputName}.txt`, `Source: ${entry.fw_binary_url}\nImage Details: ${JSON.stringify(parsed.header, null, "    ")}`);
+        fs.writeFileSync(`${outputName}.txt`, `Source: ${entry.fw_binary_url}\r\nImage Details: ${JSON.stringify(parsed.header, null, "    ").replace(/\n/g, "\r\n")}`);
     };
 
     // Cleanup
