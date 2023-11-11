@@ -10,7 +10,7 @@ import groovy.time.TimeCategory
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = "IKEA Tradfri Shortcut Button (E1812)"
-@Field static final String DRIVER_VERSION = "3.4.0"
+@Field static final String DRIVER_VERSION = "3.4.1"
 
 // Fields for capability.HealthCheck
 @Field static final Map<String, String> HEALTH_CHECK = [
@@ -117,17 +117,17 @@ def configure(auto = false) {
         Log.warn '[IMPORTANT] Click the "Configure" button immediately after pushing any button on the device in order to first wake it up!'
     }
 
-    // Advertise driver name and value
-    updateDataValue "driverName", DRIVER_NAME
-    updateDataValue "driverVersion", DRIVER_VERSION
-
     // Apply preferences first
     updated(true)
+
+    // Clear data (keep firmwareMT information though)
+    device.getData()?.collect { it.key }.each { if (it != "firmwareMT") device.removeDataValue it }
 
     // Clear state
     state.clear()
     state.lastTx = 0
     state.lastRx = 0
+    state.lastCx = DRIVER_VERSION
 
     List<String> cmds = []
 
@@ -159,6 +159,9 @@ def configure(auto = false) {
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x0005, 0x000A, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, ModelIdentifier, ProductCode, SWBuildID
 
     Utils.sendZigbeeCommands cmds
+}
+private autoConfigure() {
+    configure(true)
 }
 
 // Implementation for capability.DoubleTapableButton
@@ -244,9 +247,10 @@ def updateFirmware() {
 def parse(String description) {
     Log.debug "description=[${description}]"
 
-    // Auto-Configure device: User switched drivers but did not click the "Configure" button
-    if (logLevel == null || state.lastRx == null) {
-        configure(true)
+    // Auto-Configure device: configure() was not called for this driver version
+    if (state.lastCx != DRIVER_VERSION) {
+        state.lastCx = DRIVER_VERSION
+        return runInMillis(300, "autoConfigure")
     }
 
     // Extract msg
@@ -394,7 +398,7 @@ def parse(String description) {
 
 @Field def Utils = [
     sendZigbeeCommands: { List<String> cmds ->
-        List<String> send = delayBetween(cmds.findAll { !it.startsWith("delay") }, 2000)
+        List<String> send = delayBetween(cmds.findAll { !it.startsWith("delay") }, 1000)
         Log.debug "◀ Sending Zigbee messages: ${send}"
         state.lastTx = now()
         sendHubCommand new hubitat.device.HubMultiAction(send, hubitat.device.Protocol.ZIGBEE)
