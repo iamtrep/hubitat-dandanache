@@ -297,10 +297,10 @@ Follow the steps below if you don't know what "Hubitat Package Manager" is:
 | Since version | `3.5.0` |
 
 ### Features
-* Commands: On, Off, Toggle, On with Timed Off, Set/cycle fan speed
+* Commands: On, Off, Toggle, Set/Cycle fan speed
 * Particulate Matter < 2.5 microns (PM 2.5) sensor data
 * Filter usage (%) and Filter status (normal / replace) information
-* Configuration: Filter life time, Child lock, Panel lights
+* Configuration: Sensor report frequency, Filter life time, Child lock, LED status
 * Health status (online / offline)
 * Refresh device state on demand
 * Report Zigbee Neighbors and Routing Tables (device acts as a Zigbee router)
