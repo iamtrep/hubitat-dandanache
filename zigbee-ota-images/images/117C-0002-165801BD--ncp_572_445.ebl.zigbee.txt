@@ -1,4 +1,4 @@
-Source: http://fw.ota.homesmart.ikea.net/global/GW1.0/01.20.065/bin/190579-ncp_572_445.ebl.ota.ota.signed
+Source: http://fw.ota.homesmart.ikea.net/global/GW1.0/01.21.031/bin/190579-ncp_572_445.ebl.ota.ota.signed
 Image Details: {
     "otaHeaderVersion": 256,
     "otaHeaderLength": 56,

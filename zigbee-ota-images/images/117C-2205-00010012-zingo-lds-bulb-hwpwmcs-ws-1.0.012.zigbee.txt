@@ -1,4 +1,4 @@
-Source: http://fw.ota.homesmart.ikea.net/global/GW1.0/01.20.065/bin/10076692-zingo_lds_bulb_hwpwmcs_ws-1.0.012.ota.ota.signed
+Source: http://fw.ota.homesmart.ikea.net/global/GW1.0/01.21.031/bin/10076692-zingo_lds_bulb_hwpwmcs_ws-1.0.012.ota.ota.signed
 Image Details: {
     "otaHeaderVersion": 256,
     "otaHeaderLength": 56,

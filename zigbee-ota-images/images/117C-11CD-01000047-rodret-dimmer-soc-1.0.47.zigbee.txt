@@ -1,4 +1,4 @@
-Source: http://fw.ota.homesmart.ikea.net/global/GW1.0/01.20.065/bin/rodret_dimmer_soc-0x11cd-1.0.47-prod.ota.ota.signed
+Source: http://fw.ota.homesmart.ikea.net/global/GW1.0/01.21.031/bin/rodret_dimmer_soc-0x11cd-1.0.47-prod.ota.ota.signed
 Image Details: {
     "otaHeaderVersion": 256,
     "otaHeaderLength": 56,

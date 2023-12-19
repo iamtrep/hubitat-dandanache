@@ -1,4 +1,4 @@
-Source: http://fw.ota.homesmart.ikea.net/global/GW1.0/01.20.065/bin/191100-4.1-TRADFRI-sy5882-driver-ws-2.3.091.ota.ota.signed
+Source: http://fw.ota.homesmart.ikea.net/global/GW1.0/01.21.031/bin/191100-4.1-TRADFRI-sy5882-driver-ws-2.3.091.ota.ota.signed
 Image Details: {
     "otaHeaderVersion": 256,
     "otaHeaderLength": 56,

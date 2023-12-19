@@ -1,4 +1,4 @@
-Source: http://fw.ota.homesmart.ikea.net/global/GW1.0/01.20.065/bin/10037603-3.1-TRADFRI-signal-repeater-2.3.086.ota.ota.signed
+Source: http://fw.ota.homesmart.ikea.net/global/GW1.0/01.21.031/bin/10037603-3.1-TRADFRI-signal-repeater-2.3.086.ota.ota.signed
 Image Details: {
     "otaHeaderVersion": 256,
     "otaHeaderLength": 56,
