@@ -7,6 +7,7 @@
     "dateReleased": "2023-12-14",
     "documentationLink": "https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/",
     "communityLink": "https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853",
+    "payPalUrl": "https://www.buymeacoffee.com/dandanache",
     "licenseFile": "https://raw.githubusercontent.com/dan-danache/hubitat/master/LICENSE",
     "category": "Control",
     "tags": [ "Zigbee", "Buttons", "Lights & Switches" ],
