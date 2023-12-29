@@ -496,6 +496,9 @@ More info about installing custom drivers is available in the [Official Document
 * Battery indicator (%)
 * Health status (online / offline)
 
+### Known Issues
+* Max reported illuminance is 1364 lux; more than enough for indoor usage
+
 ### Device Pairing
 1. Remove device from its position using a small screwdriver and, on the back, you should see the small pair button (🔗).
 1. In the Hubitat interface, go to "Devices", click "Add Device" in the top right, click "Zigbee", then click "Start
