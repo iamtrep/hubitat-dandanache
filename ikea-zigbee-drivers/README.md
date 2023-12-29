@@ -4,6 +4,10 @@ Supported devices:
 * [Askvader On/Off Switch (E1836)](#askvader-onoff-switch-e1836)
 * [Parasoll Door/Window Sensor (E2013)](#parasoll-doorwindow-sensor-e2013)
 * [Rodret Dimmer (E2201)](#rodret-dimmer-e2201)
+* [Somrig Shortcut Button (E2213)](#somrig-shortcut-button-e2213)
+* [Starkvind Air Purifier (E2006)](#starkvind-air-purifier-e2006)
+* [Styrbar Remote Control N2 (E2002)](#styrbar-remote-control-n2-e2002)
+* [Symfonisk Sound Remote Gen2 (E2123)](#symfonisk-sound-remote-gen2-e2123)
 * [Tradfri Control Outlet (E1603, E1706)](#tradfri-control-outlet-e1603-e1706)
 * [Tradfri LED Driver (ICPSHC24)](#tradfri-led-driver-icpshc24)
 * [Tradfri Motion Sensor (E1745)](#tradfri-motion-sensor-e1745)
@@ -11,10 +15,6 @@ Supported devices:
 * [Tradfri Open/Close Remote (E1766)](#tradfri-openclose-remote-e1766)
 * [Tradfri Remote Control (E1810)](#tradfri-remote-control-e1810)
 * [Tradfri Shortcut Button (E1812)](#tradfri-shortcut-button-e1812)
-* [Somrig Shortcut Button (E2213)](#somrig-shortcut-button-e2213)
-* [Starkvind Air Purifier (E2006)](#starkvind-air-purifier-e2006)
-* [Styrbar Remote Control N2 (E2002)](#styrbar-remote-control-n2-e2002)
-* [Symfonisk Sound Remote Gen2 (E2123)](#symfonisk-sound-remote-gen2-e2123)
 * [Vallhorn Motion Sensor (E2134)](#vallhorn-motion-sensor-e2134)
 
 ## Driver Install
@@ -121,6 +121,133 @@ More info about installing custom drivers is available in the [Official Document
    > 5 seconds**.
 1. > IMPORTANT: Immediately after the device LED starts blinking red, keep the device **as close as you can** against
    > your Hubitat hub for **at least 30 seconds** (after the LED stops blinking and turns off).
+1. Return to the pairing page and give your device a name and assign it to a room.
+1. Close the device battery compartiment.
+1. That's it, Have fun!
+
+
+## Somrig Shortcut Button (E2213)
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="img/Ikea_E2213.webp" style="width: 200px"> |
+| Product Code | `305.603.54` |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E2213.groovy` |
+| Tested firmwares | `1.0.20` |
+| Since version | `3.6.0` |
+
+### Features
+* Button Push events for: both buttons
+* Button Double-Tap event for: both buttons
+* Button Hold events for: both buttons
+* Button Release events for: both buttons
+* Battery indicator (%)
+* Health status (online / offline)
+
+### Device Pairing
+1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
+1. In the Hubitat interface, go to "Devices", click "Add Device" in the top right, click "Zigbee", then click "Start
+   Zigbee pairing".
+1. > IMPORTANT: Move close to your Hubitat hub, then click the pair button in the battery compartiment **4 times within
+   > 5 seconds**; the red LED light can be seen from the back / battery side.
+1. > IMPORTANT: Immediately after the device LED starts blinking red, keep the device **as close as you can** against
+   > your Hubitat hub for **at least 30 seconds** (after the LED stops blinking and turns off).
+1. Return to the pairing page and give your device a name and assign it to a room.
+1. Close the device battery compartiment.
+1. That's it, Have fun!
+
+
+## Starkvind Air Purifier (E2006)
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="img/Ikea_E2006.webp" style="width: 200px"> |
+| Product Code | `194.442.19` |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E2006.groovy` |
+| Tested firmwares | `1.0.033`｜`1.1.001` |
+| Since version | `3.5.0` |
+
+### Features
+* Commands: On, Off, Toggle, Set/Cycle fan speed
+* Particulate Matter < 2.5 microns (PM 2.5) sensor data
+* Calculate US AQI score based on PM 2.5 value
+* Filter usage (%) and Filter status (normal / replace) information
+* Configuration: Sensor report frequency, Filter life time, Child lock, LED status
+* Health status (online / offline)
+* Refresh device state on demand
+* Report Zigbee Neighbors and Routing Tables (device acts as a Zigbee router)
+
+### Device Pairing
+1. If the device is already plugged in, take it out for 20 seconds (power-cycle); do this before each pair attempt.
+1. Plug the device in an outlet.
+1. Open the round top lid and you should see the pair button (🔗) next to the filter reset button.
+1. In the Hubitat interface, go to "Devices", click "Add Device" in the top right, click "Zigbee", then click "Start
+   Zigbee pairing".
+1. Press and hold the pair button **for at least 5 seconds** until the LED starts blinking.
+1. Return to the pairing page and give your device a name and assign it to a room.
+1. Put back the lid and fix it in place.
+1. That's it, Have fun!
+
+
+## Styrbar Remote Control N2 (E2002)
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="img/Ikea_E2002.webp" style="width: 200px"> |
+| Product Code | `304.883.63` |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E2002.groovy` |
+| Tested firmwares | `1.0.024`｜`2.4.5` |
+| Since version | `2.0.0` |
+
+### Features
+* Button Push events for: all buttons
+* Button Hold events for: Button 1 (🔆) and Button 2 (🔅)
+* Button Release events for: Button 1 (🔆), Button 2 (🔅)
+* Battery indicator (%)
+* Health status (online / offline)
+
+### Known Issues
+* The Hold / Release events don't work correctly on the Next and Prev buttons.
+
+### Device Pairing
+1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
+1. In the Hubitat interface, go to "Devices", click "Add Device" in the top right, click "Zigbee", then click "Start
+   Zigbee pairing".
+1. > IMPORTANT: Move close to your Hubitat hub, then click the pair button in the battery compartiment **4 times within
+   > 5 seconds**.
+1. > IMPORTANT: Immediately after the device LED starts blinking red, keep the device **as close as you can** against
+   > your Hubitat hub for **at least 30 seconds** (after the LED stops blinking and turns off).
+1. Return to the pairing page and give your device a name and assign it to a room.
+1. Close the device battery compartiment.
+1. That's it, Have fun!
+
+
+## Symfonisk Sound Remote Gen2 (E2123)
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="img/Ikea_E2123.webp" style="width: 200px"> |
+| Product Code | `305.273.12` |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E2123.groovy` |
+| Tested firmwares | `1.0.012`｜`1.0.35` |
+| Since version | `1.0.0` |
+
+### Features
+* Button Push events for: all buttons
+* Button Hold events for: Button 2 (Plus), Button 3 (Minus), Button 6 (•) and Button 7 (••)
+* Button Release events for: Button 6 (•) and Button 7 (••)
+* Button Double-Tap events for: Button 6 (•) and Button 7 (••)
+* Battery indicator (%)
+* Health status (online / offline)
+
+### Device Pairing
+1. Open the battery compartiment and you should see the small pair button (🔗).
+1. In the Hubitat interface, go to "Devices", click "Add Device" in the top right, click "Zigbee", then click "Start
+   Zigbee pairing".
+1. > IMPORTANT: Move close to your Hubitat hub, then click the pair button in the battery compartiment **4 times within
+   > 5 seconds**.
+1. > IMPORTANT: Immediately after the device LED starts blinking red, keep the device **as close as you can** against
+   > your Hubitat hub until the LED stops blinking and turns off.
 1. Return to the pairing page and give your device a name and assign it to a room.
 1. Close the device battery compartiment.
 1. That's it, Have fun!
@@ -348,133 +475,6 @@ More info about installing custom drivers is available in the [Official Document
    > 5 seconds**; the red LED light can be seen from the back / battery side.
 1. > IMPORTANT: Immediately after the device LED starts blinking red, keep the device **as close as you can** against
    > your Hubitat hub for **at least 30 seconds** (after the LED stops blinking and turns off).
-1. Return to the pairing page and give your device a name and assign it to a room.
-1. Close the device battery compartiment.
-1. That's it, Have fun!
-
-
-## Somrig Shortcut Button (E2213)
-
-| Parameter | Details |
-|-----------|-------------|
-| Product Image | <img src="img/Ikea_E2213.webp" style="width: 200px"> |
-| Product Code | `305.603.54` |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E2213.groovy` |
-| Tested firmwares | `1.0.20` |
-| Since version | `3.6.0` |
-
-### Features
-* Button Push events for: both buttons
-* Button Double-Tap event for: both buttons
-* Button Hold events for: both buttons
-* Button Release events for: both buttons
-* Battery indicator (%)
-* Health status (online / offline)
-
-### Device Pairing
-1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
-1. In the Hubitat interface, go to "Devices", click "Add Device" in the top right, click "Zigbee", then click "Start
-   Zigbee pairing".
-1. > IMPORTANT: Move close to your Hubitat hub, then click the pair button in the battery compartiment **4 times within
-   > 5 seconds**; the red LED light can be seen from the back / battery side.
-1. > IMPORTANT: Immediately after the device LED starts blinking red, keep the device **as close as you can** against
-   > your Hubitat hub for **at least 30 seconds** (after the LED stops blinking and turns off).
-1. Return to the pairing page and give your device a name and assign it to a room.
-1. Close the device battery compartiment.
-1. That's it, Have fun!
-
-
-## Starkvind Air Purifier (E2006)
-
-| Parameter | Details |
-|-----------|-------------|
-| Product Image | <img src="img/Ikea_E2006.webp" style="width: 200px"> |
-| Product Code | `194.442.19` |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E2006.groovy` |
-| Tested firmwares | `1.0.033`｜`1.1.001` |
-| Since version | `3.5.0` |
-
-### Features
-* Commands: On, Off, Toggle, Set/Cycle fan speed
-* Particulate Matter < 2.5 microns (PM 2.5) sensor data
-* Calculate US AQI score based on PM 2.5 value
-* Filter usage (%) and Filter status (normal / replace) information
-* Configuration: Sensor report frequency, Filter life time, Child lock, LED status
-* Health status (online / offline)
-* Refresh device state on demand
-* Report Zigbee Neighbors and Routing Tables (device acts as a Zigbee router)
-
-### Device Pairing
-1. If the device is already plugged in, take it out for 20 seconds (power-cycle); do this before each pair attempt.
-1. Plug the device in an outlet.
-1. Open the round top lid and you should see the pair button (🔗) next to the filter reset button.
-1. In the Hubitat interface, go to "Devices", click "Add Device" in the top right, click "Zigbee", then click "Start
-   Zigbee pairing".
-1. Press and hold the pair button **for at least 5 seconds** until the LED starts blinking.
-1. Return to the pairing page and give your device a name and assign it to a room.
-1. Put back the lid and fix it in place.
-1. That's it, Have fun!
-
-
-## Styrbar Remote Control N2 (E2002)
-
-| Parameter | Details |
-|-----------|-------------|
-| Product Image | <img src="img/Ikea_E2002.webp" style="width: 200px"> |
-| Product Code | `304.883.63` |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E2002.groovy` |
-| Tested firmwares | `1.0.024`｜`2.4.5` |
-| Since version | `2.0.0` |
-
-### Features
-* Button Push events for: all buttons
-* Button Hold events for: Button 1 (🔆) and Button 2 (🔅)
-* Button Release events for: Button 1 (🔆), Button 2 (🔅)
-* Battery indicator (%)
-* Health status (online / offline)
-
-### Known Issues
-* The Hold / Release events don't work correctly on the Next and Prev buttons.
-
-### Device Pairing
-1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
-1. In the Hubitat interface, go to "Devices", click "Add Device" in the top right, click "Zigbee", then click "Start
-   Zigbee pairing".
-1. > IMPORTANT: Move close to your Hubitat hub, then click the pair button in the battery compartiment **4 times within
-   > 5 seconds**.
-1. > IMPORTANT: Immediately after the device LED starts blinking red, keep the device **as close as you can** against
-   > your Hubitat hub for **at least 30 seconds** (after the LED stops blinking and turns off).
-1. Return to the pairing page and give your device a name and assign it to a room.
-1. Close the device battery compartiment.
-1. That's it, Have fun!
-
-
-## Symfonisk Sound Remote Gen2 (E2123)
-
-| Parameter | Details |
-|-----------|-------------|
-| Product Image | <img src="img/Ikea_E2123.webp" style="width: 200px"> |
-| Product Code | `305.273.12` |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E2123.groovy` |
-| Tested firmwares | `1.0.012`｜`1.0.35` |
-| Since version | `1.0.0` |
-
-### Features
-* Button Push events for: all buttons
-* Button Hold events for: Button 2 (Plus), Button 3 (Minus), Button 6 (•) and Button 7 (••)
-* Button Release events for: Button 6 (•) and Button 7 (••)
-* Button Double-Tap events for: Button 6 (•) and Button 7 (••)
-* Battery indicator (%)
-* Health status (online / offline)
-
-### Device Pairing
-1. Open the battery compartiment and you should see the small pair button (🔗).
-1. In the Hubitat interface, go to "Devices", click "Add Device" in the top right, click "Zigbee", then click "Start
-   Zigbee pairing".
-1. > IMPORTANT: Move close to your Hubitat hub, then click the pair button in the battery compartiment **4 times within
-   > 5 seconds**.
-1. > IMPORTANT: Immediately after the device LED starts blinking red, keep the device **as close as you can** against
-   > your Hubitat hub until the LED stops blinking and turns off.
 1. Return to the pairing page and give your device a name and assign it to a room.
 1. Close the device battery compartiment.
 1. That's it, Have fun!
