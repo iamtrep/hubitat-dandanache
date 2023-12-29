@@ -10,7 +10,7 @@ import groovy.time.TimeCategory
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = "IKEA Tradfri On/Off Switch (E1743)"
-@Field static final String DRIVER_VERSION = "3.5.1"
+@Field static final String DRIVER_VERSION = "3.6.0"
 
 // Fields for capability.HealthCheck
 @Field static final Map<String, String> HEALTH_CHECK = [
@@ -52,10 +52,10 @@ metadata {
             title: "Log verbosity",
             description: "<small>Choose the kind of messages that appear in the \"Logs\" section.</small>",
             options: [
-                "1": "Debug - log everything",
-                "2": "Info - log important events",
-                "3": "Warning - log events that require attention",
-                "4": "Error - log errors"
+                "1" : "Debug - log everything",
+                "2" : "Info - log important events",
+                "3" : "Warning - log events that require attention",
+                "4" : "Error - log errors"
             ],
             defaultValue: "1",
             required: true
@@ -143,7 +143,7 @@ def configure(auto = false) {
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
     
     // Configuration for capability.Battery
-    cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0001 0x0021 0x20 0x0000 0x4650 {02} {}" // Report battery at least every 5 hours (min 1% change)
+    cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0001 0x0021 0x20 0x0000 0x4650 {02} {}" // Report BatteryPercentage (uint8) at least every 5 hours (min 1% change)
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0001 {${device.zigbeeId}} {}" // Power Configuration cluster
     cmds += zigbee.readAttribute(0x0001, 0x0021)  // BatteryPercentage
     
@@ -250,7 +250,7 @@ def parse(String description) {
     // Auto-Configure device: configure() was not called for this driver version
     if (state.lastCx != DRIVER_VERSION) {
         state.lastCx = DRIVER_VERSION
-        return runInMillis(300, "autoConfigure")
+        runInMillis(1500, "autoConfigure")
     }
 
     // Extract msg
@@ -301,19 +301,17 @@ def parse(String description) {
         
         // Events for capability.Battery
         
-        // Report Attributes, Read Attributes Reponse: BatteryPercentage
+        // Report/Read Attributes Reponse: BatteryPercentage
         case { contains it, [clusterInt:0x0001, commandInt:0x0A, attrInt:0x0021] }:
         case { contains it, [clusterInt:0x0001, commandInt:0x01, attrInt:0x0021] }:
             Integer percentage = Integer.parseInt(msg.value, 16)
         
-            // (0xFF) 255 is an invalid value for the battery percentage attribute, so we just ignore it
-            if (percentage == 255) {
-                return Log.warn("Ignored invalid reported battery percentage value: 0xFF (255)")
-            }
+            // 0xFF represents an invalid battery percentage value, so we just ignore it
+            if (percentage == 0xFF) return Log.warn("Ignored invalid reported battery percentage value: 0xFF")
         
             percentage =  percentage / 2
             Utils.sendEvent name:"battery", value:percentage, unit:"%", type:"physical", descriptionText:"Battery is ${percentage}% full"
-            return Utils.processedZclMessage("Report/Read Attributes Response", "BatteryPercentage=${percentage}%")
+            return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "BatteryPercentage=${percentage}%")
         
         // Other events that we expect but are not usefull for capability.Battery behavior
         case { contains it, [clusterInt:0x0001, commandInt:0x07] }:  // ConfigureReportingResponse
@@ -388,10 +386,10 @@ def parse(String description) {
 // ===================================================================================================================
 
 @Field def Map Log = [
-    debug: { message -> if (logLevel == "1") log.debug "${device.displayName} ${message.uncapitalize()}" },
-    info:  { message -> if (logLevel <= "2") log.info  "${device.displayName} ${message.uncapitalize()}" },
-    warn:  { message -> if (logLevel <= "3") log.warn  "${device.displayName} ${message.uncapitalize()}" },
-    error: { message -> log.error "${device.displayName} ${message.uncapitalize()}" }
+    debug: { if (logLevel == "1") log.debug "${device.displayName} ${it.uncapitalize()}" },
+    info:  { if (logLevel <= "2") log.info  "${device.displayName} ${it.uncapitalize()}" },
+    warn:  { if (logLevel <= "3") log.warn  "${device.displayName} ${it.uncapitalize()}" },
+    error: { log.error "${device.displayName} ${it.uncapitalize()}" }
 ]
 
 // ===================================================================================================================
@@ -400,7 +398,7 @@ def parse(String description) {
 
 @Field def Utils = [
     sendZigbeeCommands: { List<String> cmds ->
-        if (cmds.isEmpty()) { return }
+        if (cmds.isEmpty()) return
         List<String> send = delayBetween(cmds.findAll { !it.startsWith("delay") }, 1000)
         Log.debug "◀ Sending Zigbee messages: ${send}"
         state.lastTx = now()

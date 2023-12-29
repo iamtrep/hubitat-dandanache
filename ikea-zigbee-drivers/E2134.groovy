@@ -1,52 +1,40 @@
 /**
- * IKEA Tradfri Control Outlet (E1603)
+ * IKEA Vallhorn Motion Sensor (E2134)
  *
  * @see https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/
- * @see https://zigbee.blakadder.com/Ikea_E1603.html
+ * @see https://zigbee.blakadder.com/Ikea_E2134.html
  * @see https://ww8.ikea.com/ikeahomesmart/releasenotes/releasenotes.html
  * @see https://static.homesmart.ikea.com/releaseNotes/
  */
 import groovy.time.TimeCategory
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = "IKEA Tradfri Control Outlet (E1603)"
+@Field static final String DRIVER_NAME = "IKEA Vallhorn Motion Sensor (E2134)"
 @Field static final String DRIVER_VERSION = "3.6.0"
 
 // Fields for capability.HealthCheck
 @Field static final Map<String, String> HEALTH_CHECK = [
     "schedule": "0 0 0/1 ? * * *", // Health will be checked using this cron schedule
-    "thereshold": "3600" // When checking, mark the device as offline if no Zigbee message was received in the last 3600 seconds
+    "thereshold": "43200" // When checking, mark the device as offline if no Zigbee message was received in the last 43200 seconds
 ]
 
 metadata {
-    definition(name:DRIVER_NAME, namespace:"dandanache", author:"Dan Danache", importUrl:"https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E1603.groovy") {
+    definition(name:DRIVER_NAME, namespace:"dandanache", author:"Dan Danache", importUrl:"https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E2134.groovy") {
         capability "Configuration"
-        capability "Switch"
+        capability "IlluminanceMeasurement"
+        capability "Sensor"
+        capability "MotionSensor"
+        capability "Battery"
         capability "HealthCheck"
         capability "PowerSource"
         capability "Refresh"
-        capability "HealthCheck"
 
-        // For firmware: 2.0.024
-        fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0003,0004,0005,0006,0008,1000,FC7C", outClusters:"0005,0019,0020,1000", model:"TRADFRI control outlet", manufacturer:"IKEA of Sweden"
-
-        // For firmware: 2.3.089 (117C-1101-23089631)
-        fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0003,0004,0005,0006,0008,1000,FC7C", outClusters:"0019,0020,1000", model:"TRADFRI control outlet", manufacturer:"IKEA of Sweden"
+        // For firmware: 1.0.57 (117C-1938-01000057)
+        fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0001,0003,0020,0B05,1000,FC7C,FC81", outClusters:"0003,0004,0006,0019,1000", model:"VALLHORN Wireless Motion Sensor", manufacturer:"IKEA of Sweden"
         
         // Attributes for capability.HealthCheck
         attribute "healthStatus", "enum", ["offline", "online", "unknown"]
-        
-        // Attributes for capability.ZigbeeRouter
-        attribute "neighbors", "string"
-        attribute "routes", "string"
     }
-    
-    // Commands for capability.Switch
-    command "toggle"
-    command "onWithTimedOff", [[name:"On time*", type:"NUMBER", description:"After how many seconds power will be turned Off [1..6500]"]]
-    
-    // Commands for capability.ZigbeeRouter
-    command "requestRoutingData"
     
     // Commands for capability.FirmwareUpdate
     command "updateFirmware"
@@ -64,21 +52,6 @@ metadata {
                 "4" : "Error - log errors"
             ],
             defaultValue: "1",
-            required: true
-        )
-        
-        // Inputs for capability.Switch
-        input(
-            name: "powerOnBehavior",
-            type: "enum",
-            title: "Power On behaviour",
-            description: "<small>Select what happens after a power outage.</small>",
-            options: [
-                "TURN_POWER_ON": "Turn power On",
-                "TURN_POWER_OFF": "Turn power Off",
-                "RESTORE_PREVIOUS_STATE": "Restore previous state"
-            ],
-            defaultValue: "RESTORE_PREVIOUS_STATE",
             required: true
         )
     }
@@ -107,14 +80,6 @@ def updated(auto = false) {
     }
     if (logLevel == "1") runIn 1800, "logsOff"
     Log.info "🛠️ logLevel = ${logLevel}"
-    
-    // Preferences for capability.Switch
-    if (powerOnBehavior == null) {
-        powerOnBehavior = "RESTORE_PREVIOUS_STATE"
-        device.updateSetting("powerOnBehavior", [value:powerOnBehavior, type:"enum"])
-    }
-    Log.info "🛠️ powerOnBehavior = ${powerOnBehavior}"
-    cmds += zigbee.writeAttribute(0x0006, 0x4003, 0x30, powerOnBehavior == "TURN_POWER_OFF" ? 0x00 : (powerOnBehavior == "TURN_POWER_ON" ? 0x01 : 0xFF))
     
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, "healthCheck"
@@ -165,17 +130,24 @@ def configure(auto = false) {
 
     List<String> cmds = []
 
-    // Configure IKEA Tradfri Control Outlet (E1603) specific Zigbee reporting
+    // Configure IKEA Vallhorn Motion Sensor (E2134) specific Zigbee reporting
     // -- No reporting needed
 
-    // Add IKEA Tradfri Control Outlet (E1603) specific Zigbee binds
+    // Add IKEA Vallhorn Motion Sensor (E2134) specific Zigbee binds
     // -- No binds needed
     
-    // Configuration for capability.Switch
-    sendEvent name:"switch", value:"on", type:"digital", descriptionText:"Switch initialized to on"
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
-    cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes
-    cmds += zigbee.readAttribute(0x0006, 0x0000) // OnOff
+    // Configuration for capability.Illuminance
+    cmds += "he cr 0x${device.deviceNetworkId} 0x03 0x0400 0x0001 0x21 0x0000 0x4650 {00} {}" // Report MeasuredValue (uint16)
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x03 0x01 0x0400 {${device.zigbeeId}} {}" // Occupancy Sensing cluster
+    
+    // Configuration for capability.Occupancy
+    cmds += "he cr 0x${device.deviceNetworkId} 0x02 0x0406 0x0001 0x18 0x0000 0x4650 {00} {}" // Report Occupancy (map8)
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x02 0x01 0x0406 {${device.zigbeeId}} {}" // Occupancy Sensing cluster
+    
+    // Configuration for capability.Battery
+    cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0001 0x0021 0x20 0x0000 0x4650 {02} {}" // Report BatteryPercentage (uint8) at least every 5 hours (min 1% change)
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0001 {${device.zigbeeId}} {}" // Power Configuration cluster
+    cmds += zigbee.readAttribute(0x0001, 0x0021)  // BatteryPercentage
     
     // Configuration for capability.HealthCheck
     sendEvent name:"healthStatus", value:"online", descriptionText:"Health status initialized to online"
@@ -195,29 +167,6 @@ def configure(auto = false) {
 private autoConfigure() {
     Log.warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure(true)
-}
-
-// Implementation for capability.Switch
-def on() {
-    Log.debug "Sending On command"
-    Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {114301}"])
-}
-def off() {
-    Log.debug "Sending Off command"
-    Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {114300}"])
-}
-
-def toggle() {
-    Log.debug "Sending Toggle command"
-    Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {114302}"])
-}
-
-def onWithTimedOff(onTime = 1) {
-    Integer delay = onTime < 1 ? 1 : (onTime > 6500 ? 6500 : onTime)
-    Log.debug "Sending OnWithTimedOff command"
-
-    String payload = "00 ${zigbee.swapOctets(zigbee.convertToHexString(delay * 10, 4))} 0000"
-    Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {114342 ${payload}}"])
 }
 
 // Implementation for capability.HealthCheck
@@ -255,18 +204,10 @@ def refresh(buttonPress = true) {
         }
     }
     List<String> cmds = []
-    cmds += zigbee.readAttribute(0x0006, 0x0000) // OnOff
-    cmds += zigbee.readAttribute(0x0006, 0x4003) // PowerOnBehavior
+    cmds += zigbee.readAttribute(0x0001, 0x0021) // BatteryPercentage
+    cmds += zigbee.readAttribute(0x0406, 0x0000, [destEndpoint:0x02]) // Occupancy
+    cmds += zigbee.readAttribute(0x0400, 0x0000, [destEndpoint:0x03]) // MeasuredValue
     Utils.sendZigbeeCommands cmds
-}
-
-// Implementation for capability.ZigbeeRouter
-def requestRoutingData() {
-    Log.info "Asking the device to send its Neighbors Table and the Routing Table data ..."
-    Utils.sendZigbeeCommands([
-        "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0031 {00} {0x00}",
-        "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0032 {00} {0x00}"
-    ])
 }
 
 // Implementation for capability.FirmwareUpdate
@@ -313,7 +254,7 @@ def parse(String description) {
     switch (msg) {
 
         // ---------------------------------------------------------------------------------------------------------------
-        // Handle IKEA Tradfri Control Outlet (E1603) specific Zigbee messages
+        // Handle IKEA Vallhorn Motion Sensor (E2134) specific Zigbee messages
         // ---------------------------------------------------------------------------------------------------------------
 
         // No specific events
@@ -322,33 +263,56 @@ def parse(String description) {
         // Handle capabilities Zigbee messages
         // ---------------------------------------------------------------------------------------------------------------
         
-        // Events for capability.Switch
+        // Events for capability.Illuminance
         
-        // Report/Read Attributes: OnOff
-        case { contains it, [clusterInt:0x0006, commandInt:0x0A, attrInt:0x0000] }:
-        case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x0000] }:
-            String newState = msg.value == "00" ? "off" : "on"
-            Utils.sendEvent name:"switch", value:newState, descriptionText:"Was turned ${newState}", type:type
+        // Report/Read Attributes Reponse: MeasuredValue
+        case { contains it, [clusterInt:0x0400, commandInt:0x0A, attrInt:0x0000] }:
+        case { contains it, [clusterInt:0x0400, commandInt:0x01, attrInt:0x0000] }:
+            Integer illuminance = Integer.parseInt(msg.value, 16)
         
-            return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "OnOff=${newState}")
+            // 0xFFFF represents an invalid illuminance value, so we just ignore it
+            if (illuminance == 0xFFFF) return Log.warn("Ignored invalid reported illuminance value: 0xFFFF")
         
-        // Read Attributes Response: powerOnBehavior
-        case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x4003] }:
-            String newValue = ""
-            switch (Integer.parseInt(msg.value, 16)) {
-                case 0x00: newValue = "TURN_POWER_OFF"; break
-                case 0x01: newValue = "TURN_POWER_ON"; break
-                case 0xFF: newValue = "RESTORE_PREVIOUS_STATE"; break
-                default: return Log.warn("Received attribute value: powerOnBehavior=${msg.value}")
+            // Transform raw value to lux
+            if (illuminance != 0) {
+                illuminance = Math.pow(10, (illuminance - 1) / 10000)
             }
-            powerOnBehavior = newValue
-            device.updateSetting("powerOnBehavior",[ value:newValue, type:"enum" ])
+            Utils.sendEvent(name:"illuminance", value:illuminance, unit:"lx", type:"physical", descriptionText:"Illuminance is ${illuminance}")
+            return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "Illuminance/MeasuredValue=${msg.value}")
         
-            return Utils.processedZclMessage("Read Attributes Response", "PowerOnBehavior=${newValue}")
+        // Other events that we expect but are not usefull for capability.Illuminance behavior
+        case { contains it, [clusterInt:0x0400, commandInt:0x07] }:  // ConfigureReportingResponse
+            return
         
-        // Other events that we expect but are not usefull for capability.Switch behavior
-        case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attribute Response (0x04)
-        case { contains it, [clusterInt:0x0006, commandInt:0x07] }: // Configure Reporting Response
+        // Events for capability.Occupancy
+        
+        // Report/Read Attributes Reponse: Occupancy
+        case { contains it, [clusterInt:0x0406, commandInt:0x0A, attrInt:0x0000] }:
+        case { contains it, [clusterInt:0x0406, commandInt:0x01, attrInt:0x0000] }:
+            String motion = msg.value == "01" ? "active" : "inactive"
+            Utils.sendEvent(name:"motion", value:motion, type:"physical", descriptionText:"Is ${motion}")
+            return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "Occupancy=${msg.value}")
+        
+        // Other events that we expect but are not usefull for capability.Occupancy behavior
+        case { contains it, [clusterInt:0x0406, commandInt:0x07] }:  // ConfigureReportingResponse
+            return
+        
+        // Events for capability.Battery
+        
+        // Report/Read Attributes Reponse: BatteryPercentage
+        case { contains it, [clusterInt:0x0001, commandInt:0x0A, attrInt:0x0021] }:
+        case { contains it, [clusterInt:0x0001, commandInt:0x01, attrInt:0x0021] }:
+            Integer percentage = Integer.parseInt(msg.value, 16)
+        
+            // 0xFF represents an invalid battery percentage value, so we just ignore it
+            if (percentage == 0xFF) return Log.warn("Ignored invalid reported battery percentage value: 0xFF")
+        
+            percentage =  percentage / 2
+            Utils.sendEvent name:"battery", value:percentage, unit:"%", type:"physical", descriptionText:"Battery is ${percentage}% full"
+            return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "BatteryPercentage=${percentage}%")
+        
+        // Other events that we expect but are not usefull for capability.Battery behavior
+        case { contains it, [clusterInt:0x0001, commandInt:0x07] }:  // ConfigureReportingResponse
             return
         
         // Events for capability.HealthCheck
@@ -376,32 +340,6 @@ def parse(String description) {
             }
             Utils.sendEvent name:"powerSource", value:powerSource, type:"digital", descriptionText:"Power source is ${powerSource}"
             return Utils.processedZclMessage("Read Attributes Response", "PowerSource=${msg.value}")
-        
-        // Events for capability.ZigbeeRouter
-        
-        // Mgmt_Lqi_rsp := { 08:Status, 08:NeighborTableEntries, 08:StartIndex, 08:NeighborTableListCount, n*176:NeighborTableList }
-        // NeighborTableList := { 64:ExtendedPanId, 64:IEEEAddress, 16:NetworkAddress, 02:DeviceType, 02:RxOnWhenIdle, 03:Relationship, 01:Reserved, 02:PermitJoining, 06:Reserved, 08:Depth, 08:LQI }
-        // Example: [6E, 00, 08, 00, 03, 50, 53, 3A, 0D, 00, DF, 66, 15, E9, A6, C9, 17, 00, 6F, 0D, 00, 00, 00, 24, 02, 00, CF, 50, 53, 3A, 0D, 00, DF, 66, 15, 80, BF, CA, 6B, 6A, 38, C1, A4, 4A, 16, 05, 02, 0F, CD, 50, 53, 3A, 0D, 00, DF, 66, 15, D3, FA, E1, 25, 00, 4B, 12, 00, 64, 17, 25, 02, 0F, 36]
-        case { contains it, [endpointInt:0x00, clusterInt:0x8031, commandInt:0x00] }:
-            if (msg.data[1] != "00") return Log.warn("Failed to retrieve Neighbors Table: data=${msg.data}")
-            Integer entriesCount = Integer.parseInt(msg.data[4], 16)
-        
-            // Use base64 encoding instead of hex encoding to make the message a bit shorter
-            String base64 = msg.data.join().decodeHex().encodeBase64().toString() // Decode test: https://base64.guru/converter/decode/hex
-            sendEvent name:"neighbors", value:"${entriesCount} entries", type:"digital", descriptionText:base64
-            return Utils.processedZdoMessage("Neighbors Table Response", "entries=${entriesCount}, data=${msg.data}")
-        
-        // Mgmt_Rtg_rsp := { 08:Status, 08:RoutingTableEntries, 08:StartIndex, 08:RoutingTableListCount, n*40:RoutingTableList }
-        // RoutingTableList := { 16:DestinationAddress, 03:RouteStatus, 01:MemoryConstrained, 01:ManyToOne, 01:RouteRecordRequired, 02:Reserved, 16:NextHopAddress }
-        // Example: [6F, 00, 0A, 00, 0A, 00, 00, 10, 00, 00, AD, 56, 00, AD, 56, ED, EE, 00, 4A, 16, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00]
-        case { contains it, [endpointInt:0x00, clusterInt:0x8032, commandInt:0x00] }:
-            if (msg.data[1] != "00") return Log.warn("Failed to retrieve Routing Table: data=${msg.data}")
-            Integer entriesCount = Integer.parseInt(msg.data[4], 16)
-        
-            // Use base64 encoding instead of hex encoding to make the message a bit shorter
-            String base64 = msg.data.join().decodeHex().encodeBase64().toString()
-            sendEvent name:"routes", value:"${entriesCount} entries", type:"digital", descriptionText:base64
-            return Utils.processedZdoMessage("Routing Table Response", "entries=${entriesCount}, data=${msg.data}")
 
         // ---------------------------------------------------------------------------------------------------------------
         // Handle common messages (e.g.: received during pairing when we query the device for information)

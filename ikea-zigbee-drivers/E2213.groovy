@@ -1,52 +1,47 @@
 /**
- * IKEA Tradfri Control Outlet (E1603)
+ * IKEA Somrig Shortcut Button (E2213)
  *
  * @see https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/
- * @see https://zigbee.blakadder.com/Ikea_E1603.html
+ * @see https://zigbee.blakadder.com/Ikea_E2213.html
  * @see https://ww8.ikea.com/ikeahomesmart/releasenotes/releasenotes.html
  * @see https://static.homesmart.ikea.com/releaseNotes/
  */
 import groovy.time.TimeCategory
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = "IKEA Tradfri Control Outlet (E1603)"
+@Field static final String DRIVER_NAME = "IKEA Somrig Shortcut Button (E2213)"
 @Field static final String DRIVER_VERSION = "3.6.0"
 
 // Fields for capability.HealthCheck
 @Field static final Map<String, String> HEALTH_CHECK = [
     "schedule": "0 0 0/1 ? * * *", // Health will be checked using this cron schedule
-    "thereshold": "3600" // When checking, mark the device as offline if no Zigbee message was received in the last 3600 seconds
+    "thereshold": "43200" // When checking, mark the device as offline if no Zigbee message was received in the last 43200 seconds
+]
+
+// Fields for capability.PushableButton
+@Field static final Map<String, List<String>> BUTTONS = [
+    "DOT_1": ["1", "•"],
+    "DOT_2": ["2", "••"],
 ]
 
 metadata {
-    definition(name:DRIVER_NAME, namespace:"dandanache", author:"Dan Danache", importUrl:"https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E1603.groovy") {
+    definition(name:DRIVER_NAME, namespace:"dandanache", author:"Dan Danache", importUrl:"https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E2213.groovy") {
         capability "Configuration"
-        capability "Switch"
+        capability "Battery"
+        capability "DoubleTapableButton"
         capability "HealthCheck"
+        capability "HoldableButton"
         capability "PowerSource"
+        capability "PushableButton"
         capability "Refresh"
-        capability "HealthCheck"
+        capability "ReleasableButton"
 
-        // For firmware: 2.0.024
-        fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0003,0004,0005,0006,0008,1000,FC7C", outClusters:"0005,0019,0020,1000", model:"TRADFRI control outlet", manufacturer:"IKEA of Sweden"
-
-        // For firmware: 2.3.089 (117C-1101-23089631)
-        fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0003,0004,0005,0006,0008,1000,FC7C", outClusters:"0019,0020,1000", model:"TRADFRI control outlet", manufacturer:"IKEA of Sweden"
+        // For firmware: 1.0.20 (117C-3B08-01000020)
+        fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0001,0003,0004,0020,1000,FC7C,0xFC80", outClusters:"0003,0004,0006,0008,0019,1000,0xFC80", model:"SOMRIG shortcut button", manufacturer:"IKEA of Sweden"
         
         // Attributes for capability.HealthCheck
         attribute "healthStatus", "enum", ["offline", "online", "unknown"]
-        
-        // Attributes for capability.ZigbeeRouter
-        attribute "neighbors", "string"
-        attribute "routes", "string"
     }
-    
-    // Commands for capability.Switch
-    command "toggle"
-    command "onWithTimedOff", [[name:"On time*", type:"NUMBER", description:"After how many seconds power will be turned Off [1..6500]"]]
-    
-    // Commands for capability.ZigbeeRouter
-    command "requestRoutingData"
     
     // Commands for capability.FirmwareUpdate
     command "updateFirmware"
@@ -64,21 +59,6 @@ metadata {
                 "4" : "Error - log errors"
             ],
             defaultValue: "1",
-            required: true
-        )
-        
-        // Inputs for capability.Switch
-        input(
-            name: "powerOnBehavior",
-            type: "enum",
-            title: "Power On behaviour",
-            description: "<small>Select what happens after a power outage.</small>",
-            options: [
-                "TURN_POWER_ON": "Turn power On",
-                "TURN_POWER_OFF": "Turn power Off",
-                "RESTORE_PREVIOUS_STATE": "Restore previous state"
-            ],
-            defaultValue: "RESTORE_PREVIOUS_STATE",
             required: true
         )
     }
@@ -107,14 +87,6 @@ def updated(auto = false) {
     }
     if (logLevel == "1") runIn 1800, "logsOff"
     Log.info "🛠️ logLevel = ${logLevel}"
-    
-    // Preferences for capability.Switch
-    if (powerOnBehavior == null) {
-        powerOnBehavior = "RESTORE_PREVIOUS_STATE"
-        device.updateSetting("powerOnBehavior", [value:powerOnBehavior, type:"enum"])
-    }
-    Log.info "🛠️ powerOnBehavior = ${powerOnBehavior}"
-    cmds += zigbee.writeAttribute(0x0006, 0x4003, 0x30, powerOnBehavior == "TURN_POWER_OFF" ? 0x00 : (powerOnBehavior == "TURN_POWER_ON" ? 0x01 : 0xFF))
     
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, "healthCheck"
@@ -165,17 +137,17 @@ def configure(auto = false) {
 
     List<String> cmds = []
 
-    // Configure IKEA Tradfri Control Outlet (E1603) specific Zigbee reporting
+    // Configure IKEA Somrig Shortcut Button (E2213) specific Zigbee reporting
     // -- No reporting needed
 
-    // Add IKEA Tradfri Control Outlet (E1603) specific Zigbee binds
-    // -- No binds needed
+    // Add IKEA Somrig Shortcut Button (E2213) specific Zigbee binds
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0xFC80 {${device.zigbeeId}} {}" // IKEA Button cluster (ep 01)
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x02 0x01 0xFC80 {${device.zigbeeId}} {}" // IKEA Button cluster (ep 02)
     
-    // Configuration for capability.Switch
-    sendEvent name:"switch", value:"on", type:"digital", descriptionText:"Switch initialized to on"
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
-    cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes
-    cmds += zigbee.readAttribute(0x0006, 0x0000) // OnOff
+    // Configuration for capability.Battery
+    cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0001 0x0021 0x20 0x0000 0x4650 {02} {}" // Report BatteryPercentage (uint8) at least every 5 hours (min 1% change)
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0001 {${device.zigbeeId}} {}" // Power Configuration cluster
+    cmds += zigbee.readAttribute(0x0001, 0x0021)  // BatteryPercentage
     
     // Configuration for capability.HealthCheck
     sendEvent name:"healthStatus", value:"online", descriptionText:"Health status initialized to online"
@@ -184,6 +156,10 @@ def configure(auto = false) {
     // Configuration for capability.PowerSource
     sendEvent name:"powerSource", value:"unknown", type:"digital", descriptionText:"Power source initialized to unknown"
     cmds += zigbee.readAttribute(0x0000, 0x0007) // PowerSource
+    
+    // Configuration for capability.PushableButton
+    Integer numberOfButtons = BUTTONS.count{_ -> true}
+    sendEvent name:"numberOfButtons", value:numberOfButtons, descriptionText:"Number of buttons is ${numberOfButtons}"
 
     // Query Basic cluster attributes
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x0005, 0x000A, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, ModelIdentifier, ProductCode, SWBuildID
@@ -197,27 +173,11 @@ private autoConfigure() {
     configure(true)
 }
 
-// Implementation for capability.Switch
-def on() {
-    Log.debug "Sending On command"
-    Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {114301}"])
-}
-def off() {
-    Log.debug "Sending Off command"
-    Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {114300}"])
-}
-
-def toggle() {
-    Log.debug "Sending Toggle command"
-    Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {114302}"])
-}
-
-def onWithTimedOff(onTime = 1) {
-    Integer delay = onTime < 1 ? 1 : (onTime > 6500 ? 6500 : onTime)
-    Log.debug "Sending OnWithTimedOff command"
-
-    String payload = "00 ${zigbee.swapOctets(zigbee.convertToHexString(delay * 10, 4))} 0000"
-    Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {114342 ${payload}}"])
+// Implementation for capability.DoubleTapableButton
+def doubleTap(buttonNumber) {
+    String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
+    if (buttonName == null) return Log.warn("Cannot double tap button ${buttonNumber} because it is not defined")
+    Utils.sendEvent name:"doubleTapped", value:buttonNumber, type:"digital", isStateChange:true, descriptionText:"Button ${buttonNumber} (${buttonName}) was double tapped"
 }
 
 // Implementation for capability.HealthCheck
@@ -246,6 +206,20 @@ def pingExecute() {
     Log.info "Will be marked as offline if no message is received until ${thereshold.format("yyyy-MM-dd HH:mm:ss", location.timeZone)} (${offlineMarkAgo} from now)"
 }
 
+// Implementation for capability.HoldableButton
+def hold(buttonNumber) {
+    String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
+    if (buttonName == null) return Log.warn("Cannot hold button ${buttonNumber} because it is not defined")
+    Utils.sendEvent name:"held", value:buttonNumber, type:"digital", isStateChange:true, descriptionText:"Button ${buttonNumber} (${buttonName}) was held"
+}
+
+// Implementation for capability.PushableButton
+def push(buttonNumber) {
+    String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
+    if (buttonName == null) return Log.warn("Cannot push button ${buttonNumber} because it is not defined")
+    Utils.sendEvent name:"pushed", value:buttonNumber, type:"digital", isStateChange:true, descriptionText:"Button ${buttonNumber} (${buttonName}) was pressed"
+}
+
 // Implementation for capability.Refresh
 def refresh(buttonPress = true) {
     if (buttonPress) {
@@ -255,18 +229,15 @@ def refresh(buttonPress = true) {
         }
     }
     List<String> cmds = []
-    cmds += zigbee.readAttribute(0x0006, 0x0000) // OnOff
-    cmds += zigbee.readAttribute(0x0006, 0x4003) // PowerOnBehavior
+    cmds += zigbee.readAttribute(0x0001, 0x0021) // BatteryPercentage
     Utils.sendZigbeeCommands cmds
 }
 
-// Implementation for capability.ZigbeeRouter
-def requestRoutingData() {
-    Log.info "Asking the device to send its Neighbors Table and the Routing Table data ..."
-    Utils.sendZigbeeCommands([
-        "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0031 {00} {0x00}",
-        "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0032 {00} {0x00}"
-    ])
+// Implementation for capability.ReleasableButton
+def release(buttonNumber) {
+    String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
+    if (buttonName == null) return Log.warn("Cannot release button ${buttonNumber} because it is not defined")
+    Utils.sendEvent name:"released", value:buttonNumber, type:"digital", isStateChange:true, descriptionText:"Button ${buttonNumber} (${buttonName}) was released"
 }
 
 // Implementation for capability.FirmwareUpdate
@@ -313,42 +284,54 @@ def parse(String description) {
     switch (msg) {
 
         // ---------------------------------------------------------------------------------------------------------------
-        // Handle IKEA Tradfri Control Outlet (E1603) specific Zigbee messages
+        // Handle IKEA Somrig Shortcut Button (E2213) specific Zigbee messages
         // ---------------------------------------------------------------------------------------------------------------
 
-        // No specific events
+        // IGNORED: We don't know yet if this will be a push, double-tap or hold
+        case { contains it, [clusterInt:0xFC80, commandInt:0x01] }:
+            def button = msg.endpointInt == 0x01 ? BUTTONS.DOT_1 : BUTTONS.DOT_2
+            return Log.debug("Button ${button[0]} (${button[1]}) was pressed-down (ignored as we don't know yet if this will be a push, double-tap or hold)")
+        
+        // Button was held
+        case { contains it, [clusterInt:0xFC80, commandInt:0x02] }:
+            def button = msg.endpointInt == 0x01 ? BUTTONS.DOT_1 : BUTTONS.DOT_2
+            return Utils.sendEvent(name:"held", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was held")
+        
+        // Button was pushed
+        case { contains it, [clusterInt:0xFC80, commandInt:0x03] }:
+            def button = msg.endpointInt == 0x01 ? BUTTONS.DOT_1 : BUTTONS.DOT_2
+            return Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
+        
+        // Button was released
+        case { contains it, [clusterInt:0xFC80, commandInt:0x04] }:
+            def button = msg.endpointInt == 0x01 ? BUTTONS.DOT_1 : BUTTONS.DOT_2
+            return Utils.sendEvent(name:"released", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was released")
+        
+        // Button was double tapped
+        case { contains it, [clusterInt:0xFC80, commandInt:0x06] }:
+            def button = msg.endpointInt == 0x01 ? BUTTONS.DOT_1 : BUTTONS.DOT_2
+            return Utils.sendEvent(name:"doubleTapped", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was double tapped")
 
         // ---------------------------------------------------------------------------------------------------------------
         // Handle capabilities Zigbee messages
         // ---------------------------------------------------------------------------------------------------------------
         
-        // Events for capability.Switch
+        // Events for capability.Battery
         
-        // Report/Read Attributes: OnOff
-        case { contains it, [clusterInt:0x0006, commandInt:0x0A, attrInt:0x0000] }:
-        case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x0000] }:
-            String newState = msg.value == "00" ? "off" : "on"
-            Utils.sendEvent name:"switch", value:newState, descriptionText:"Was turned ${newState}", type:type
+        // Report/Read Attributes Reponse: BatteryPercentage
+        case { contains it, [clusterInt:0x0001, commandInt:0x0A, attrInt:0x0021] }:
+        case { contains it, [clusterInt:0x0001, commandInt:0x01, attrInt:0x0021] }:
+            Integer percentage = Integer.parseInt(msg.value, 16)
         
-            return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "OnOff=${newState}")
+            // 0xFF represents an invalid battery percentage value, so we just ignore it
+            if (percentage == 0xFF) return Log.warn("Ignored invalid reported battery percentage value: 0xFF")
         
-        // Read Attributes Response: powerOnBehavior
-        case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x4003] }:
-            String newValue = ""
-            switch (Integer.parseInt(msg.value, 16)) {
-                case 0x00: newValue = "TURN_POWER_OFF"; break
-                case 0x01: newValue = "TURN_POWER_ON"; break
-                case 0xFF: newValue = "RESTORE_PREVIOUS_STATE"; break
-                default: return Log.warn("Received attribute value: powerOnBehavior=${msg.value}")
-            }
-            powerOnBehavior = newValue
-            device.updateSetting("powerOnBehavior",[ value:newValue, type:"enum" ])
+            percentage =  percentage / 2
+            Utils.sendEvent name:"battery", value:percentage, unit:"%", type:"physical", descriptionText:"Battery is ${percentage}% full"
+            return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "BatteryPercentage=${percentage}%")
         
-            return Utils.processedZclMessage("Read Attributes Response", "PowerOnBehavior=${newValue}")
-        
-        // Other events that we expect but are not usefull for capability.Switch behavior
-        case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attribute Response (0x04)
-        case { contains it, [clusterInt:0x0006, commandInt:0x07] }: // Configure Reporting Response
+        // Other events that we expect but are not usefull for capability.Battery behavior
+        case { contains it, [clusterInt:0x0001, commandInt:0x07] }:  // ConfigureReportingResponse
             return
         
         // Events for capability.HealthCheck
@@ -376,32 +359,6 @@ def parse(String description) {
             }
             Utils.sendEvent name:"powerSource", value:powerSource, type:"digital", descriptionText:"Power source is ${powerSource}"
             return Utils.processedZclMessage("Read Attributes Response", "PowerSource=${msg.value}")
-        
-        // Events for capability.ZigbeeRouter
-        
-        // Mgmt_Lqi_rsp := { 08:Status, 08:NeighborTableEntries, 08:StartIndex, 08:NeighborTableListCount, n*176:NeighborTableList }
-        // NeighborTableList := { 64:ExtendedPanId, 64:IEEEAddress, 16:NetworkAddress, 02:DeviceType, 02:RxOnWhenIdle, 03:Relationship, 01:Reserved, 02:PermitJoining, 06:Reserved, 08:Depth, 08:LQI }
-        // Example: [6E, 00, 08, 00, 03, 50, 53, 3A, 0D, 00, DF, 66, 15, E9, A6, C9, 17, 00, 6F, 0D, 00, 00, 00, 24, 02, 00, CF, 50, 53, 3A, 0D, 00, DF, 66, 15, 80, BF, CA, 6B, 6A, 38, C1, A4, 4A, 16, 05, 02, 0F, CD, 50, 53, 3A, 0D, 00, DF, 66, 15, D3, FA, E1, 25, 00, 4B, 12, 00, 64, 17, 25, 02, 0F, 36]
-        case { contains it, [endpointInt:0x00, clusterInt:0x8031, commandInt:0x00] }:
-            if (msg.data[1] != "00") return Log.warn("Failed to retrieve Neighbors Table: data=${msg.data}")
-            Integer entriesCount = Integer.parseInt(msg.data[4], 16)
-        
-            // Use base64 encoding instead of hex encoding to make the message a bit shorter
-            String base64 = msg.data.join().decodeHex().encodeBase64().toString() // Decode test: https://base64.guru/converter/decode/hex
-            sendEvent name:"neighbors", value:"${entriesCount} entries", type:"digital", descriptionText:base64
-            return Utils.processedZdoMessage("Neighbors Table Response", "entries=${entriesCount}, data=${msg.data}")
-        
-        // Mgmt_Rtg_rsp := { 08:Status, 08:RoutingTableEntries, 08:StartIndex, 08:RoutingTableListCount, n*40:RoutingTableList }
-        // RoutingTableList := { 16:DestinationAddress, 03:RouteStatus, 01:MemoryConstrained, 01:ManyToOne, 01:RouteRecordRequired, 02:Reserved, 16:NextHopAddress }
-        // Example: [6F, 00, 0A, 00, 0A, 00, 00, 10, 00, 00, AD, 56, 00, AD, 56, ED, EE, 00, 4A, 16, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00]
-        case { contains it, [endpointInt:0x00, clusterInt:0x8032, commandInt:0x00] }:
-            if (msg.data[1] != "00") return Log.warn("Failed to retrieve Routing Table: data=${msg.data}")
-            Integer entriesCount = Integer.parseInt(msg.data[4], 16)
-        
-            // Use base64 encoding instead of hex encoding to make the message a bit shorter
-            String base64 = msg.data.join().decodeHex().encodeBase64().toString()
-            sendEvent name:"routes", value:"${entriesCount} entries", type:"digital", descriptionText:base64
-            return Utils.processedZdoMessage("Routing Table Response", "entries=${entriesCount}, data=${msg.data}")
 
         // ---------------------------------------------------------------------------------------------------------------
         // Handle common messages (e.g.: received during pairing when we query the device for information)
