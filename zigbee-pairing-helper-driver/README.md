@@ -32,11 +32,11 @@ More info about installing custom drivers is available in the [Official Document
 
    <img src="img/overview.png" style="width: 100%">
 
-1. Select a main-powered Zigbee device and (temporarily) change its driver to "Zigbee Pairing Helper". Best candidates are the Zigbee repeater devices since you can keep using this driver for them. We call this the `Control Device`.
+1. Select a mains-powered Zigbee device and (temporarily) change its driver to "Zigbee Pairing Helper". Best candidates are the Zigbee repeater devices since you can keep using this driver for them. We call this the `Control Device`.
 
    <img src="img/assign-driver.png" style="width: 100%">
 
-   **Note**: This is not the device that the pairing will go through. This device will only send the "start pairing" commands to the target routing device (see below).
+   **Note**: This is not the device that the pairing will go through. This device will only send the "start pairing" commands to the target `Router Device` (see below).
 
 1. In a new tab, navigate to (as usual) to "Devices" -> "Add Device" -> "Zigbee" -> "Start Zigbee pairing".
 
