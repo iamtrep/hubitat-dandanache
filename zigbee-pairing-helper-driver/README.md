@@ -42,7 +42,7 @@ More info about installing custom drivers is available in the [Official Document
 
    <img src="img/start-zigbee-pairing.png" style="width: 100%">
 
-   At this moment, all Zigbee router devices in your mesh  are in pairing mode, but we do not want this. We want just one specific device to be in pairing mode, so read on.
+   At this moment, all Zigbee router devices in your mesh are in pairing mode, but we do not want this. We want only one specific device to be in pairing mode, so read on.
 
 1. In a new tab, go to the `Control Device` details page and, in the "Preferences" section, select the `Router Device` that you want to put in pairing mode (1), then click the "Save Preferences" button (2).
 

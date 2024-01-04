@@ -16,7 +16,7 @@ metadata {
         input(
             name: "deviceNetworkId",
             type: "enum",
-            title: "Pairing device",
+            title: "Router Device",
             description: "<small>Select a mains-powered device that you want to put in pairing mode.</small>",
             options: [ "0000":"👑 Hubitat Hub" ] + getDevices(),
             required: true
