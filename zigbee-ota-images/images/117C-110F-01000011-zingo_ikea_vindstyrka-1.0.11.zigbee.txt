@@ -1,0 +1,12 @@
+input = https://github.com/zigpy/zigpy/discussions/660                                                                                
+Image Details: {
+    "otaHeaderVersion": 256,
+    "otaHeaderLength": 56,
+    "otaHeaderFieldControl": 0,
+    "manufacturerCode": 4476,
+    "imageType": 4367,
+    "fileVersion": 16777233,
+    "zigbeeStackVersion": 2,
+    "otaHeaderString": 'GBL zingo_ikea_vindstyrka\x00\x00\x00\x00\x00\x00\x00',
+    "totalImageSize": 283326
+}
