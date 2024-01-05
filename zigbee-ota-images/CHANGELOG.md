@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2024-01-05]
+### Added
+  - New device: `117C-110F-01000011` - Vindstyrka Air Quality Sensor (E2112)
+
 ## [2023-11-08]
 ### Added
 - Add images from Release Version: 1.25.1 (6th Nov 2023)
