@@ -534,7 +534,6 @@ More info about installing custom drivers is available in the [Official Document
 1. In the Hubitat interface, go to "Devices", click "Add Device" in the top right, click "Zigbee", then click "Start Zigbee pairing".
 1. Click the pair button (🔗), located on the top of the device, 4 times in 5 seconds.
 1. Return to the pairing page and give your device a name and assign it to a room.
-1. Place the device back to its position by gently pressing it until you hear it clicking in place.
 1. That's it, Have fun!
 
 ---
