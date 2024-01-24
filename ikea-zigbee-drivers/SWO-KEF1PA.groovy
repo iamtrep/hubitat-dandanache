@@ -275,17 +275,17 @@ def parse(String description) {
                 case "00":
                     def button = BUTTONS.HOME
                     Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
-                    return Utils.sendZigbeeCommands("he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 00}")
+                    return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 00}"])
         
                 case "02":
                     def button = BUTTONS.NIGHT
                     Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
-                    return Utils.sendZigbeeCommands("he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 02}")
+                    return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 02}"])
         
                 case "03":
                     def button = BUTTONS.AWAY
                     Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
-                    return Utils.sendZigbeeCommands("he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 03}")
+                    return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 03}"])
             }
         
             return Log.error("Sent unexpected Zigbee message: description=${description}, msg=${msg}")
@@ -308,7 +308,7 @@ def parse(String description) {
         
         // Enroll Request
         case { contains it, [clusterInt:0x500, commandInt:0x01, isClusterSpecific:true] }:
-            Utils.sendZigbeeCommands "he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0500 {01 23 00 00 00}"
+            Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0500 {01 23 00 00 00}"])
             return Utils.processedZclMessage("Enroll Request", "description=${description}")
         
         // Read Attributes: ZoneState
