@@ -36,6 +36,9 @@ metadata {
         // For firmware: TBD
         fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0003,0001,0500,0000", outClusters:"0003,0501", model:"SWO-KEF1PA", manufacturer:"SwannONe"
         
+        // Attributes for capability.IAS
+        attribute "status", "enum", ["enrolled", "not enrolled"]
+        
         // Attributes for capability.HealthCheck
         attribute "healthStatus", "enum", ["offline", "online", "unknown"]
     }
@@ -138,11 +141,9 @@ def configure(auto = false) {
     // -- No binds needed
     
     // Configuration for capability.IAS
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0500 {${device.zigbeeId}} {}" // IAS Zone cluster
-    cmds += zigbee.enrollResponse()
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {${device.zigbeeId}} {}" // IAS Ancillary Control Equipment
-    cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0500 0x0002 0x19 0x0000 0x0E10 {00} {}" // Report ZoneStatus (map16) at least every 1 hour // TODO: do we need this?!
     cmds += zigbee.writeAttribute(0x0500, 0x0010, 0xF0, "${device.zigbeeId}")  // IAS_CIE_Address
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0500 {${device.zigbeeId}} {}" // IAS Zone cluster
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {${device.zigbeeId}} {}" // IAS Ancillary Control Equipment
     
     // Configuration for capability.Battery
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0001 {${device.zigbeeId}} {}" // Power Configuration cluster
@@ -215,7 +216,6 @@ def refresh(buttonPress = true) {
         }
     }
     List<String> cmds = []
-    cmds += zigbee.readAttribute(0x0001, 0x0020) // BatteryVoltage
     cmds += zigbee.readAttribute(0x0001, 0x0021) // BatteryPercentage
     cmds += zigbee.readAttribute(0x0500, 0x0000) // IAS ZoneState
     cmds += zigbee.readAttribute(0x0500, 0x0001) // IAS ZoneType
@@ -238,14 +238,8 @@ def parse(String description) {
 
     // Extract msg
     def msg = [:]
-    if (description.startsWith("zone status")) {
-         msg.clusterInt = 0x500
-         msg.commandInt = 0x00
-    }
-    if (description.startsWith("enroll request")) {
-         msg.clusterInt = 0x500
-         msg.commandInt = 0x01
-    }
+    if (description.startsWith("zone status")) msg += [ clusterInt:0x500, commandInt:0x00, isClusterSpecific:true ]
+    if (description.startsWith("enroll request")) msg += [ clusterInt:0x500, commandInt:0x01, isClusterSpecific:true ]
 
     msg += zigbee.parseDescriptionAsMap description
     if (msg.containsKey("endpoint")) msg.endpointInt = Integer.parseInt(msg.endpoint, 16)
@@ -271,7 +265,35 @@ def parse(String description) {
         // Handle Swann One Key Fob (SWO-KEF1PA) specific Zigbee messages
         // ---------------------------------------------------------------------------------------------------------------
 
-        // Waiting for logs from @Rxich
+        // Arm := { 16:Button, 08:ArmMode, ??:ArmDisarmCode, 08:ZoneId}
+        // ArmMode := { 0x00:Disarm, 0x01:Arm Day/Home Zones Only, 0x02:Arm Night/Sleep Zones Only, 0x03:Arm All Zones }
+        // [00, 00, 00, 00, 00, 00, 00, 00, 00, 00] -> Home button
+        // [02, 00, 00, 00, 00, 00, 00, 00, 00, 00] -> Sleep button
+        // [03, 00, 00, 00, 00, 00, 00, 00, 00, 00] -> Away button
+        case { contains it, [clusterInt:0x0501, commandInt:0x00, isClusterSpecific:true] }:
+           switch (msg.data[0]) {
+                case "00":
+                    def button = BUTTONS.HOME
+                    Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
+                    return Utils.sendZigbeeCommands("he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 00}")
+        
+                case "02":
+                    def button = BUTTONS.SLEEP
+                    Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
+                    return Utils.sendZigbeeCommands("he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 02}")
+        
+                case "03":
+                    def button = BUTTONS.AWAY
+                    Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
+                    return Utils.sendZigbeeCommands("he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 03}")
+            }
+        
+            return Log.error("Sent unexpected Zigbee message: description=${description}, msg=${msg}")
+        
+        // Panic
+        case { contains it, [clusterInt:0x0501, commandInt:0x04, isClusterSpecific:true] }:
+            def button = BUTTONS.PANIC
+            return Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
 
         // ---------------------------------------------------------------------------------------------------------------
         // Handle capabilities Zigbee messages
@@ -280,18 +302,32 @@ def parse(String description) {
         // Events for capability.IAS
         
         // Zone Status Change Notification
-        case { contains it, [clusterInt:0x500, commandInt:0x00] }:
+        case { contains it, [clusterInt:0x500, commandInt:0x00, isClusterSpecific:true] }:
             def zs = zigbee.parseZoneStatus(description)
             return Utils.processedZclMessage("Zone Status Change Notification", "ZoneStatus=${zs}")
         
         // Enroll Request
-        case { contains it, [clusterInt:0x500, commandInt:0x01] }:
-            Utils.sendZigbeeCommands zigbee.enrollResponse()
+        case { contains it, [clusterInt:0x500, commandInt:0x01, isClusterSpecific:true] }:
+            Utils.sendZigbeeCommands "he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0500 {01 23 00 00 00}"
             return Utils.processedZclMessage("Enroll Request", "description=${description}")
         
+        // Read Attributes: ZoneState
+        case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0000] }:
+            String status = msg.value == "00" ? "enrolled" : "not enrolled"
+            Utils.sendEvent name:"status", value:status, descriptionText:"Device is now ${status}", type:"digital"
+            return Utils.processedZclMessage("Read Attributes Response", "ZoneState=${msg.value}")
+        
+        // Read Attributes: ZoneType
+        case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0001] }:
+            return Utils.processedZclMessage("Read Attributes Response", "ZoneType=${msg.value}")
+        
+        // Read Attributes: ZoneStatus
+        case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0002] }:
+            return Utils.processedZclMessage("Read Attributes Response", "ZoneStatus=${msg.value}")
+        
         // Other events that we expect but are not usefull for capability.IAS behavior
-        case { contains it, [clusterInt:0x0500, commandInt:0x07] }:
-            return Utils.processedZclMessage("Configure Reporting Response", "attribute=ZoneStatus, data=${msg.data}")
+        case { contains it, [clusterInt:0x0500, commandInt:0x04, isClusterSpecific:false] }:
+            return Utils.processedZclMessage("Write Attribute Response", "attribute=IAS_CIE_Address, data=${msg.data}")
         
         // Events for capability.Battery
         
@@ -303,6 +339,7 @@ def parse(String description) {
             if (msg.value == "FF") return Log.warn("Ignored invalid remaining battery percentage value: 0x${msg.value}")
         
             Integer percentage = Integer.parseInt(msg.value, 16)
+            percentage =  percentage / 2
             Utils.sendEvent name:"battery", value:percentage, unit:"%", descriptionText:"Battery is ${percentage}% full", type:type
             return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "BatteryPercentage=${percentage}%")
         
@@ -357,7 +394,8 @@ def parse(String description) {
             return Log.warn("Device is leaving the Zigbee mesh. See you later, Aligator!")
 
         // Ignore the following Zigbee messages
-        case { contains it, [commandInt:0x0A] }:                                       // ZCL: Attribute report we don't care about (configured by other driver)
+        case { contains it, [commandInt:0x0A, isClusterSpecific:false] }:              // ZCL: Attribute report we don't care about (configured by other driver)
+        case { contains it, [commandInt:0x0B, isClusterSpecific:false] }:              // ZCL: Default Response
         case { contains it, [clusterInt:0x0003, commandInt:0x01] }:                    // ZCL: Identify Query Command
         case { contains it, [endpointInt:0x00, clusterInt:0x8001, commandInt:0x00] }:  // ZDP: IEEE_addr_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8005, commandInt:0x00] }:  // ZDP: Active_EP_rsp
