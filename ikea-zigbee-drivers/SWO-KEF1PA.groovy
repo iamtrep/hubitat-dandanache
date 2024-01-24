@@ -10,12 +10,6 @@ import groovy.transform.Field
 @Field static final String DRIVER_NAME = "Swann One Key Fob (SWO-KEF1PA)"
 @Field static final String DRIVER_VERSION = "3.8.0"
 
-// Fields for capability.HealthCheck
-@Field static final Map<String, String> HEALTH_CHECK = [
-    "schedule": "0 0 0/1 ? * * *", // Health will be checked using this cron schedule
-    "thereshold": "43200" // When checking, mark the device as offline if no Zigbee message was received in the last 43200 seconds
-]
-
 // Fields for capability.PushableButton
 @Field static final Map<String, List<String>> BUTTONS = [
     "PANIC": ["1", "Panic"],
@@ -28,8 +22,6 @@ metadata {
     definition(name:DRIVER_NAME, namespace:"dandanache", author:"Dan Danache", importUrl:"https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/SWO-KEF1PA.groovy") {
         capability "Configuration"
         capability "Battery"
-        capability "HealthCheck"
-        capability "PowerSource"
         capability "PushableButton"
         capability "Refresh"
 
@@ -38,9 +30,6 @@ metadata {
         
         // Attributes for capability.IAS
         attribute "status", "enum", ["enrolled", "not enrolled"]
-        
-        // Attributes for capability.HealthCheck
-        attribute "healthStatus", "enum", ["offline", "online", "unknown"]
     }
 
     preferences {
@@ -84,9 +73,6 @@ def updated(auto = false) {
     }
     if (logLevel == "1") runIn 1800, "logsOff"
     Log.info "🛠️ logLevel = ${logLevel}"
-    
-    // Preferences for capability.HealthCheck
-    schedule HEALTH_CHECK.schedule, "healthCheck"
 
     Utils.sendZigbeeCommands cmds
 }
@@ -99,13 +85,6 @@ def updated(auto = false) {
 def logsOff() {
    Log.info '⏲️ Automatically reverting log level to "Info"'
    device.updateSetting("logLevel", [value:"2", type:"enum"])
-}
-
-// Helpers for capability.HealthCheck
-def healthCheck() {
-    Log.debug '⏲️ Automatically running health check'
-    String healthStatus = state.lastRx == 0 || state.lastRx == null ? "unknown" : (now() - state.lastRx < Integer.parseInt(HEALTH_CHECK.thereshold) * 1000 ? "online" : "offline")
-    Utils.sendEvent name:"healthStatus", value:healthStatus, type:"physical", descriptionText:"Health status is ${healthStatus}"
 }
 
 // ===================================================================================================================
@@ -141,22 +120,14 @@ def configure(auto = false) {
     // -- No binds needed
     
     // Configuration for capability.IAS
-    cmds += zigbee.writeAttribute(0x0500, 0x0010, 0xF0, "${device.zigbeeId}")  // IAS_CIE_Address
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0500 {${device.zigbeeId}} {}" // IAS Zone cluster
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {${device.zigbeeId}} {}" // IAS Ancillary Control Equipment
+    cmds += zigbee.enrollResponse()
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {${device.zigbeeId}} {}" // IAS Ancillary Control Equipment cluter
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0500 {${device.zigbeeId}} {}" // IAS Zone cluter
+    cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0500 0x0002 0x19 0x0000 0x4650 {00} {}" // Report ZoneStatus (map16) at least every 5 hours (Δ = 0)
     
     // Configuration for capability.Battery
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0001 {${device.zigbeeId}} {}" // Power Configuration cluster
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0001 0x0021 0x20 0x0000 0x4650 {02} {}" // Report BatteryPercentage (uint8) at least every 5 hours (Δ = 1%)
-    cmds += zigbee.readAttribute(0x0001, 0x0021)  // BatteryPercentage
-    
-    // Configuration for capability.HealthCheck
-    sendEvent name:"healthStatus", value:"online", descriptionText:"Health status initialized to online"
-    sendEvent name:"checkInterval", value:3600, unit:"second", descriptionText:"Health check interval is 3600 seconds"
-    
-    // Configuration for capability.PowerSource
-    sendEvent name:"powerSource", value:"unknown", type:"digital", descriptionText:"Power source initialized to unknown"
-    cmds += zigbee.readAttribute(0x0000, 0x0007) // PowerSource
     
     // Configuration for capability.PushableButton
     Integer numberOfButtons = BUTTONS.count{_ -> true}
@@ -172,32 +143,6 @@ def configure(auto = false) {
 private autoConfigure() {
     Log.warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure(true)
-}
-
-// Implementation for capability.HealthCheck
-def ping() {
-    Log.warn "ping ..."
-    Utils.sendZigbeeCommands(zigbee.readAttribute(0x0000, 0x0000))
-    Log.debug "Ping command sent to the device; we'll wait 5 seconds for a reply ..."
-    runIn 5, "pingExecute"
-}
-
-def pingExecute() {
-    if (state.lastRx == 0) {
-        return Log.info("Did not sent any messages since it was last configured")
-    }
-
-    Date now = new Date(Math.round(now() / 1000) * 1000)
-    Date lastRx = new Date(Math.round(state.lastRx / 1000) * 1000)
-    String lastRxAgo = TimeCategory.minus(now, lastRx).toString().replace(".000 seconds", " seconds")
-    Log.info "Sent last message at ${lastRx.format("yyyy-MM-dd HH:mm:ss", location.timeZone)} (${lastRxAgo} ago)"
-
-    Date thereshold = new Date(Math.round(state.lastRx / 1000 + Integer.parseInt(HEALTH_CHECK.thereshold)) * 1000)
-    String theresholdAgo = TimeCategory.minus(thereshold, lastRx).toString().replace(".000 seconds", " seconds")
-    Log.info "Will be marked as offline if no message is received for ${theresholdAgo} (hardcoded)"
-
-    String offlineMarkAgo = TimeCategory.minus(thereshold, now).toString().replace(".000 seconds", " seconds")
-    Log.info "Will be marked as offline if no message is received until ${thereshold.format("yyyy-MM-dd HH:mm:ss", location.timeZone)} (${offlineMarkAgo} from now)"
 }
 
 // Implementation for capability.PushableButton
@@ -249,11 +194,6 @@ def parse(String description) {
     Log.debug "msg=[${msg}]"
 
     state.lastRx = now()
-    
-    // Parse for capability.HealthCheck
-    if (device.currentValue("healthStatus", true) != "online") {
-        Utils.sendEvent name:"healthStatus", value:"online", type:"digital", descriptionText:"Health status changed to online"
-    }
 
     // If we sent a Zigbee command in the last 3 seconds, we assume that this Zigbee event is a consequence of this driver doing something
     // Therefore, we mark this event as "digital"
@@ -274,18 +214,15 @@ def parse(String description) {
            switch (msg.data[0]) {
                 case "00":
                     def button = BUTTONS.HOME
-                    Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
-                    return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 00}"])
+                    return Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
         
                 case "02":
                     def button = BUTTONS.NIGHT
-                    Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
-                    return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 02}"])
+                    return Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
         
                 case "03":
                     def button = BUTTONS.AWAY
-                    Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
-                    return Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 03}"])
+                    return Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
             }
         
             return Log.error("Sent unexpected Zigbee message: description=${description}, msg=${msg}")
@@ -308,13 +245,16 @@ def parse(String description) {
         
         // Enroll Request
         case { contains it, [clusterInt:0x500, commandInt:0x01, isClusterSpecific:true] }:
-            Utils.sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0500 {01 23 00 00 00}"])
+            Utils.sendZigbeeCommands([
+                "he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0500 {01 23 00 00 00}",  // Zone Enroll Response (0x00): status=Success, zoneId=0x00
+                "he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0500 {01 23 01}",        // Initiate Normal Operation Mode (0x01): no payload
+            ])
             return Utils.processedZclMessage("Enroll Request", "description=${description}")
         
         // Read Attributes: ZoneState
         case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0000] }:
-            String status = msg.value == "00" ? "enrolled" : "not enrolled"
-            Utils.sendEvent name:"status", value:status, descriptionText:"Device is now ${status}", type:"digital"
+            String status = msg.value == "01" ? "enrolled" : "not enrolled"
+            Utils.sendEvent name:"status", value:status, descriptionText:"Device is ${status}", type:"digital"
             return Utils.processedZclMessage("Read Attributes Response", "ZoneState=${msg.value}")
         
         // Read Attributes: ZoneType
@@ -333,7 +273,12 @@ def parse(String description) {
         
         // Report/Read Attributes Reponse: BatteryPercentage
         case { contains it, [clusterInt:0x0001, commandInt:0x0A, attrInt:0x0021] }:
-        case { contains it, [clusterInt:0x0001, commandInt:0x01, attrInt:0x0021] }:
+        case { contains it, [clusterInt:0x0001, commandInt:0x01] }:
+        
+            // Hubitat fails to parse some Read Attributes Responses
+            if (msg.value == null && msg.data != null && msg.data[0] == "21" && msg.data[1] == "00") {
+                msg.value = msg.data[2]
+            }
         
             // The value 0xff indicates an invalid or unknown reading
             if (msg.value == "FF") return Log.warn("Ignored invalid remaining battery percentage value: 0x${msg.value}")
@@ -345,33 +290,7 @@ def parse(String description) {
         
         // Other events that we expect but are not usefull for capability.Battery behavior
         case { contains it, [clusterInt:0x0001, commandInt:0x07] }:
-            return Utils.processedZclMessage("Configure Reporting Response", "attribute=BatteryPercentage, data=${msg.data}")
-        
-        // Events for capability.HealthCheck
-        case { contains it, [clusterInt:0x0000, attrInt:0x0000] }:
-            return Log.warn("... pong")
-        
-        // Read Attributes Reponse: PowerSource
-        case { contains it, [clusterInt:0x0000, commandInt:0x01, attrInt:0x0007] }:
-            String powerSource = "unknown"
-        
-            // PowerSource := { 0x00:Unknown, 0x01:MainsSinglePhase, 0x02:MainsThreePhase, 0x03:Battery, 0x04:DC, 0x05:EmergencyMainsConstantlyPowered, 0x06:EmergencyMainsAndTransferSwitch }
-            switch (msg.value) {
-                case "01":
-                case "02":
-                case "05":
-                case "06":
-                    powerSource = "mains"
-                    break
-                case "03":
-                    powerSource = "battery"
-                    break
-                case "04":
-                    powerSource = "dc"
-                    break
-            }
-            Utils.sendEvent name:"powerSource", value:powerSource, type:"digital", descriptionText:"Power source is ${powerSource}"
-            return Utils.processedZclMessage("Read Attributes Response", "PowerSource=${msg.value}")
+            return Utils.processedZclMessage("Configure Reporting Response", "attribute=battery, data=${msg.data}")
 
         // ---------------------------------------------------------------------------------------------------------------
         // Handle common messages (e.g.: received during pairing when we query the device for information)
