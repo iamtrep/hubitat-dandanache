@@ -21,7 +21,7 @@ import groovy.transform.Field
     "PANIC": ["1", "Panic"],
     "HOME": ["2", "Home"],
     "AWAY": ["3", "Away"],
-    "SLEEP": ["4", "Sleep"],
+    "NIGHT": ["4", "Night"],
 ]
 
 metadata {
@@ -268,7 +268,7 @@ def parse(String description) {
         // Arm := { 16:Button, 08:ArmMode, ??:ArmDisarmCode, 08:ZoneId}
         // ArmMode := { 0x00:Disarm, 0x01:Arm Day/Home Zones Only, 0x02:Arm Night/Sleep Zones Only, 0x03:Arm All Zones }
         // [00, 00, 00, 00, 00, 00, 00, 00, 00, 00] -> Home button
-        // [02, 00, 00, 00, 00, 00, 00, 00, 00, 00] -> Sleep button
+        // [02, 00, 00, 00, 00, 00, 00, 00, 00, 00] -> Night button
         // [03, 00, 00, 00, 00, 00, 00, 00, 00, 00] -> Away button
         case { contains it, [clusterInt:0x0501, commandInt:0x00, isClusterSpecific:true] }:
            switch (msg.data[0]) {
@@ -278,7 +278,7 @@ def parse(String description) {
                     return Utils.sendZigbeeCommands("he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 00}")
         
                 case "02":
-                    def button = BUTTONS.SLEEP
+                    def button = BUTTONS.NIGHT
                     Utils.sendEvent(name:"pushed", value:button[0], type:"physical", isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed")
                     return Utils.sendZigbeeCommands("he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0501 {01 23 00 02}")
         
