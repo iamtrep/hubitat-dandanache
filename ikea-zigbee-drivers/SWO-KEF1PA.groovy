@@ -71,7 +71,6 @@ def updated(auto = false) {
         logLevel = "1"
         device.updateSetting("logLevel", [value:logLevel, type:"enum"])
     }
-    //if (logLevel == "1") runIn 1800, "logsOff"
     Log.info "🛠️ logLevel = ${logLevel}"
 
     Utils.sendZigbeeCommands cmds
