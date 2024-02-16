@@ -1,0 +1,40 @@
+{
+    "packageName": "Zigbee Map",
+    "version": "1.0.0",
+    "releaseNotes": "v1.0.0\n- Initial revision",
+    "minimumHEVersion": "2.3.8.117",
+    "author": "Dan Danache (@agamemnon.dandanache)",
+    "dateReleased": "2024-02-16",
+    "documentationLink": "https://dan-danache.github.io/hubitat/zigbee-map-app/",
+    "communityLink": "https://community.hubitat.com/t/zigbee-visual-render-for-getchildandrouteinfo/119074",
+    "licenseFile": "https://raw.githubusercontent.com/dan-danache/hubitat/master/LICENSE",
+    "payPalUrl": "https://www.buymeacoffee.com/dandanache",
+    "category": "Utility",
+    "tags": [ "Zigbee", "Tools & Utilities" ],
+    "files": [{
+        "id": "11ba8718-86f0-4461-ae21-8627001d3e8e",
+        "name": "zigbee-map.html",
+        "namespace": "dandanache",
+        "location": "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_1.0.0/zigbee-map-app/zigbee-map.html",
+        "required": true,
+        "oauth": false,
+        "description": "Allows you to visually render the Zigbee map of your Hubitat system."
+    }],
+    "apps": [{
+        "id": "c2e67d9b-d56f-4865-9419-14a93cbe94d0",
+        "namespace": "dandanache",
+        "location": "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_1.0.0/zigbee-map-app/zigbee-map.groovy",
+        "name": "Zigbee Map",
+        "description": "Allows you to visually render the Zigbee map of your Hubitat system.",
+        "oauth": true,
+        "required": true
+    }],
+    "drivers": [{
+        "id": "6394c6a8-73db-49d2-b4d1-3a00427aed2f",
+        "namespace": "dandanache",
+        "location": "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_1.0.0/zigbee-map-app/zigbee-map-helper.groovy",
+        "name": "Zigbee Map Helper",
+        "description": "Helper driver for the Zigbee Map application.",
+        "required": true
+    }]
+}

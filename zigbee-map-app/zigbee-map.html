@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hubitat - Zigbee Map - v1.0.0</title>
+    <meta charset="utf-8">
+    <meta name="keywords" content="hubitat, zigbee, map">
+    <meta name="author" content="Agamemnon Dandanache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="robots" content="noindex">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" sizes="180x180" href="/ui2/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/ui2/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/ui2/images/favicon-16x16.png">
+    <link rel="icon" sizes="192x192" href="/ui2/images/favicon.ico">
+    <link rel="manifest" href="/ui2/images/site.webmanifest">
+    <link rel="mask-icon" href="/ui2/images/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/ui2/images/favicon.ico">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="msapplication-config" content="/ui2/images/browserconfig.xml">
+    <meta name="theme-color" content="#fdf6e3">
+
+    <script src="//unpkg.com/@github/tab-container-element@latest/dist/index.js" type="module"></script>
+    <script src="//unpkg.com/force-graph"></script>
+    <link rel="stylesheet" type="text/css" href="//necolas.github.io/normalize.css/8.0.1/normalize.css">
+    <style>
+
+    :root {
+        --Base03: #002b36; /* background tones (dark) */
+        --Base02: #073642; /* -- */
+        --Base01: #586e75; /* content tones */
+        --Base00: #657b83; /* -- */
+        --Base0: #839496;  /* -- */
+        --Base1: #93a1a1;  /* -- */
+        --Base2: #eee8d5;  /* background tones (white) */
+        --Base3: #fdf6e3;  /* -- */
+        --Yellow: #b58900; /* accent tones */
+        --Orange: #cb4b16;
+        --Red: #dc322f;
+        --Magenta: #d33682;
+        --Violet: #6c71c4;
+        --Blue: #268bd2;
+        --Cyan: #2aa198;
+        --Green: #859900;
+        --Black: #000;
+
+        --bg-color: var(--Base2);
+        --bg-color-darker: var(--Base3);
+        --text-color: var(--Base03);
+        --text-color-darker: var(--Base00);
+        --border-color: var(--Base1);
+        --shadow-color: var(--Base1);
+        --separator-color: var(--Base1);
+        --Gray: var(--Base0);
+
+        --tooltip-bg-color: var(--Base02);
+        --tooltip-text-color: var(--Base2);
+    }
+
+    [data-theme="dark"] {
+        --bg-color: var(--Base03);
+        --bg-color-darker: var(--Base02);
+        --text-color: var(--Base3);
+        --text-color-darker: var(--Base1);
+        --border-color: var(--Base01);
+        --shadow-color: var(--Black);
+        --separator-color: var(--Base01);
+        --Gray: var(--Base01);
+
+        --tooltip-bg-color: var(--Base2);
+        --tooltip-text-color: var(--Base02);
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        font: 1rem sans-serif;
+        background: var(--bg-color);
+        color: var(--text-color);
+        cursor: default;
+    }
+
+    html {
+        -webkit-text-size-adjust: 100%;
+    }
+
+    a {
+        text-decoration: none;
+        color: var(--Blue);
+    }
+
+    /* Tabs */
+    [role="tablist"] {
+        margin: 0 0 -.1em;
+        overflow: visible;
+    }
+
+    [role="tab"] {
+        position: relative;
+        margin: 0;
+        padding: .3em .5em .4em;
+        border: 1px solid var(--border-color);
+        border-radius: .3em .3em 0 0;
+        box-shadow: 0 0 .3em var(--shadow-color);
+        overflow: visible;
+        font-family: inherit;
+        font-size: inherit;
+        background: var(--bg-color);
+        color: var(--text-color);
+        cursor: pointer;
+    }
+
+    [role="tab"]:hover::before,
+    [role="tab"][aria-selected="true"]::before {
+        position: absolute;
+        bottom: 100%;
+        right: -1px;
+        left: -1px;
+        border-radius: .3em .3em 0 0;
+        border-top: 3px solid var(--Orange);
+        content: '';
+    }
+
+    [role="tab"][aria-selected="true"] {
+        border-radius: 0;
+        background: var(--bg-color-darker);
+        outline: 0;
+    }
+
+    [role="tab"][aria-selected="true"]::after {
+        position: absolute;
+        z-index: 3;
+        bottom: -1px;
+        right: 0;
+        left: 0;
+        height: .5em;
+        background: var(--bg-color-darker);
+        box-shadow: none;
+        content: '';
+    }
+
+    [role="tab"]:hover,
+    [role="tab"]:focus,
+    [role="tab"]:active {
+        outline: 0;
+        border-radius: 0;
+        color: inherit;
+    }
+
+    [role="tabpanel"] {
+        position: relative;
+        z-index: 2;
+        padding: .5em .5em .7em;
+        border: 1px solid var(--border-color);
+        border-radius: 0 .3em .3em .3em;
+        box-shadow: 0 0 .3em var(--shadow-color);
+        background: var(--bg-color-darker);
+    }
+
+    /* Tabs */
+    body.embedded #tabs-container {
+        visibility: hidden;
+    }
+
+    #tabs-container {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        opacity: .90;
+        margin-right: 10px;
+        min-width: 21em;
+        max-width: 33em;
+    }
+
+    @media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
+        #tabs-container {
+            width: calc(100% - 20px);
+        }
+    }
+
+    .long-line {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Status */
+    #status-container details {
+        margin-top: .3em;
+    }
+
+    #status-container details summary {
+        cursor: pointer;
+        color: var(--Blue);
+    }
+
+    #status-container details section {
+        margin-top: .5em;
+    }
+
+    #status-container ul {
+        margin: .3em 0 1em 0;
+    }
+
+    #status-container ul:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Devices list */
+    table {
+        border-spacing: 0;
+        width: 100%;
+    }
+    table td, table th {
+        border-bottom: 1px solid var(--separator-color);
+        text-align: left;
+        padding: .3em;
+    }
+
+    table td:first-child {
+        font-family: monospace;
+    }
+
+    table tr:nth-child(even) {
+        background: var(--bg-color);
+    }
+
+    table tr:last-child td {
+        border-bottom: 0;
+    }
+
+    td.device-missing {
+        color: var(--Red);
+    }
+
+    table input {
+        width: 100%;
+        background-color: var(--bg-color);
+        color: var(--text-color-darker);
+        border: 1px solid var(--bg-color);
+        border-radius: 5px;
+        padding: 0;
+    }
+    table input:focus {
+        outline: 0;
+    }
+
+    table td.device-missing {
+        cursor: default;
+    }
+
+    /* Help */
+    .tooltip {
+        position: relative;
+        display: inline-block;
+    }
+    .tooltip::before {
+        content: "ℹ️";
+        color: var(--Blue);
+        cursor: help;
+    }
+
+    .tooltip span {
+        visibility: hidden;
+        width: 18em;
+        top: 100%;
+        left: 50%;
+        margin-left: -2em;
+        margin-top: 5px;
+        background: var(--tooltip-bg-color);
+        color: var(--tooltip-text-color);
+        padding: .3em .5em;
+        border-radius: 6px;
+        position: absolute;
+        z-index: 1;
+    }
+
+    .tooltip span::after {
+        content: " ";
+        position: absolute;
+        bottom: 100%;  /* At the top of the tooltip */
+        left: 2em;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: transparent transparent var(--tooltip-bg-color) transparent;
+    }
+
+    /* Show the tooltip text when you mouse over the tooltip container */
+    .tooltip:hover span {
+        visibility: visible;
+    }
+
+    /* Graph tooltip */
+    .graph-tooltip ul {
+        margin: 0;
+        padding: 0;
+    }
+
+    .graph-tooltip li {
+        margin: .2em 1em 0 .8em;
+        padding: 0;
+    }
+
+    .graph-tooltip {
+        background: var(--tooltip-bg-color) !important;
+        color: var(--tooltip-text-color) !important;
+        opacity: .90;
+        padding: .3em .5em !important;
+        border-radius: 6px !important;
+    }
+
+    .graph-tooltip header {
+        display: block;
+        font-weight: bold;
+        width: 100%;
+        border-bottom: 1px solid var(--separator-color);
+        margin: 0;
+        padding-bottom: .3em;
+    }
+
+    /* Config */
+    form {
+        padding: 0 5px;
+    }
+
+    form ul {
+        padding: 0;
+        margin: 0;
+    }
+
+    form ul li {
+        list-style: none;
+        padding: .5em 0;
+        border-bottom: 1px solid var(--separator-color);
+        line-height: 20px;
+    }
+
+    form ul li:last-child {
+        border: 0;
+    }
+
+    form ul li div {
+        margin-bottom: 0.3em;
+    }
+
+    form input[type=checkbox]{
+        height: 0;
+        width: 0;
+        visibility: hidden;
+        float: right;
+    }
+
+    form label {
+        cursor: pointer;
+        text-indent: -9999px;
+        width: 40px;
+        height: 20px;
+        background: var(--Base0);
+        border-radius: 20px;
+        position: relative;
+        float: right;
+    }
+
+    form label:after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        background: var(--Base3);
+        border-radius: 16px;
+        transition: .3s;
+    }
+
+    form  input:checked + label {
+        background: var(--Green);
+    }
+
+    form  input:checked + label:after {
+        left: calc(100% - 2px);
+        transform: translateX(-100%);
+    }
+
+    form fieldset {
+        border: 1px solid var(--separator-color);
+        border-radius: 5px;
+        margin: 0;
+        padding: 0 1em;
+    }
+
+    form fieldset:not(:last-child) {
+        margin-bottom: 1em;
+    }
+
+    form fieldset legend {
+        padding: 0 .5em;
+    }
+
+    form input[type=range] {
+        appearance: none;
+        width: calc(100% - 4px);
+        height: 20px;
+        cursor: pointer;
+        background: var(--Green);
+        border-radius: 20px;
+        padding: 0 2px;
+    }
+
+    form input[type=range]:focus {
+        outline: none;
+    }
+
+    form  input[type=range]::-webkit-slider-thumb {
+        width: 16px;
+        height: 16px;
+        background: var(--Base3);
+        border-radius: 16px;
+        border: transparent;
+        cursor: pointer;
+        -webkit-appearance: none;
+    }
+
+    form input[type=range]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        background: var(--Base3);
+        border-radius: 16px;
+        border: transparent;
+        cursor: pointer;
+    }
+    </style>
+</head>
+<body>
+    <!-- Graph placeholder -->
+    <div id="graph"></div>
+
+    <!-- Tabs Container -->
+    <div id="tabs-container">
+        <tab-container>
+            <div role="tablist">
+                <button type="button" id="status" role="tab" tabindex="0" aria-selected="true">Status</button>
+                <button type="button" id="devices" role="tab" tabindex="-1">Devices</button>
+                <button type="button" id="config" role="tab" tabindex="-1">Config</button>
+            </div>
+
+            <!-- Status -->
+            <div role="tabpanel" aria-labelledby="status" id="status-container">
+                <div>Discovered devices: <span id="nodesCount">...</span> / <span id="devicesCount">...</span></div>
+                <div class="long-line">Inteview Queue: <span id="interviewQueue">...</span></div>
+                <details>
+                    <summary>Legend</summary>
+                    <section>
+                        <b>Device types</b>
+                        <ul>
+                            <li><b style="color:var(--Orange)">orange</b> &#10132; Zigbee Coordinator</li>
+                            <li><b style="color:var(--Blue)">blue</b> &#10132; Zigbee Router</li>
+                            <li><b style="color:var(--Green)">green</b> &#10132; Zigbee End Device</li>
+                            <li><b style="color:var(--Magenta)">magenta</b> &#10132; Unknown</li>
+                        </ul>
+        
+                        <b>More info</b>
+                        <ul>
+                            <li>The node that is currently interviewed is pulsing</li>
+                            <li>Nodes with dots inside them were already interviewed</li>
+                        </ul>
+        
+                        <b>Usage</b>
+                        <ul>
+                            <li>Double-click anywhere to center the graph and reset zooming</li>
+                            <li>Drag any node to fix its position, click it to reset its position</li>
+                            <li>Hover any node to highlight all its neighbors</li>
+                            <li>Right-click any node to to add it back to the Interview Queue</li>
+                        </ul>
+                    </section>
+                </details>
+            </div>
+
+            <!-- Zigbee devices -->
+            <div role="tabpanel" aria-labelledby="devices" id="devices-container" hidden>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Addr</th>
+                            <th>&nbsp;</th>
+                            <th>Name</th>
+                        </tr>
+                        <tr>
+                            <th colspan="3">
+                                <input type="search" id="device-search">
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="zigbee-devices-list">
+                        <tr><td colspan="3">Loading, please wait ...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Config -->
+            <div role="tabpanel" aria-labelledby="config" id="config-container" hidden>
+                <form id="configForm" onsubmit="event.preventDefault()">
+                    <ul>
+                        <li>
+                            <input type="checkbox" id="conf-dark"><label for="conf-dark">Dark theme</label>
+                            <span>Dark theme</span>
+                        </li>
+                        <li>
+                            <input type="checkbox" id="conf-dots"><label for="conf-dots">Show link particles</label>
+                            Show link particles
+                        </li>
+                        <li>
+                            <input type="checkbox" id="conf-duplex"><label for="conf-duplex">Show duplex links</label>
+                            Show duplex links
+                        </li>
+                        <li>
+                            <div>Node repulsion force</div>
+                            <input type="range" id="conf-charge" min="0" max="9" step="1">
+                        </li>
+                    </ul>
+                </form>
+            </div>
+        </tab-container>
+    </div>
+
+    <script type="text/javascript">
+
+    class NeighborTableEntry {
+        constructor(bytes) {
+            if (bytes.length != 22) {
+                console.error(`NeighborTableEntry.constructor(${bytes}) - Bytes length != 22`);
+                throw new Error(`NeighborTableEntry.constructor(${bytes}) - Bytes length != 22`);
+            }
+
+            this.panId = bytes.slice(0, 8).reverse().join('');
+            this.ieee = bytes.slice(8, 16).reverse().join('');
+            this.addr = bytes.slice(16, 18).reverse().join('');
+
+            let octet = parseInt(bytes.slice(18, 19), 16).toString(2).padStart(8, '0');
+
+            switch (parseInt(octet.substring(6, 8), 2)) {
+                case 0: this.deviceType = 'Zigbee Coordinator'; break;
+                case 1: this.deviceType = 'Zigbee Router'; break;
+                case 2: this.deviceType = 'Zigbee End Device'; break;
+                default: this.deviceType = 'Unknown';
+            }
+
+            switch (parseInt(octet.substring(4, 6), 2)) {
+                case 0: this.rxOnWhenIdle = 'Rx Off'; break;
+                case 1: this.rxOnWhenIdle = 'Rx On'; break;
+                default: this.rxOnWhenIdle = 'Unknown';
+            }
+
+            switch (parseInt(octet.substring(1, 4), 2)) {
+                case 0: this.affinity = 'Parent'; break;
+                case 1: this.affinity = 'Child'; break;
+                case 2: this.affinity = 'Sibling'; break;
+                default: this.affinity = 'Unknown';
+            }
+
+            octet = parseInt(bytes.slice(19, 20), 16).toString(2).padStart(8, '0');
+
+            this.permitJoining = 'Unknown';
+            switch (parseInt(octet.substring(6, 8), 2)) {
+                case 0:  this.permitJoining = 'No'; break;
+                case 1:  this.permitJoining = 'Yes'; break;
+                default: this.permitJoining = 'Unknown';
+            }
+
+            this.depth = parseInt(bytes.slice(20, 21), 16);
+            this.lqa = parseInt(bytes.slice(21, 22), 16);
+        }
+    }
+
+    class NeighborTablePart {
+        constructor(bytes) {
+            if (bytes[1] !== '00') {
+                console.warn('NeighborTablePart.constructor() - Status != SUCEESS (0)', bytes);
+                throw new Error('NeighborTablePart.constructor() - Status != SUCEESS (0)', bytes);
+            }
+
+            this.neighbors = [];
+            this.total = parseInt(bytes[2], 16);
+            if (this.total === 0) return;
+
+            this.startIndex = parseInt(bytes[3], 16);
+            const receivedEntriesCount = parseInt(bytes[4], 16);
+
+            for (let i = 0; i < receivedEntriesCount; i++) {
+                this.neighbors.push(new NeighborTableEntry(bytes.slice(5 + i * 22, 5 + i * 22 + 22)));
+            }
+
+            this.nextIndex = this.startIndex + receivedEntriesCount;
+        }
+    }
+
+    class Device {
+        constructor(addr, name, link) {
+            this.addr = addr;
+            this.name = name;
+            this.link = link;
+            this.type = addr === '0000' ? 'Zigbee Coordinator' : 'Unknown';
+            this.talking = undefined;
+        }
+
+        static hubitat() {
+            return new Device('0000', 'Hubitat');
+        }
+
+        setType(type) {
+            if (type === 'Unknown') return;
+            this.type = type;
+        }
+
+        startInterview() {
+            this.talking = true;
+        }
+
+        stopInterview() {
+            this.talking = false;
+        }
+    }
+
+    class HubitatConnection {
+        static TIME_BETWEEN_POKES = 800;
+        static POKE_TIMOUT = 25000;
+
+        constructor(configuration) {
+
+            this.socketURL = `${window.location.href.startsWith('https://') ? 'wss' : 'ws'}://${new URL(window.location.href).host}/zigbeeLogsocket`;
+            //this.socketURL = 'ws://192.168.1.201/zigbeeLogsocket';
+            this.socket = null;
+
+            this.accessToken = undefined;
+            this.queue = [];
+            this.promises = {};
+
+            configuration.addEventListener('config', config => this.accessToken = config.accessToken);
+        }
+
+        init() {
+
+            // Check Access Token
+            if (this.accessToken === undefined) {
+                throw new Error('HubitatConnection: Cannot find Access Token in URL');
+            }
+
+            // Start poking interval: time between pokes = 500 ms
+            setInterval(() => this.#pokeNextDeviceInQueue(), HubitatConnection.TIME_BETWEEN_POKES);
+
+            // Start Zigbee websocket if not already started
+            if (this.socket === null) {
+                console.info('Starting Zigbee websocket', this.socketURL);
+                try {
+                    this.socket = new WebSocket(this.socketURL);
+                    this.socket.onmessage = event => this.#onWebsocketMessage(JSON.parse(event.data));
+                    this.socket.onerror = ex => {
+                        console.error('[Zigbee Websocket] Error encountered', ex);
+                        alert('[Zigbee Websocket] Error encountered');
+                    };
+                } catch (ex) {
+                    this.socket = undefined;
+                    console.error('Failed to open websocket', ex);
+                    alert('Failed to open websocket: ' + ex);
+                }
+            }
+        }
+
+        async fetchDevicesList() {
+            console.log('Fetching devices list ...');
+            return fetch(new Request('/hub/zigbee/getChildAndRouteInfoJson'), {cache: 'no-store'})
+                .then((response) => {
+                    if (!response.ok) {
+                        console.error('HubitatConnection.fetchDevicesList() - Bad response (not 200 OK)', response);
+                        throw new Error(`HubitatConnection.fetchDevicesList() - HTTP error, status = ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(text => JSON.parse(text))
+                .then(json => {
+                    if (json.status !== true) {
+                        console.error('HubitatConnection.fetchDevicesList() - Bad status attribute (not true)', json);
+                        throw new Error(`HubitatConnection.fetchDevicesList() - JSON error, status = ${json.status}`);
+                    }
+                    return json.devices;
+                })
+                .catch((ex) => {
+                    console.error('HubitatConnection.fetchDevicesList() - Failed to fetch data', ex);
+                    alert(`HubitatConnection.fetchDevicesList() - Failed to fetch data: ${ex.message}`);
+                });
+        }
+
+        async poke(addr, startIndex) {
+            return new Promise((resolve, reject) => {
+                this.queue.push({addr, startIndex, promise: { resolve, reject }});
+            });
+        }
+
+        #pokeNextDeviceInQueue() {
+            const pokeCoordinates = this.queue.shift();
+            if (pokeCoordinates === undefined) return;
+
+            const {addr, startIndex, promise: { resolve, reject } } = pokeCoordinates;
+            return fetch(new Request(`./poke/${addr}/${startIndex}?access_token=${this.accessToken}`), {cache: 'no-store'})
+                .then((response) => {
+                    if (!response.ok) {
+                        console.error('HubitatConnection#pokeNextDeviceInQueue() - Bad response (not 200 OK)', response);
+                        throw new Error(`HubitatConnection#pokeNextDeviceInQueue() - HTTP error, status = ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(text => JSON.parse(text))
+                .then(json => {
+                    if (json.status !== true) {
+                        console.error('HubitatConnection#pokeNextDeviceInQueue() - Bad status attribute (not true)', json);
+                        throw new Error(`HubitatConnection#pokeNextDeviceInQueue() - JSON error, status = ${json.status}`);
+                    }
+
+                    // Timeout this promise if we don't receive back a response on the websocket
+                    const timeout = setTimeout(() => {
+                        delete this.promises[`${addr}:${startIndex}`];
+                        reject(`Poke timeout after ${HubitatConnection.POKE_TIMOUT} ms`)
+                    }, HubitatConnection.POKE_TIMOUT);
+
+                    
+                    this.promises[`${addr}:${startIndex}`] = { resolve, reject, timeout };
+
+                    // Return response from the app/driver
+                    return json;
+                })
+                .catch((ex) => {
+                    console.error('HubitatConnection#pokeNextDeviceInQueue() - Failed to fetch data', ex);
+                    delete this.promises[`${addr}:${startIndex}`];
+                    reject(ex);
+                });
+        }
+
+        #onWebsocketMessage(message) {
+            //console.log('HubitatConnection::#onWebsocketMessage()', message);
+
+            const addr = message.id.toString(16).toUpperCase().padStart(4, '0');
+            if (message.clusterId === '8031') this.#onLqiResponse(addr, message.payload);
+        }
+
+        #onLqiResponse(addr, payload) {
+            try {
+                const tablePart = new NeighborTablePart(payload);
+                const promise = this.promises[`${addr}:${tablePart.startIndex}`];
+                if (promise === undefined) {
+                    return console.warn(`Received unsolicited LQI Response message from ${addr}`, payload, tablePart);
+                }
+
+                const { resolve, reject, timeout } = promise;
+                clearTimeout(timeout);
+                resolve(tablePart);
+                delete this.promises[`${addr}:${tablePart.startIndex}`];
+            } catch (ex) {
+                console.error('Exception while processing LQI Response message', ex);
+            }
+        }
+    }
+
+    class DeviceRepository {
+        static TIME_BETWEEN_INTERVIEWS = 1000;
+
+        constructor(connection) {
+            this.connection = connection;
+            this.devices = [];
+            this.neighbors = {};
+
+            this.eventListeners = {};
+            this.queue = [];
+            this.busy = false;
+
+            // Start interview interval: time between interviews = 500 ms
+            setInterval(() => this.#fetchNeighborsInQueue(), DeviceRepository.TIME_BETWEEN_INTERVIEWS);
+        }
+
+        getDevicebyAddr(addr) {
+            return this.devices.find(device => device.addr === addr);
+        }
+
+        addEventListener(eventName, callback) {
+            if (!Array.isArray(this.eventListeners[eventName])) this.eventListeners[eventName] = [];
+            this.eventListeners[eventName].push(callback);
+        }
+
+        #onDevicesChange() {
+            const eventName = 'devices';
+            if (!Array.isArray(this.eventListeners[eventName])) return;
+            this.eventListeners[eventName].forEach(eventListener => eventListener(this.devices));
+        }
+
+        #onNeighborsChange(addr) {
+            const eventName = 'neighbors';
+            if (!Array.isArray(this.eventListeners[eventName])) return;
+            this.eventListeners[eventName].forEach(eventListener => eventListener(this.neighbors));
+        }
+
+        #onQueueChange() {
+            const eventName = 'queue';
+            if (!Array.isArray(this.eventListeners[eventName])) return;
+            this.eventListeners[eventName].forEach(eventListener => eventListener(this.queue));
+        }
+
+        setDevices(devices) {
+            this.devices = [Device.hubitat()].concat(devices);
+            this.#onDevicesChange();
+            return this.devices;
+        }
+
+        setNeighbors(addr, neighbors) {
+            this.neighbors[addr] = neighbors;
+
+            // Look for the neighbors' neighbors
+            neighbors.forEach(neighbor => {
+
+                // Update node type
+                this.getDevicebyAddr(neighbor.addr)?.setType(neighbor.deviceType);
+
+                // Interview neighbor; only if it not a sleepy device
+                if (neighbor.deviceType != 'Zigbee End Device') {
+                    this.fetchNeighbors(neighbor.addr);
+                }
+            });
+
+            this.#onNeighborsChange(addr);
+            return this.neighbors[addr];
+        }
+
+        #startInterview(addr) {
+            this.getDevicebyAddr(addr)?.startInterview();
+            this.#onDevicesChange();
+        }
+
+        #stopInterview(addr) {
+            this.getDevicebyAddr(addr)?.stopInterview();
+            this.#onDevicesChange();
+        }
+
+        async fetchKnownDevices() {
+            return this.connection.fetchDevicesList()
+                .then(jsonDevices => jsonDevices.map(jsonDevice => new Device(jsonDevice.zigbeeId, jsonDevice.name, jsonDevice.id)))
+                .then(devices => this.setDevices(devices));
+        }
+
+        fetchNeighbors(addr, force = false) {
+
+            // We already know the neighbors of this device
+            if (this.neighbors[addr] !== undefined && force !== true) return;
+
+            // Check device already in queue
+            if (this.queue.some(item => item.addr === addr)) return;
+
+            // Add to queue
+            this.queue.push({ addr });
+            this.#onQueueChange();
+        }
+
+        async #fetchNeighborsInQueue() {
+            if (this.busy === true) return;
+
+            // Get next item from the queue; keep current interviewing device in the queue
+            if (this.queue.length === 0) return;
+            const queueItem = this.queue[0];
+
+            const { addr } = queueItem;
+
+            // Mark device as busy
+            console.log('Starting device interview', addr);
+            this.busy = true;
+            this.#startInterview(addr);
+
+            return this.#fetchNeighborsTable(addr, 0, [])
+                .then(neighbors => this.setNeighbors(addr, neighbors))
+                .catch(ex => this.setNeighbors(addr, []))
+                .finally(() => {
+                    this.busy = false;
+                    this.#stopInterview(addr);
+
+                    // Remove device from the interview queue
+                    this.queue.shift();
+                    this.#onQueueChange();
+                });
+        }
+
+        async #fetchNeighborsTable(addr, startIndex = 0, neighbors = []) {
+            return this.connection.poke(addr, startIndex)
+                .then(part => {
+                    const result = neighbors.concat(part.neighbors);
+                    if (part.nextIndex >= part.total) return result;
+                    return this.#fetchNeighborsTable(addr, part.nextIndex, result);
+                })
+                .catch(ex => {
+                    console.error(`DeviceRepository#fetchNeighborsTable(${addr}, ${startIndex}) - Exception encountered: ${ex}`);
+                    return Promise.reject(ex);
+                });
+        }
+    }
+
+    class GraphModel {
+        constructor() {
+            this.nodes = [];
+            this.links = [];
+            this.empty = true;
+
+            this.addNode('0000', 'Hubitat');
+        }
+
+        get data() {
+
+            // Update node types
+            this.nodes.forEach(node => {
+                if (node.addr === '0000') {
+                    node.type = 'Zigbee Coordinator';
+                    return;
+                }
+            });
+
+            // Calculate link curvature
+            this.links.forEach(link => link.curvature = undefined);
+            this.links.forEach(link => {
+                if (link.curvature !== undefined) return;
+                const otherLink = this.links.find(other => other.sourceAddr === link.targetAddr && other.targetAddr === link.sourceAddr);
+                if (otherLink === undefined) return link.curvature = 0;
+                link.curvature = 0.2;
+                otherLink.curvature = 0.2;
+            });
+
+            // Return data
+            return {
+                nodes: this.nodes,
+                links: this.links
+            };
+        }
+
+        static #deviceName(addr, devices) {
+            if (addr === '0000') return 'Hubitat';
+            return (devices.find(device => device.addr === addr) || {name: 'Unknown'}).name;
+        }
+
+        static #tooltip(header, props) {
+            let text = `<header>${header}</header>`;
+            for (const key in props) {
+                text += `<li>${key}${props[key] !== null ? `: ${props[key]}` : ''}</li>`;
+            }
+            return text;
+        }
+
+        load(neighbors, devices) {
+            for (const [addr, neighborsList] of Object.entries(neighbors)) {
+                const nodeAddr = addr;
+                const nodeName = GraphModel.#deviceName(nodeAddr, devices);
+                neighborsList.forEach(neighbor => {
+                    const neighborAddr = neighbor.addr;
+                    const neighborName = GraphModel.#deviceName(neighborAddr, devices);
+                    const tooltip = GraphModel.#tooltip('Neighbor', {Affinity: neighbor.affinity, LQA: neighbor.lqa});
+                    this.addLink(
+                        nodeAddr,         // source addr
+                        nodeName,         // source name
+                        neighborAddr,     // target addr
+                        neighborName,     // target name
+                        'neighbor',       // link type
+                        tooltip           // link label (tooltip)
+                    );
+                });
+            }
+
+            devices.forEach(device => {
+                const node = this.nodes.find(node => node.addr === device.addr);
+                if (node === undefined) return;
+                node.talking = device.talking;
+                node.type = device.type;
+            });
+            return this;
+        }
+
+        addLink(sourceAddr, sourceName, targetAddr, targetName, type, label) {
+            this.addNode(sourceAddr, sourceName);
+            this.addNode(targetAddr, targetName);
+
+            // Update existing link; if the case
+            const existingLink = this.links.find(link => link.sourceAddr === sourceAddr && link.targetAddr === targetAddr && link.type === type);
+            if (existingLink) {
+                existingLink.sourceName = sourceName;
+                existingLink.targetName = targetName;
+                existingLink.label = label;
+                return false;
+            }
+
+            // Add new link
+            this.links.push({ sourceName, sourceAddr, targetName, targetAddr, type, label });
+            return true;
+        }
+
+        addNode(addr, name) {
+
+            // Update existing node; if the case
+            const existingNode = this.nodes.find(node => node.addr === addr);
+            if (existingNode) {
+                existingNode.name = name;
+                return;
+            }
+
+            // Add new node
+            let tooltip = GraphModel.#tooltip(name, {Address: addr});
+            if (addr === '0000') {
+                tooltip = GraphModel.#tooltip(name, {'Zigbee Coordinator': null});
+            }
+            this.nodes.push({ name, addr, tooltip });
+        }
+
+        removeLink(link) {
+            const idx = this.links.findIndex(oldLink => oldLink.sourceAddr === link.sourceAddr && oldLink.targetAddr === link.targetAddr && oldLink.type === link.type);
+            if (idx < 0) return false;
+
+            // Remove link, then the nodes
+            this.links.splice(idx, 1);
+            this.removeNode(link.sourceAddr);
+            this.removeNode(link.targetAddr);
+            return true;
+        }
+
+        removeNode(addr) {
+            const idx = this.nodes.findIndex(node => node.addr === addr);
+            if (idx < 0) return;
+
+            // This node still has some links
+            if (this.links.some(link => link.sourceAddr === addr || link.targetAddr === addr)) return;
+
+            // Remove node
+            this.nodes.splice(idx, 1);
+        }
+
+        merge(newData) {
+            let somethingChanged = false;
+
+            // Add new links; if any
+            newData.links.forEach(link => somethingChanged = this.addLink(
+                link.sourceAddr,
+                link.sourceName,
+                link.targetAddr,
+                link.targetName,
+                link.type,
+                link.label
+            ) || somethingChanged);
+
+            // Remove old links, if any
+            this.links
+                .filter(link => !newData.links.some(newLink => link.sourceAddr === newLink.sourceAddr && link.targetAddr === newLink.targetAddr && link.type === newLink.type))
+                .forEach(deadLink => somethingChanged = this.removeLink(deadLink) || somethingChanged);
+
+            // Update nodes
+            this.nodes.forEach(node => {
+                const found = newData.nodes.find(newNode => newNode.addr === node.addr);
+                if (found === undefined) return;
+
+                node.talking = found.talking;
+                node.type = found.type;
+            });
+
+            this.empty = false;
+            return somethingChanged;
+        }
+    }
+
+    class ZigbeeGraph {
+        constructor(element, deviceRepository, configuration) {
+            this.deviceRepository = deviceRepository;
+
+            // State variables
+            this.createdAt = null;
+            this.graphModel = new GraphModel();
+            this.eventListeners = {};
+            this.highlightLinks = new Set();
+
+            // Add event handlers
+            configuration.addEventListener('config', config => this.applyConfiguration(config));
+            deviceRepository.addEventListener('neighbors', () => {
+                const newGraphData = new GraphModel().load(deviceRepository.neighbors, deviceRepository.devices);
+                this.#render(newGraphData);
+            });
+            deviceRepository.addEventListener('devices', () => {
+                const newGraphData = new GraphModel().load(deviceRepository.neighbors, deviceRepository.devices);
+                this.#render(newGraphData);
+            });
+
+            // Init graph container
+            this.graph = ForceGraph()(element)
+                .graphData(this.graphModel.data)
+                .nodeId('addr')
+                .nodeLabel(node => this.#translateDates(node.tooltip))
+                .linkSource('sourceAddr')
+                .linkTarget('targetAddr')
+                .nodeCanvasObject((node, ctx) => this.#nodePaint(node, ctx))
+                .linkLabel(link => this.#translateDates(link.label))
+                .linkColor(link => this.#linkColor(link))
+                .linkWidth(link => this.highlightLinks.has(link) ? 2 : 1)
+                .linkCurvature('curvature')
+                .linkDirectionalParticles(1)
+                .linkLineDash(link => link.alive === false && [2, 2])
+                .cooldownTime(5000)
+                .autoPauseRedraw(false)
+                .onNodeDragEnd(node => {
+                    node.fx = node.x;
+                    node.fy = node.y;
+                })
+                .onNodeRightClick(node => {
+                    deviceRepository.fetchNeighbors(node.addr, true);
+                })
+                .onNodeClick(node => {
+                    node.fx = undefined;
+                    node.fy = undefined;
+                    this.graph.graphData(this.graph.graphData());
+                })
+                .onNodeHover(node => {
+                    this.highlightLinks.clear();
+                    if (!node) return;
+                    this.graphModel.links.forEach(link => {
+                        if (link.sourceAddr === node.addr) this.highlightLinks.add(link);
+                    });
+                });
+
+            // Init node repulsion force 
+            this.graph.d3Force('charge').strength(() => -100);
+        }
+
+        addEventListener(eventName, callback) {
+            if (!Array.isArray(this.eventListeners[eventName])) this.eventListeners[eventName] = [];
+            this.eventListeners[eventName].push(callback);
+        }
+
+        #onNodesChange() {
+            const eventName = 'nodes';
+            if (!Array.isArray(this.eventListeners[eventName])) return;
+            this.eventListeners[eventName].forEach(eventListener => eventListener(this.graphModel.nodes));
+        }
+
+        hasNode(addr) {
+            return this.graphModel.nodes.some(node => node.addr === addr);
+        }
+
+        #render(graphModel) {
+            let needsRedraw = this.graphModel.merge(graphModel);
+
+            // Init graph
+            if (this.createdAt === null) {
+                console.log('First paint', this.graphModel.data);
+                this.#init(this.graphModel.data);
+                this.#onNodesChange();
+                return;
+            }
+
+            // Redraw graph only if something changed
+            if (needsRedraw === false) return;
+
+            console.log('Repainting graph', this.graphModel.data);
+            this.graph.graphData(this.graphModel.data);
+            this.#onNodesChange();
+        }
+
+        zoomToFit() {
+            this.graph.zoomToFit(500, 10);
+        }
+
+        zoomOn(addr) {
+            const node = this.graphModel.nodes.find(node => node.addr === addr);
+            if (!node) return;
+
+            this.graph.zoomToFit(350, 10);
+            setTimeout(() => {
+                this.graph.centerAt(node.x, node.y, 1500);
+                this.graph.zoom(8, 2000);
+            }, 350);
+        }
+
+        applyConfiguration(configuration) {
+            if (configuration.dots) {
+                this.graph.linkDirectionalParticles(1);
+                this.graph.linkDirectionalArrowLength(0);
+            } else {
+                this.graph.linkDirectionalParticles(0);
+                this.graph.linkDirectionalArrowLength(3);
+                this.graph.linkDirectionalArrowRelPos(1)
+            }
+
+            if (configuration.duplex) {
+                this.graph.linkCurvature(0);
+            } else {
+                this.graph.linkCurvature('curvature');
+            }
+
+            const currentCharge = this.graph.d3Force('charge').strength()();
+            const newCharge = -1 * (configuration.charge + 1) * (configuration.charge + 1) * 50;
+            if (currentCharge != newCharge) {
+                this.graph.d3Force('charge').strength(() => newCharge);
+                this.graph.graphData(this.graphModel.data);
+            }
+        }
+
+        #init(data) {
+            this.createdAt = new Date().valueOf();
+            this.graph.graphData(data);
+        }
+
+        #translateDates(html) {
+            return html.replace(/\$\{\d+\}/, matched => {
+                const date = new Date(parseInt(matched.substring(2, matched.length - 1)));
+                const formatter = new Intl.RelativeTimeFormat('en');
+                const ranges = {
+                    years: 3600 * 24 * 365,
+                    months: 3600 * 24 * 30,
+                    weeks: 3600 * 24 * 7,
+                    days: 3600 * 24,
+                    hours: 3600,
+                    minutes: 60,
+                    seconds: 1
+                };
+                const secondsElapsed = (date.getTime() - Date.now()) / 1000;
+                for (let key in ranges) {
+                    if (ranges[key] < Math.abs(secondsElapsed)) {
+                    const delta = secondsElapsed / ranges[key];
+                    return formatter.format(Math.round(delta), key);
+                    }
+                }
+            });
+        }
+
+        #nodePaint(node, ctx) {
+            const animateTime = 1000;
+
+            // Pulse chatty devices
+            let t = 0;
+            if (node.talking) {
+                t = ((+new Date() - this.createdAt) % animateTime) / animateTime;
+                if (t < 0.10) {
+                    t = t * 10
+                } else {
+                    t = 1 - (t - 0.10) * 1.1111;
+                }
+            }
+
+            // Circle
+            const colors = UI.colors();
+            ctx.fillStyle = {
+                'Zigbee Router': colors.Blue,
+                'Zigbee End Device': colors.Green,
+                'Zigbee Coordinator': colors.Orange
+            }[node.type] || colors.Magenta;
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, 3 + 2 * t, 0, 2 * Math.PI, false);
+            ctx.fill();
+
+            ctx.lineWidth = 0.2;
+            ctx.strokeStyle = this.#adjustColor(ctx.fillStyle, -30);
+            ctx.stroke();
+
+            if (node.talking === true || node.talking === false) {
+                ctx.fillStyle = this.#adjustColor(ctx.fillStyle, 40);
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 1 + 2 * t, 0, 2 * Math.PI, false);
+                ctx.fill();
+            }
+
+            // Text
+            ctx.fillStyle = colors.TextColor;
+            ctx.font = '3px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(node.name, node.x, node.y + 5);
+        }
+
+        #linkColor(link) {
+            const colors = UI.colors();
+            if (this.highlightLinks.has(link)) return colors.Orange;
+            return { neighbor: colors.TextColorDarker }[link.type];
+        }
+
+        #adjustColor(color, amount) {
+            return '#' + color.replace(/^#/, '').replace(/../g, color => ('0' + Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
+        }
+    }
+
+    class Configuration {
+        constructor() {
+            this.accessToken = undefined;
+            this.dots = true;
+            this.duplex = false;
+            this.dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            this.charge = 0;
+
+            // Event listeners
+            this.eventListeners = {};
+        }
+
+        addEventListener(eventName, callback) {
+            if (!Array.isArray(this.eventListeners[eventName])) this.eventListeners[eventName] = [];
+            this.eventListeners[eventName].push(callback);
+        }
+
+        #onConfigChange() {
+            const eventName = 'config';
+            if (!Array.isArray(this.eventListeners[eventName])) return;
+            this.eventListeners[eventName].forEach(eventListener => eventListener(this));
+        }
+
+        loadFromURL() {
+            const params = new URLSearchParams(window.location.search);
+
+            // Maker API URL
+            const accessToken = params.get('access_token');
+            if (accessToken != null) this.accessToken = accessToken;
+
+            // Link particles
+            const showDots = params.get('dots');
+            if (showDots != null) this.dots = showDots !== 'false';
+
+            // Duplex links
+            const showDuplex = params.get('duplex');
+            if (showDuplex != null) this.duplex = showDuplex === 'true';
+
+            // Dark mode
+            const darkTheme = params.get('dark');
+            if (darkTheme != null) this.dark = darkTheme === 'true';
+
+            // Nodes charge
+            const charge = parseInt(params.get('charge'));
+            this.charge = (isNaN(charge) || charge < 0 || charge > 9) ? 0 : charge;
+
+            // Notify outside world of the changes
+            this.#onConfigChange();
+        }
+    }
+
+    class UI {
+        static colors() {
+            const css = getComputedStyle(document.documentElement);
+            return {
+                BgColorDarker: css.getPropertyValue('--bg-color-darker'),
+                TextColor: css.getPropertyValue('--text-color'),
+                TextColorDarker: css.getPropertyValue('--text-color-darker'),
+                Yellow: css.getPropertyValue('--Yellow'),
+                Orange: css.getPropertyValue('--Orange'),
+                Red: css.getPropertyValue('--Red'),
+                Magenta: css.getPropertyValue('--Magenta'),
+                Violet: css.getPropertyValue('--Violet'),
+                Blue: css.getPropertyValue('--Blue'),
+                Cyan: css.getPropertyValue('--Cyan'),
+                Green: css.getPropertyValue('--Green'),
+                Gray: css.getPropertyValue('--Gray')
+            };
+        }
+
+        constructor(deviceRepository, zigbeeGraph, configuration) {
+            this.deviceRepository = deviceRepository;
+            this.zigbeeGraph = zigbeeGraph;
+            this.configuration = configuration;
+
+            this.deviceFilter = '';
+            const searchField = document.getElementById('device-search');
+            window.addEventListener('load', () => {
+                searchField.value = '';
+                searchField.setAttribute('placeholder', '-- click here to search device --')
+                searchField.addEventListener('keyup', event => {
+                    if (event.keyCode === 27) {
+                        searchField.value = '';
+                    }
+
+                    this.search(searchField.value.toLowerCase());
+                });
+
+                searchField.addEventListener('focus', event => searchField.setAttribute('placeholder', ''));
+                searchField.addEventListener('blur', event => searchField.setAttribute('placeholder', '-- click here to search device --'));
+
+                document.getElementById('configForm').addEventListener('change', () => {
+                    this.applyConfiguration();
+                    configuration.loadFromURL();
+                });
+
+                // Embeddable
+                if (window.location.href.includes('embed=true')) {
+                    document.body.classList.add('embedded');
+                }
+            });
+
+            // Setup event handlers
+            zigbeeGraph.addEventListener('nodes', nodes => this.#repaintNodesCount(nodes));
+            deviceRepository.addEventListener('devices', devices => this.#repaintDevicesList(devices));
+            deviceRepository.addEventListener('queue', queue => this.#repaintInterviewQueue(queue));
+            configuration.addEventListener('config', config => this.#repaintConfiguration(config));
+        }
+
+        search(deviceFilter) {
+            this.deviceFilter = deviceFilter;
+            const rows = document.getElementById('zigbee-devices-list').rows;
+            
+            for(let idx = 0; idx < rows.length; idx++) {
+                const row = rows.item(idx);
+                row.style.display = this.deviceFilter === '' || row.innerText.toLowerCase().includes(this.deviceFilter) ? 'table-row' : 'none';
+            }
+        }
+
+        #repaintNodesCount(nodes) {
+            document.getElementById('nodesCount').innerText = `${nodes.length - 1}`;
+        }
+
+        #repaintConfiguration(config) {
+            document.getElementById('conf-dots').checked = config.dots;
+            document.getElementById('conf-duplex').checked = config.duplex;
+            document.getElementById('conf-dark').checked = config.dark;
+            document.getElementById('conf-charge').value = config.charge % 11;
+            document.documentElement.setAttribute('data-theme', config.dark ? 'dark' : 'light');
+            document.querySelector('meta[name="theme-color"]').setAttribute('content',  UI.colors().BgColorDarker);
+        }
+
+        #repaintInterviewQueue(queue) {
+            if (queue.length === 0) return document.getElementById('interviewQueue').innerText = 'empty';
+            document.getElementById('interviewQueue').innerHTML = `[${queue.map((device, idx) => idx === 0 ? `<span style="color:var(--Red)">▸${device.addr}◂</span>` : device.addr).join(', ')}]`;
+        }
+
+        #repaintDevicesList(devices) {
+            document.getElementById('devicesCount').innerText = `${devices.length}`;
+
+            // Update devices list
+            const tbl = document.getElementById('zigbee-devices-list');
+            while (tbl.rows.length > 0) tbl.deleteRow(0);
+            devices
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .forEach(device => {
+                    const row = tbl.insertRow();
+                    row.insertCell().appendChild(document.createTextNode(device.addr));
+
+                    const found = this.zigbeeGraph.hasNode(device.addr);
+                    if (!found) {
+                        const cell = row.insertCell();
+                        cell.appendChild(document.createTextNode('⛔'));
+                        cell.classList.add('device-missing')
+                    } else {
+                        const link = document.createElement('a');
+                        link.setAttribute('href', `javascript:zigbeeGraph.zoomOn('${device.addr}')`);
+                        link.innerText = '👁️';
+                        row.insertCell().appendChild(link);
+                    }
+
+                    const link = document.createElement('a');
+                    link.setAttribute('href', `/device/edit/${device.link}`);
+                    link.setAttribute('target', '_blank');
+                    link.setAttribute('rel', 'noopener noreferrer');
+                    link.innerText = device.name;
+                    row.insertCell().appendChild(link);
+
+                    // Apply filtering
+                    if (this.deviceFilter !== '') {
+                        row.style.display = row.innerText.toLowerCase().includes(this.deviceFilter) ? 'table-row' : 'none';
+                    }
+                });
+        }
+
+        applyConfiguration() {
+            var searchParams = new URLSearchParams();
+
+            const params = new URLSearchParams(window.location.search);
+            const accessToken = params.get('access_token');
+            if (accessToken) searchParams.set('access_token', accessToken);
+
+            const dots = document.getElementById('conf-dots').checked;
+            searchParams.set('dots', dots);
+
+            const duplex = document.getElementById('conf-duplex').checked;
+            searchParams.set('duplex', duplex);
+
+            const dark = document.getElementById('conf-dark').checked;
+            searchParams.set('dark', dark);
+
+            const charge = document.getElementById('conf-charge').value;
+            searchParams.set('charge', charge);
+
+            var goto = window.location.pathname + '?' + searchParams.toString();
+            history.pushState(null, '', goto);
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // Entry point
+    /////////////////////////////////////////////////////////////////
+
+    // Init instances
+    const configuration = new Configuration();
+    const hubitatConnection = new HubitatConnection(configuration);
+    const deviceRepository = new DeviceRepository(hubitatConnection);
+    const zigbeeGraph = new ZigbeeGraph(document.getElementById('graph'), deviceRepository, configuration);
+    const ui = new UI(deviceRepository, zigbeeGraph, configuration);
+
+    // On page load
+    window.addEventListener('load', () => {
+
+        try {
+            configuration.loadFromURL();
+            hubitatConnection.init();
+
+            window.ondblclick = () => zigbeeGraph.zoomToFit();
+
+            // Once the devices list is loaded, start poking at the hub
+            deviceRepository.fetchKnownDevices().then(_ => {
+                deviceRepository.fetchNeighbors('0000');
+            });
+        } catch (ex) {
+            alert(ex.message);
+        }
+    });
+    </script>
+</body>
+</html>
