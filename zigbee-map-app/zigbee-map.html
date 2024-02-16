@@ -703,6 +703,15 @@
             if (pokeCoordinates === undefined) return;
 
             const {addr, startIndex, promise: { resolve, reject } } = pokeCoordinates;
+
+            // Timeout this promise if we don't receive back a response on the websocket
+            const timeout = setTimeout(() => {
+                delete this.promises[`${addr}:${startIndex}`];
+                reject(`Poke timeout after ${HubitatConnection.POKE_TIMOUT} ms`)
+            }, HubitatConnection.POKE_TIMOUT);
+            this.promises[`${addr}:${startIndex}`] = { resolve, reject, timeout };
+
+            // Poke device
             return fetch(new Request(`./poke/${addr}/${startIndex}?access_token=${this.accessToken}`), {cache: 'no-store'})
                 .then((response) => {
                     if (!response.ok) {
@@ -717,15 +726,6 @@
                         console.error('HubitatConnection#pokeNextDeviceInQueue() - Bad status attribute (not true)', json);
                         throw new Error(`HubitatConnection#pokeNextDeviceInQueue() - JSON error, status = ${json.status}`);
                     }
-
-                    // Timeout this promise if we don't receive back a response on the websocket
-                    const timeout = setTimeout(() => {
-                        delete this.promises[`${addr}:${startIndex}`];
-                        reject(`Poke timeout after ${HubitatConnection.POKE_TIMOUT} ms`)
-                    }, HubitatConnection.POKE_TIMOUT);
-
-                    
-                    this.promises[`${addr}:${startIndex}`] = { resolve, reject, timeout };
 
                     // Return response from the app/driver
                     return json;
