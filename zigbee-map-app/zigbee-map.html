@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Hubitat - Zigbee Map - v1.0.0</title>
+    <title>Hubitat - Zigbee Map - v1.1.0</title>
     <meta charset="utf-8">
     <meta name="keywords" content="hubitat, zigbee, map">
     <meta name="author" content="Agamemnon Dandanache">
@@ -21,8 +21,8 @@
     <meta name="msapplication-config" content="/ui2/images/browserconfig.xml">
     <meta name="theme-color" content="#fdf6e3">
 
-    <script src="//unpkg.com/@github/tab-container-element@latest/dist/index.js" type="module"></script>
-    <script src="//unpkg.com/force-graph"></script>
+    <script src="//unpkg.com/@github/tab-container-element@4.0.0/dist/index.js" type="module"></script>
+    <script src="//unpkg.com/force-graph@1.43.4/dist/force-graph.min.js"></script>
     <link rel="stylesheet" type="text/css" href="//necolas.github.io/normalize.css/8.0.1/normalize.css">
     <style>
 
@@ -169,13 +169,14 @@
         left: 10px;
         opacity: .90;
         margin-right: 10px;
-        min-width: 21em;
+        min-width: 20em;
         max-width: 33em;
     }
 
-    @media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
+    @media only screen and (max-width: 790px) {
         #tabs-container {
             width: calc(100% - 20px);
+            max-width: 100%;
         }
     }
 
@@ -205,6 +206,11 @@
 
     #status-container ul:last-child {
         margin-bottom: 0;
+    }
+
+    #status-container li b {
+        display: inline-block;
+        width: 5em;
     }
 
     /* Devices list */
@@ -449,7 +455,7 @@
             <!-- Status -->
             <div role="tabpanel" aria-labelledby="status" id="status-container">
                 <div>Discovered devices: <span id="nodesCount">...</span> / <span id="devicesCount">...</span></div>
-                <div class="long-line">Inteview Queue: <span id="interviewQueue">...</span></div>
+                <div class="long-line" id="interview-queue">Interview Queue: ...</div>
                 <details>
                     <summary>Legend</summary>
                     <section>
@@ -458,7 +464,8 @@
                             <li><b style="color:var(--Orange)">orange</b> &#10132; Zigbee Coordinator</li>
                             <li><b style="color:var(--Blue)">blue</b> &#10132; Zigbee Router</li>
                             <li><b style="color:var(--Green)">green</b> &#10132; Zigbee End Device</li>
-                            <li><b style="color:var(--Magenta)">magenta</b> &#10132; Unknown</li>
+                            <li><b style="color:var(--Violet)">violet</b> &#10132; Unknown Device</li>
+                            <li><b style="color:var(--Magenta)">magenta</b> &#10132; Interview Failed</li>
                         </ul>
         
                         <b>More info</b>
@@ -603,6 +610,8 @@
             this.link = link;
             this.type = addr === '0000' ? 'Zigbee Coordinator' : 'Unknown';
             this.talking = undefined;
+            this.error = undefined;
+            this.interviewTime = undefined;
         }
 
         static hubitat() {
@@ -612,6 +621,14 @@
         setType(type) {
             if (type === 'Unknown') return;
             this.type = type;
+        }
+
+        setError(error) {
+            this.error = error;
+        }
+
+        setInterviewTime(setInterviewTime) {
+            this.interviewTime = setInterviewTime;
         }
 
         startInterview() {
@@ -630,7 +647,6 @@
         constructor(configuration) {
 
             this.socketURL = `${window.location.href.startsWith('https://') ? 'wss' : 'ws'}://${new URL(window.location.href).host}/zigbeeLogsocket`;
-            //this.socketURL = 'ws://192.168.1.201/zigbeeLogsocket';
             this.socket = null;
 
             this.accessToken = undefined;
@@ -778,13 +794,13 @@
             setInterval(() => this.#fetchNeighborsInQueue(), DeviceRepository.TIME_BETWEEN_INTERVIEWS);
         }
 
-        getDevicebyAddr(addr) {
-            return this.devices.find(device => device.addr === addr);
-        }
-
         addEventListener(eventName, callback) {
             if (!Array.isArray(this.eventListeners[eventName])) this.eventListeners[eventName] = [];
             this.eventListeners[eventName].push(callback);
+        }
+
+        #getDevicebyAddr(addr) {
+            return this.devices.find(device => device.addr === addr);
         }
 
         #onDevicesChange() {
@@ -817,8 +833,8 @@
             // Look for the neighbors' neighbors
             neighbors.forEach(neighbor => {
 
-                // Update node type
-                this.getDevicebyAddr(neighbor.addr)?.setType(neighbor.deviceType);
+                // Update neightbor node type
+                this.#getDevicebyAddr(neighbor.addr)?.setType(neighbor.deviceType);
 
                 // Interview neighbor; only if it not a sleepy device
                 if (neighbor.deviceType != 'Zigbee End Device') {
@@ -831,12 +847,12 @@
         }
 
         #startInterview(addr) {
-            this.getDevicebyAddr(addr)?.startInterview();
+            this.#getDevicebyAddr(addr)?.startInterview();
             this.#onDevicesChange();
         }
 
         #stopInterview(addr) {
-            this.getDevicebyAddr(addr)?.stopInterview();
+            this.#getDevicebyAddr(addr)?.stopInterview();
             this.#onDevicesChange();
         }
 
@@ -869,16 +885,22 @@
             const { addr } = queueItem;
 
             // Mark device as busy
-            console.log('Starting device interview', addr);
+            console.info('Starting interview for device', addr);
             this.busy = true;
             this.#startInterview(addr);
 
             return this.#fetchNeighborsTable(addr, 0, [])
-                .then(neighbors => this.setNeighbors(addr, neighbors))
-                .catch(ex => this.setNeighbors(addr, []))
+                .then(neighbors => {
+                    this.setNeighbors(addr, neighbors);
+                })
+                .catch(ex => {
+                    this.setNeighbors(addr, []);
+                    this.#getDevicebyAddr(addr)?.setError(ex);
+                })
                 .finally(() => {
                     this.busy = false;
                     this.#stopInterview(addr);
+                    this.#getDevicebyAddr(addr)?.setInterviewTime(new Date());
 
                     // Remove device from the interview queue
                     this.queue.shift();
@@ -958,21 +980,24 @@
                     const neighborName = GraphModel.#deviceName(neighborAddr, devices);
                     const tooltip = GraphModel.#tooltip('Neighbor', {Affinity: neighbor.affinity, LQA: neighbor.lqa});
                     this.addLink(
-                        nodeAddr,         // source addr
-                        nodeName,         // source name
-                        neighborAddr,     // target addr
-                        neighborName,     // target name
-                        'neighbor',       // link type
-                        tooltip           // link label (tooltip)
+                        nodeAddr,       // source addr
+                        nodeName,       // source name
+                        neighborAddr,   // target addr
+                        neighborName,   // target name
+                        'neighbor',     // link type
+                        tooltip         // link label (tooltip)
                     );
                 });
             }
 
+            // Enhance node properties
             devices.forEach(device => {
                 const node = this.nodes.find(node => node.addr === device.addr);
                 if (node === undefined) return;
                 node.talking = device.talking;
                 node.type = device.type;
+                node.error = device.error;
+                node.interviewTime = device.interviewTime;
             });
             return this;
         }
@@ -1059,6 +1084,8 @@
 
                 node.talking = found.talking;
                 node.type = found.type;
+                node.error = found.error;
+                node.interviewTime = found.interviewTime;
             });
 
             this.empty = false;
@@ -1244,11 +1271,7 @@
 
             // Circle
             const colors = UI.colors();
-            ctx.fillStyle = {
-                'Zigbee Router': colors.Blue,
-                'Zigbee End Device': colors.Green,
-                'Zigbee Coordinator': colors.Orange
-            }[node.type] || colors.Magenta;
+            ctx.fillStyle = this.#nodeColor(node);
             ctx.beginPath();
             ctx.arc(node.x, node.y, 3 + 2 * t, 0, 2 * Math.PI, false);
             ctx.fill();
@@ -1272,6 +1295,16 @@
             ctx.fillText(node.name, node.x, node.y + 5);
         }
 
+        #nodeColor(node) {
+            const colors = UI.colors();
+            if (node.error !== undefined) return colors.Magenta;
+            return {
+                'Zigbee Router': colors.Blue,
+                'Zigbee End Device': colors.Green,
+                'Zigbee Coordinator': colors.Orange
+            }[node.type] || colors.Violet;
+        }
+
         #linkColor(link) {
             const colors = UI.colors();
             if (this.highlightLinks.has(link)) return colors.Orange;
@@ -1287,7 +1320,7 @@
         constructor() {
             this.accessToken = undefined;
             this.dots = true;
-            this.duplex = false;
+            this.duplex = true;
             this.dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
             this.charge = 0;
 
@@ -1319,7 +1352,7 @@
 
             // Duplex links
             const showDuplex = params.get('duplex');
-            if (showDuplex != null) this.duplex = showDuplex === 'true';
+            if (showDuplex != null) this.duplex = showDuplex !== 'false';
 
             // Dark mode
             const darkTheme = params.get('dark');
@@ -1416,8 +1449,8 @@
         }
 
         #repaintInterviewQueue(queue) {
-            if (queue.length === 0) return document.getElementById('interviewQueue').innerText = 'empty';
-            document.getElementById('interviewQueue').innerHTML = `[${queue.map((device, idx) => idx === 0 ? `<span style="color:var(--Red)">▸${device.addr}◂</span>` : device.addr).join(', ')}]`;
+            if (queue.length === 0) return document.getElementById('interview-queue').innerText = 'Interview Queue: empty';
+            document.getElementById('interview-queue').innerHTML = `Interview Queue (${queue.length}): [${queue.map((device, idx) => idx === 0 ? `<span style="color:var(--Red)">▸${device.addr}◂</span>` : device.addr).join(', ')}]`;
         }
 
         #repaintDevicesList(devices) {
@@ -1430,7 +1463,11 @@
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .forEach(device => {
                     const row = tbl.insertRow();
-                    row.insertCell().appendChild(document.createTextNode(device.addr));
+                    let link = document.createElement('a');
+                    link.setAttribute('title', 'Click to add this device to the Interview Queue');
+                    link.setAttribute('href', `javascript:deviceRepository.fetchNeighbors('${device.addr}')`);
+                    link.innerText = device.addr;
+                    row.insertCell().appendChild(link);
 
                     const found = this.zigbeeGraph.hasNode(device.addr);
                     if (!found) {
@@ -1438,13 +1475,14 @@
                         cell.appendChild(document.createTextNode('⛔'));
                         cell.classList.add('device-missing')
                     } else {
-                        const link = document.createElement('a');
+                        link = document.createElement('a');
+                        link.setAttribute('title', 'Click to zoom map on this device');
                         link.setAttribute('href', `javascript:zigbeeGraph.zoomOn('${device.addr}')`);
                         link.innerText = '👁️';
                         row.insertCell().appendChild(link);
                     }
 
-                    const link = document.createElement('a');
+                    link = document.createElement('a');
                     link.setAttribute('href', `/device/edit/${device.link}`);
                     link.setAttribute('target', '_blank');
                     link.setAttribute('rel', 'noopener noreferrer');

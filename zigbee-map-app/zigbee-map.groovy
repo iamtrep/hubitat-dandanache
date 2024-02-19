@@ -9,9 +9,10 @@ import groovy.transform.Field
 import com.hubitat.app.ChildDeviceWrapper
 
 @Field static final String APP_NAME = "Zigbee Map"
-@Field static final String APP_VERSION = "1.0.0"
+@Field static final String APP_VERSION = "1.1.0"
 @Field static final String FILE_NAME = "zigbee-map.html"
 @Field static final def HEXADECIMAL_PATTERN = ~/\p{XDigit}{4}/
+@Field static final def URL_PATTERN = ~/^https?:\/\/[^\/]+(.+)/
 
 definition(
     name: APP_NAME,
@@ -78,7 +79,7 @@ Map zigbeemap() {
     dynamicPage (
         name: "zigbeemap",
         title: "<b>${APP_NAME} - v${APP_VERSION}</b>",
-        install: showInstall,
+        install: true,
         uninstall: !showInstall
     ) {
         if (app.getInstallationState() == "COMPLETE") {
@@ -143,14 +144,24 @@ Map changelog() {
         uninstall: false
     ) {
 
-        section ("v1.0.0 - 2024-02-16", hideable: true, hidden: false) {
+        section ("v1.1.0 - 2024-02-19", hideable: true, hidden: false) {
+            paragraph "<li>Add \"Done\" button in the Hubitat app - @dnickel</li>" +
+            "<li>Click the address of any device in the \"Devices\" tab to add it to the Interview Queue - @hubitrep</li>" +
+            "<li>Use relative URL when opening the HTML app - @jlv</li>" +
+            "<li>Mark devices that failed the Interview  - @kahn-hubitat</li>" +
+            "<li>Show Interview Queue size</li>" +
+            "<li>Show \"duplex\" links by default</li>"
+        }
+
+        section ("v1.0.0 - 2024-02-16", hideable: true, hidden: true) {
             paragraph "<li>Initial release</li>"
         }
     }
 }
 
 def getLocalURL() {
-    return "${getFullLocalApiServerUrl()}/${FILE_NAME}?access_token=${state.accessToken}"
+    String fullURL = "${getFullLocalApiServerUrl()}/${FILE_NAME}?access_token=${state.accessToken}";
+    return (fullURL =~ URL_PATTERN).findAll()[0][1]
 }
 
 def getCloudURL() {
@@ -167,7 +178,7 @@ mappings {
 }
 
 def loadZigbeeMapMapping() {
-    debug "Poxying ${FILE_NAME} to ${request.HOST} (${request.requestSource})"
+    debug "Proxying ${FILE_NAME} to ${request.HOST} (${request.requestSource})"
     return render(
         status: 200,
         contentType: "text/html",
