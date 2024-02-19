@@ -34,6 +34,14 @@
             "category": "Control",
             "tags": [ "Zigbee" ],
             "location": "https://raw.githubusercontent.com/dan-danache/hubitat/main/zigbee-pairing-helper-driver/packageManifest.json"
+        },
+        {
+            "id": "46ce50b6-6513-4ae9-b4a3-1d392294b35f",
+            "name": "Zigbee Map",
+            "description": "Allows you to visually render the Zigbee map of your Hubitat system.",
+            "category": "Utility",
+            "tags": [ "Zigbee", "Tools & Utilities" ],
+            "location": "https://raw.githubusercontent.com/dan-danache/hubitat/main/zigbee-map-app/packageManifest.json"
         }
     ]
 }
