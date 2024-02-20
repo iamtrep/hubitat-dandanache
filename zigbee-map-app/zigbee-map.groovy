@@ -9,7 +9,7 @@ import groovy.transform.Field
 import com.hubitat.app.ChildDeviceWrapper
 
 @Field static final String APP_NAME = "Zigbee Map"
-@Field static final String APP_VERSION = "1.1.0"
+@Field static final String APP_VERSION = "1.2.0"
 @Field static final String FILE_NAME = "zigbee-map.html"
 @Field static final def HEXADECIMAL_PATTERN = ~/\p{XDigit}{4}/
 @Field static final def URL_PATTERN = ~/^https?:\/\/[^\/]+(.+)/
@@ -144,7 +144,11 @@ Map changelog() {
         uninstall: false
     ) {
 
-        section ("v1.1.0 - 2024-02-19", hideable: true, hidden: false) {
+        section ("v1.2.0 - 2024-02-20", hideable: true, hidden: false) {
+            paragraph "<li>Add option to use an image as map background (e.g.: home layout)</li>"
+        }
+
+        section ("v1.1.0 - 2024-02-19", hideable: true, hidden: true) {
             paragraph "<li>Add \"Done\" button in the Hubitat app - @dnickel</li>" +
             "<li>Click the address of any device in the \"Devices\" tab to add it to the Interview Queue - @hubitrep</li>" +
             "<li>Use relative URL when opening the HTML app - @jlv</li>" +
