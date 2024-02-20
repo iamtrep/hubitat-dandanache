@@ -18,14 +18,14 @@
         "location": "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_1.2.0/zigbee-map-app/zigbee-map.html",
         "required": true,
         "oauth": false,
-        "description": "Allows you to visually render the Zigbee map of your Hubitat system."
+        "description": "Allows you to visualize the topology and connectivity of your Zigbee network."
     }],
     "apps": [{
         "id": "c2e67d9b-d56f-4865-9419-14a93cbe94d0",
         "namespace": "dandanache",
         "location": "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_1.2.0/zigbee-map-app/zigbee-map.groovy",
         "name": "Zigbee Map",
-        "description": "Allows you to visually render the Zigbee map of your Hubitat system.",
+        "description": "Allows you to visualize the topology and connectivity of your Zigbee network.",
         "oauth": true,
         "required": true
     }],

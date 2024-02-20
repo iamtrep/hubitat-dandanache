@@ -1178,7 +1178,6 @@
                 .linkWidth(link => this.highlightLinks.has(link) ? 2 : 1)
                 .linkCurvature('curvature')
                 .linkDirectionalParticles(1)
-                .linkLineDash(link => link.alive === false && [2, 2])
                 .cooldownTime(5000)
                 .autoPauseRedraw(false)
                 .onNodeDragEnd(node => {
