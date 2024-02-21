@@ -9,7 +9,7 @@ import groovy.transform.Field
 import com.hubitat.app.ChildDeviceWrapper
 
 @Field static final String APP_NAME = "Zigbee Map"
-@Field static final String APP_VERSION = "1.2.0"
+@Field static final String APP_VERSION = "1.3.0"
 @Field static final String FILE_NAME = "zigbee-map.html"
 @Field static final def HEXADECIMAL_PATTERN = ~/\p{XDigit}{4}/
 @Field static final def URL_PATTERN = ~/^https?:\/\/[^\/]+(.+)/
@@ -18,8 +18,8 @@ definition(
     name: APP_NAME,
     namespace: "dandanache",
     author: "Dan Danache",
-    description: "Allows you to visually render the Zigbee map of your Hubitat system",
-    documentationLink: "https://dan-danache.github.io/hubitat/zigbee-graph-app/",
+    description: "Visualize the topology and connectivity of your Zigbee network.",
+    documentationLink: "https://community.hubitat.com/t/release-zigbee-map-app/133888",
     importUrl: "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_${APP_VERSION}/zigbee-map-app/zigbee-map.groovy",
     category: "Utility",
     singleInstance: true,
@@ -111,14 +111,14 @@ Map zigbeemap() {
                     page: "changelog",
                     required: false,
                 )
-                href (
-                    name: "donateLink",
-                    title: "<img src=\"data:image/png;base64,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\" alt=\"Buy me a Coffee\">",
-                    description: "",
-                    url: "https://www.buymeacoffee.com/dandanache",
-                    style: "embedded",
-                    required: false,
-                )
+                // href (
+                //     name: "donateLink",
+                //     title: "<img src=\"data:image/png;base64,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\" alt=\"Buy me a Coffee\">",
+                //     description: "",
+                //     url: "https://www.buymeacoffee.com/dandanache",
+                //     style: "embedded",
+                //     required: false,
+                // )
 
                 input(
                     name: "logEnable",
@@ -144,7 +144,11 @@ Map changelog() {
         uninstall: false
     ) {
 
-        section ("v1.2.0 - 2024-02-20", hideable: true, hidden: false) {
+        section ("v1.3.0 - 2024-02-??", hideable: true, hidden: false) {
+            paragraph "<li>TODO</li>"
+        }
+
+        section ("v1.2.0 - 2024-02-20", hideable: true, hidden: true) {
             paragraph "<li>Add option to use an image as map background (e.g.: home layout)</li>"
         }
 
@@ -178,6 +182,7 @@ def getCloudURL() {
 
 mappings {
     path("/${FILE_NAME}") {action: [GET: "loadZigbeeMapMapping"]}
+    path("/zigbee-map.webmanifest") {action: [GET: "loadManifestMapping"]}
     path("/poke/:addr/:startIndex") {action: [GET: "pokeMapping"]}
 }
 
@@ -186,7 +191,41 @@ def loadZigbeeMapMapping() {
     return render(
         status: 200,
         contentType: "text/html",
-        data: new String(downloadHubFile(FILE_NAME), "UTF-8")
+        data: new String(downloadHubFile(FILE_NAME), "UTF-8").replaceAll('\\$\\{access_token\\}', "${state.accessToken}")
+    )
+}
+
+def loadManifestMapping() {
+    debug "Loading PWA manifest"
+    return render(
+        status: 200,
+        contentType: "application/manifest+json",
+        data: """\
+        {
+            "id": "11ba8718-86f0-4461-ae21-8627001d3e8e",
+            "name": "Hubitat - Zigbee Map",
+            "short_name": "Zigbee Map",
+            "description": "Visualize the topology and connectivity of your Zigbee network.",
+            "start_url": "${getLocalURL()}",
+            "icons": [
+                {
+                    "src": "/ui2/images/android-chrome-192x192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                },
+                {
+                    "src": "/ui2/images/android-chrome-512x512.png",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ],
+            "categories": ["utilities"],
+            "display": "standalone",
+            "orientation": "portrait",
+            "theme_color": "#eee8d5",
+            "background_color": "#eee8d5"
+        }
+        """
     )
 }
 

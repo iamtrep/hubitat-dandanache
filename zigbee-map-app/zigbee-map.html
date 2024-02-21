@@ -1,29 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Hubitat - Zigbee Map - v1.2.0</title>
+    <title>Hubitat - Zigbee Map - v1.3.0</title>
     <meta charset="utf-8">
     <meta name="keywords" content="hubitat, zigbee, map">
     <meta name="author" content="Agamemnon Dandanache">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
-    <meta name="robots" content="noindex">
+    <meta name="description" content="Visualize the topology and connectivity of your Zigbee network.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" sizes="180x180" href="/ui2/images/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/ui2/images/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/ui2/images/favicon-16x16.png">
-    <link rel="icon" sizes="192x192" href="/ui2/images/favicon.ico">
-    <link rel="manifest" href="/ui2/images/site.webmanifest">
-    <link rel="mask-icon" href="/ui2/images/safari-pinned-tab.svg" color="#5bbad5">
-    <link rel="shortcut icon" href="/ui2/images/favicon.ico">
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-title" content="Zigbee Map"/>
+    <meta name="application-name" content="Zigbee Map"/>
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="msapplication-config" content="/ui2/images/browserconfig.xml">
     <meta name="theme-color" content="#fdf6e3">
+    <meta name="x5-orientation" content="portrait">
+    <meta name="x5-page-mode" content="app">
+    <meta name="screen-orientation" content="portrait">
+    <meta name="browsermode" content="application">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/ui2/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/ui2/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/ui2/images/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/ui2/images/android-chrome-512x512.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/ui2/images/android-chrome-192x192.png">
+    <link rel="icon" sizes="192x192" href="/ui2/images/favicon.ico">
+    <link rel="manifest" href="./zigbee-map.webmanifest?access_token=${access_token}">
+    <link rel="mask-icon" href="/ui2/images/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/ui2/images/favicon.ico">
+    <link rel="preconnect" href="//unpkg.com" crossorigin="anonymous" />
+    <link rel="preconnect" href="//necolas.github.io" crossorigin="anonymous" />
+
+    <link rel="stylesheet" type="text/css" href="//necolas.github.io/normalize.css/8.0.1/normalize.css">
 
     <script src="//unpkg.com/@github/tab-container-element@4.0.0/dist/index.js" type="module"></script>
     <script src="//unpkg.com/force-graph@1.43.4/dist/force-graph.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="//necolas.github.io/normalize.css/8.0.1/normalize.css">
     <style>
 
     :root {
@@ -467,7 +478,6 @@
         background-repeat: no-repeat;
         background-size: contain;
         background-position: center;
-        box-shadow: inset 0 0 5px 2px #282a2d;
     }
 
     /* Mobile view */
@@ -570,6 +580,10 @@
                             Show duplex links
                         </li>
                         <li>
+                            <input type="checkbox" id="conf-unknown"><label for="conf-unknown">Show "Unknown" devices</label>
+                            Show <b style="color:var(--Violet)">Unknown</b> devices
+                        </li>
+                        <li>
                             <div>Node repulsion force</div>
                             <input type="range" id="conf-charge" min="0" max="9" step="1">
                         </li>
@@ -663,10 +677,6 @@
             this.talking = undefined;
             this.error = undefined;
             this.interviewTime = undefined;
-        }
-
-        static hubitat() {
-            return new Device('0000', 'Hubitat');
         }
 
         setType(type) {
@@ -873,7 +883,7 @@
         }
 
         setDevices(devices) {
-            this.devices = [Device.hubitat()].concat(devices);
+            this.devices = devices;
             this.#onDevicesChange();
             return this.devices;
         }
@@ -982,7 +992,7 @@
             this.addNode('0000', 'Hubitat');
         }
 
-        get data() {
+        buildData(includeUnknowns = true) {
 
             // Update node types
             this.nodes.forEach(node => {
@@ -1003,9 +1013,10 @@
             });
 
             // Return data
+            const unknownAddrs = this.nodes.filter(node => node.type === undefined).map(node => node.addr);
             return {
-                nodes: this.nodes,
-                links: this.links
+                nodes: this.nodes.filter(node => includeUnknowns || node.type !== undefined),
+                links: this.links.filter(link => includeUnknowns || (!unknownAddrs.includes(link.sourceAddr) && !unknownAddrs.includes(link.targetAddr)))
             };
         }
 
@@ -1134,7 +1145,7 @@
                 if (found === undefined) return;
 
                 node.talking = found.talking;
-                node.type = found.type;
+                if (found.type !== undefined) node.type = found.type;
                 node.error = found.error;
                 node.interviewTime = found.interviewTime;
             });
@@ -1153,6 +1164,7 @@
             this.graphModel = new GraphModel();
             this.eventListeners = {};
             this.highlightLinks = new Set();
+            this.showUnknown = true;
 
             // Add event handlers
             configuration.addEventListener('config', config => this.applyConfiguration(config));
@@ -1167,7 +1179,7 @@
 
             // Init graph container
             this.graph = ForceGraph()(element)
-                .graphData(this.graphModel.data)
+                .graphData(this.graphModel.buildData())
                 .nodeId('addr')
                 .nodeLabel(node => this.#translateDates(node.tooltip))
                 .linkSource('sourceAddr')
@@ -1209,33 +1221,14 @@
             this.eventListeners[eventName].push(callback);
         }
 
-        #onNodesChange() {
+        #onNodesChange(nodes) {
             const eventName = 'nodes';
             if (!Array.isArray(this.eventListeners[eventName])) return;
-            this.eventListeners[eventName].forEach(eventListener => eventListener(this.graphModel.nodes));
+            this.eventListeners[eventName].forEach(eventListener => eventListener(nodes));
         }
 
         hasNode(addr) {
             return this.graphModel.nodes.some(node => node.addr === addr);
-        }
-
-        #render(graphModel) {
-            let needsRedraw = this.graphModel.merge(graphModel);
-
-            // Init graph
-            if (this.createdAt === null) {
-                console.log('First paint', this.graphModel.data);
-                this.#init(this.graphModel.data);
-                this.#onNodesChange();
-                return;
-            }
-
-            // Redraw graph only if something changed
-            if (needsRedraw === false) return;
-
-            console.log('Repainting graph', this.graphModel.data);
-            this.graph.graphData(this.graphModel.data);
-            this.#onNodesChange();
         }
 
         zoomToFit() {
@@ -1254,6 +1247,8 @@
         }
 
         applyConfiguration(configuration) {
+            let refreshGraph = false;
+
             if (configuration.dots) {
                 this.graph.linkDirectionalParticles(1);
                 this.graph.linkDirectionalArrowLength(0);
@@ -1269,17 +1264,53 @@
                 this.graph.linkCurvature('curvature');
             }
 
+            if (configuration.duplex) {
+                this.graph.linkCurvature(0);
+            } else {
+                this.graph.linkCurvature('curvature');
+            }
+
+            const currentShowUnknown = this.showUnknown;
+            this.showUnknown = configuration.unknown;
+            
+            if (currentShowUnknown !== this.showUnknown) {
+                refreshGraph = true;
+            }
+
             const currentCharge = this.graph.d3Force('charge').strength()();
             const newCharge = -1 * (configuration.charge + 1) * (configuration.charge + 1) * 50;
             if (currentCharge != newCharge) {
                 this.graph.d3Force('charge').strength(() => newCharge);
-                this.graph.graphData(this.graphModel.data);
+                refreshGraph = true;
             }
+
+            // Refresh graph; if needed
+            if (refreshGraph) this.#render();
         }
 
-        #init(data) {
-            this.createdAt = new Date().valueOf();
+        #render(graphModel) {
+
+            // #render() -> force refresh/reload graph with the same data
+            const needsRedraw = graphModel === undefined ? true : this.graphModel.merge(graphModel);
+
+            let data = this.graphModel.buildData(this.showUnknown);
+
+            // Init graph
+            if (this.createdAt === null) {
+                console.log('First paint', data);
+                this.createdAt = new Date().valueOf();
+                this.graph.graphData(data);
+
+                this.#onNodesChange(data.nodes);
+                return;
+            }
+
+            // Redraw graph only if something changed
+            if (needsRedraw === false) return;
+
+            console.log('Repainting graph', data);
             this.graph.graphData(data);
+            this.#onNodesChange(data.nodes);
         }
 
         #translateDates(html) {
@@ -1371,6 +1402,7 @@
             this.accessToken = undefined;
             this.dots = true;
             this.duplex = true;
+            this.unknown = true;
             this.dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
             this.charge = 0;
 
@@ -1403,6 +1435,10 @@
             // Duplex links
             const showDuplex = params.get('duplex');
             if (showDuplex != null) this.duplex = showDuplex !== 'false';
+
+            // Hide "Unknown" devices
+            const showUnknown = params.get('unknown');
+            if (showUnknown != null) this.unknown = showUnknown !== 'false';
 
             // Dark mode
             const darkTheme = params.get('dark');
@@ -1496,6 +1532,7 @@
         #repaintConfiguration(config) {
             document.getElementById('conf-dots').checked = config.dots;
             document.getElementById('conf-duplex').checked = config.duplex;
+            document.getElementById('conf-unknown').checked = config.unknown;
             document.getElementById('conf-dark').checked = config.dark;
             document.getElementById('conf-charge').value = config.charge % 11;
 
@@ -1520,7 +1557,7 @@
                     const row = tbl.insertRow();
                     let link = document.createElement('a');
                     link.setAttribute('title', 'Click to add this device to the Interview Queue');
-                    link.setAttribute('href', `javascript:deviceRepository.fetchNeighbors('${device.addr}')`);
+                    link.setAttribute('href', `javascript:deviceRepository.fetchNeighbors('${device.addr}', true)`);
                     link.innerText = device.addr;
                     row.insertCell().appendChild(link);
 
@@ -1569,6 +1606,9 @@
 
             const duplex = document.getElementById('conf-duplex').checked;
             searchParams.set('duplex', duplex);
+
+            const unknown = document.getElementById('conf-unknown').checked;
+            searchParams.set('unknown', unknown);
 
             const dark = document.getElementById('conf-dark').checked;
             searchParams.set('dark', dark);

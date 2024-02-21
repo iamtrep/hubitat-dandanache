@@ -27,7 +27,7 @@ To use the Zigbee Map app, follow these steps:
 2. Select **Zigbee Map** from the list of apps.
 3. Click the **View Zigbee map** option.
 4. Watch the app build the map of your Zigbee network.
-5. The Zigbee network map is ready when the Interview Queue is empty.
+5. The map is ready when the Interview Queue is empty.
 
 ## How it works
 Each Zigbee device keeps a list of other devices that are within direct radio range. This list is called the "Neighbors Table".
@@ -52,11 +52,11 @@ Data collection process:
 
 - The application waits for 25 seconds for each device to respond to the interview request. If there is no response, the device is marked as unresponsive and the application moves on to the next device in the queue.
 
-- Zigbee End Devices (typically battery-powered devices that enter sleep mode to conserve energy) are not queried for their Neighbors List, as they are unlikely to respond while sleeping.
+- Zigbee End Devices (typically battery-powered devices that enter sleep mode to conserve energy) are not queried for their Neighbors Table, as they are unlikely to respond while sleeping.
 
 - Some Zigbee End Devices may be incorrectly identified as Zigbee Routers by their neighbors. The application attempts to interview these devices, but will likely encounter a timeout.
 
-- After the Zigbee Map is fully rendered, you can update the network information of any device by right-clicking on its node and adding it to the Interview Queue. This may be useful for devices that were previously unresponsive or have changed their status.
+- After the Zigbee Map is fully rendered, you can update the network information of any device by right-clicking on its node to add it back to the Interview Queue. This may be useful for devices that were previously unresponsive or have changed their status.
 
 
 ---

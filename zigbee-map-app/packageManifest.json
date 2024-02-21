@@ -1,12 +1,12 @@
 {
     "packageName": "Zigbee Map",
-    "version": "1.2.0",
-    "releaseNotes": "v1.2.0\n - Add option to use an image as map background (e.g.: home layout)",
+    "version": "1.3.0",
+    "releaseNotes": "v1.3.0\n - Add option to show/hide \"Unknown\" devices - @Tony\n - Remove the Hub device from the \"Devices\" tab - @jimhim\n - Add PWA manifest",
     "minimumHEVersion": "2.3.8.117",
     "author": "Dan Danache (@agamemnon.dandanache)",
-    "dateReleased": "2024-02-20",
+    "dateReleased": "2024-02-21",
     "documentationLink": "https://dan-danache.github.io/hubitat/zigbee-map-app/",
-    "communityLink": "https://community.hubitat.com/t/zigbee-visual-render-for-getchildandrouteinfo/119074",
+    "communityLink": "https://community.hubitat.com/t/release-zigbee-map-app/133888",
     "licenseFile": "https://raw.githubusercontent.com/dan-danache/hubitat/master/LICENSE",
     "payPalUrl": "https://www.buymeacoffee.com/dandanache",
     "category": "Utility",
@@ -15,24 +15,24 @@
         "id": "11ba8718-86f0-4461-ae21-8627001d3e8e",
         "name": "zigbee-map.html",
         "namespace": "dandanache",
-        "location": "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_1.2.0/zigbee-map-app/zigbee-map.html",
+        "location": "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_1.3.0/zigbee-map-app/zigbee-map.html",
         "required": true,
         "oauth": false,
-        "description": "Allows you to visualize the topology and connectivity of your Zigbee network."
+        "description": "Visualize the topology and connectivity of your Zigbee network."
     }],
     "apps": [{
         "id": "c2e67d9b-d56f-4865-9419-14a93cbe94d0",
         "namespace": "dandanache",
-        "location": "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_1.2.0/zigbee-map-app/zigbee-map.groovy",
+        "location": "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_1.3.0/zigbee-map-app/zigbee-map.groovy",
         "name": "Zigbee Map",
-        "description": "Allows you to visualize the topology and connectivity of your Zigbee network.",
+        "description": "Visualize the topology and connectivity of your Zigbee network.",
         "oauth": true,
         "required": true
     }],
     "drivers": [{
         "id": "6394c6a8-73db-49d2-b4d1-3a00427aed2f",
         "namespace": "dandanache",
-        "location": "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_1.2.0/zigbee-map-app/zigbee-map-helper.groovy",
+        "location": "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_1.3.0/zigbee-map-app/zigbee-map-helper.groovy",
         "name": "Zigbee Map Helper",
         "description": "Helper driver for the Zigbee Map application.",
         "required": true
