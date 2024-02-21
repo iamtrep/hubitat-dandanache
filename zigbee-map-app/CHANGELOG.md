@@ -8,8 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.3.0] - 2024-02-21
 ### Added
 - Add option to show/hide "Unknown" devices - `@Tony`
-- Remove the Hub device from the "Devices" tab - `@jimhim`
 - Add PWA manifest
+
+### Fixed
+- Remove the Hub device from the "Devices" tab - `@jimhim`
 
 ## [1.2.0] - 2024-02-20
 ### Added
