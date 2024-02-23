@@ -9,7 +9,7 @@ import groovy.transform.Field
 import com.hubitat.app.ChildDeviceWrapper
 
 @Field static final String APP_NAME = "Zigbee Map"
-@Field static final String APP_VERSION = "1.3.0"
+@Field static final String APP_VERSION = "1.4.0"
 @Field static final String FILE_NAME = "zigbee-map.html"
 @Field static final def HEXADECIMAL_PATTERN = ~/\p{XDigit}{4}/
 @Field static final def URL_PATTERN = ~/^https?:\/\/[^\/]+(.+)/
@@ -144,8 +144,16 @@ Map changelog() {
         uninstall: false
     ) {
 
-        section ("v1.3.0 - 2024-02-??", hideable: true, hidden: false) {
-            paragraph "<li>TODO</li>"
+        section ("v1.4.0 - 2024-02-23", hideable: true, hidden: false) {
+            paragraph "<li>Color links based on LQI/LQA value - @Horseflesh</li>" +
+            "<li>Hide back <b>duplex</b> links by default to better see the link colors</li>" +
+            "<li>Use <b>Esc</b> keyboard key to toggle the controls - @jshimota</li>"
+        }
+
+        section ("v1.3.0 - 2024-02-21", hideable: true, hidden: true) {
+            paragraph "<li>Add option to show/hide <b>Unknown</b> devices - @Tony</li>" +
+            "<li>Remove the Hub device from the <b>Devices</b> tab - @jimhim</li>" +
+            "<li>Add PWA manifest</li>"
         }
 
         section ("v1.2.0 - 2024-02-20", hideable: true, hidden: true) {
@@ -153,12 +161,12 @@ Map changelog() {
         }
 
         section ("v1.1.0 - 2024-02-19", hideable: true, hidden: true) {
-            paragraph "<li>Add \"Done\" button in the Hubitat app - @dnickel</li>" +
-            "<li>Click the address of any device in the \"Devices\" tab to add it to the Interview Queue - @hubitrep</li>" +
+            paragraph "<li>Add <b>Done</b> button in the Hubitat app - @dnickel</li>" +
+            "<li>Click the address of any device in the <b>Devices</b> tab to add it to the Interview Queue - @hubitrep</li>" +
             "<li>Use relative URL when opening the HTML app - @jlv</li>" +
             "<li>Mark devices that failed the Interview  - @kahn-hubitat</li>" +
             "<li>Show Interview Queue size</li>" +
-            "<li>Show \"duplex\" links by default</li>"
+            "<li>Show <b>duplex</b> links by default</li>"
         }
 
         section ("v1.0.0 - 2024-02-16", hideable: true, hidden: true) {

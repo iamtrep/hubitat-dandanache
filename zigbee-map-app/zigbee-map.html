@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Hubitat - Zigbee Map - v1.3.0</title>
+    <title>Hubitat Zigbee Map - v1.4.0</title>
     <meta charset="utf-8">
     <meta name="keywords" content="hubitat, zigbee, map">
     <meta name="author" content="Agamemnon Dandanache">
@@ -180,6 +180,7 @@
         left: 10px;
         opacity: .90;
         margin-right: 10px;
+        margin-bottom: 10px;
         min-width: 18em;
         max-width: 33em;
     }
@@ -214,7 +215,7 @@
 
     #status-container li b {
         display: inline-block;
-        width: 5em;
+        width: 4.5rem;
     }
 
     /* Devices list */
@@ -385,11 +386,11 @@
         transition: .3s;
     }
 
-    form  input:checked + label {
+    form input:checked + label {
         background: var(--Green);
     }
 
-    form  input:checked + label:after {
+    form input:checked + label:after {
         left: calc(100% - 2px);
         transform: translateX(-100%);
     }
@@ -423,7 +424,7 @@
         outline: none;
     }
 
-    form  input[type=range]::-webkit-slider-thumb {
+    form input[type=range]::-webkit-slider-thumb {
         width: 16px;
         height: 16px;
         background: var(--Base3);
@@ -524,7 +525,16 @@
                             <li><b style="color:var(--Violet)">violet</b> &#10132; Unknown Device</li>
                             <li><b style="color:var(--Magenta)">magenta</b> &#10132; Interview Failed</li>
                         </ul>
-        
+
+                        <b>Link quality</b>
+                        <ul>
+                            <li><b style="color:var(--Red)">red</b> &#10132; Bad: LQI &lt; 50</li>
+                            <li><b style="color:var(--Yellow)">yellow</b> &#10132; Poor: LQI &lt; 150</li>
+                            <li><b style="color:var(--Blue)">blue</b> &#10132; Good: LQI &lt; 200</li>
+                            <li><b style="color:var(--Cyan)">cyan</b> &#10132; Very good: LQI &lt; 220</li>
+                            <li><b style="color:var(--Green)">green</b> &#10132; Excellent: LQI &gt; 220</li>
+                        </ul>
+
                         <b>More info</b>
                         <ul>
                             <li>The node that is currently interviewed is pulsing</li>
@@ -537,6 +547,7 @@
                             <li>Drag any node to fix its position, click it to reset its position</li>
                             <li>Hover any node to highlight all its neighbors</li>
                             <li>Right-click any node to to add it back to the Interview Queue</li>
+                            <li>Use <b style="display:inline">Esc</b> keyboard key to toggle the controls (this panel)</li>
                         </ul>
                     </section>
                 </details>
@@ -642,7 +653,7 @@
             }
 
             this.depth = parseInt(bytes.slice(20, 21), 16);
-            this.lqa = parseInt(bytes.slice(21, 22), 16);
+            this.lqi = parseInt(bytes.slice(21, 22), 16);
         }
     }
 
@@ -1040,13 +1051,14 @@
                 neighborsList.forEach(neighbor => {
                     const neighborAddr = neighbor.addr;
                     const neighborName = GraphModel.#deviceName(neighborAddr, devices);
-                    const tooltip = GraphModel.#tooltip('Neighbor', {Affinity: neighbor.affinity, LQA: neighbor.lqa});
+                    const tooltip = GraphModel.#tooltip('Neighbor', {Affinity: neighbor.affinity, LQI: neighbor.lqi});
                     this.addLink(
                         nodeAddr,       // source addr
                         nodeName,       // source name
                         neighborAddr,   // target addr
                         neighborName,   // target name
                         'neighbor',     // link type
+                        neighbor.lqi,   // link quality index
                         tooltip         // link label (tooltip)
                     );
                 });
@@ -1064,7 +1076,7 @@
             return this;
         }
 
-        addLink(sourceAddr, sourceName, targetAddr, targetName, type, label) {
+        addLink(sourceAddr, sourceName, targetAddr, targetName, type, lqi, tooltip) {
             this.addNode(sourceAddr, sourceName);
             this.addNode(targetAddr, targetName);
 
@@ -1073,12 +1085,13 @@
             if (existingLink) {
                 existingLink.sourceName = sourceName;
                 existingLink.targetName = targetName;
-                existingLink.label = label;
+                existingLink.lqi = lqi;
+                existingLink.tooltip = tooltip;
                 return false;
             }
 
             // Add new link
-            this.links.push({ sourceName, sourceAddr, targetName, targetAddr, type, label });
+            this.links.push({ sourceName, sourceAddr, targetName, targetAddr, type, lqi, tooltip });
             return true;
         }
 
@@ -1131,7 +1144,8 @@
                 link.targetAddr,
                 link.targetName,
                 link.type,
-                link.label
+                link.lqi,
+                link.tooltip
             ) || somethingChanged);
 
             // Remove old links, if any
@@ -1185,7 +1199,7 @@
                 .linkSource('sourceAddr')
                 .linkTarget('targetAddr')
                 .nodeCanvasObject((node, ctx) => this.#nodePaint(node, ctx))
-                .linkLabel(link => this.#translateDates(link.label))
+                .linkLabel(link => this.#translateDates(link.tooltip))
                 .linkColor(link => this.#linkColor(link))
                 .linkWidth(link => this.highlightLinks.has(link) ? 2 : 1)
                 .linkCurvature('curvature')
@@ -1388,8 +1402,12 @@
 
         #linkColor(link) {
             const colors = UI.colors();
-            if (this.highlightLinks.has(link)) return colors.Orange;
-            return { neighbor: colors.TextColorDarker }[link.type];
+            if (this.highlightLinks.has(link)) return colors.Magenta;
+            if (link.lqi >= 220) return colors.Green;
+            if (link.lqi >= 200) return colors.Cyan;
+            if (link.lqi >= 150) return colors.Blue;
+            if (link.lqi >= 50) return colors.Yellow;
+            return colors.Red;
         }
 
         #adjustColor(color, amount) {
@@ -1401,7 +1419,7 @@
         constructor() {
             this.accessToken = undefined;
             this.dots = true;
-            this.duplex = true;
+            this.duplex = false;
             this.unknown = true;
             this.dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
             this.charge = 0;
@@ -1434,7 +1452,7 @@
 
             // Duplex links
             const showDuplex = params.get('duplex');
-            if (showDuplex != null) this.duplex = showDuplex !== 'false';
+            if (showDuplex != null) this.duplex = showDuplex === 'true';
 
             // Hide "Unknown" devices
             const showUnknown = params.get('unknown');
@@ -1500,6 +1518,11 @@
 
                 document.getElementById('conf-layout').addEventListener('change', () => {
                     this.#applyHomeLayout();
+                });
+
+                document.body.addEventListener('keydown', e => {
+                    if (e.key !== 'Escape') return;
+                    if (document.body.classList.toggle('embedded'));
                 });
 
                 // Embeddable

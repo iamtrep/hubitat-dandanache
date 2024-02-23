@@ -7,7 +7,7 @@ import groovy.transform.Field
 import hubitat.helper.HexUtils
 
 @Field static final String DRIVER_NAME = "Zigbee Map Helper"
-@Field static final String DRIVER_VERSION = "1.3.0"
+@Field static final String DRIVER_VERSION = "1.4.0"
 
 metadata {
     definition(
