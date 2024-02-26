@@ -5,7 +5,7 @@ View dashboards for your Hubitat hub metrics.
 
 ## Installation
 
-If you have already installed the **Hubitat Package Manager** app on your Hubitat hub, you can use it to install the **Hub-a-Dashery** app and receive automatic updates. To install the Hub-a-Dashery app using the Hubitat Package Manager, follow these steps:
+To install the Hub-a-Dashery app using the Hubitat Package Manager (and receive automatic updates), follow these steps:
 
 1. Go to the **Apps** menu in the Hubitat interface.
 2. Select **Hubitat Package Manager** from the list of apps.

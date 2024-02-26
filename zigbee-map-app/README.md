@@ -1,12 +1,13 @@
 # Hubitat Zigbee Map
 
+<img src="icon.png" style="height: 32px !important; weight: 32px !important; float: right; margin-bottom: 10px">
 This application allows you to visualize the topology and connectivity of your Zigbee network.
 
 ![Zigbee Map](zigbee-map.png "Zigbee Map")
 
 ## Installation
 
-If you have already installed the **Hubitat Package Manager** app on your Hubitat hub, you can use it to install the **Zigbee Map** app and receive automatic updates. To install the Zigbee Map app using the Hubitat Package Manager, follow these steps:
+To install the Hub-a-Dashery app using the Hubitat Package Manager (and receive automatic updates), follow these steps:
 
 1. Go to the **Apps** menu in the Hubitat interface.
 2. Select **Hubitat Package Manager** from the list of apps.
