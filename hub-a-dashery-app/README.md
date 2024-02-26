@@ -1,4 +1,4 @@
-# Hub-a-Dashsery
+# Hub-a-Dashery
 
 <img src="icon.png" style="height: 32px !important; weight: 32px !important; float: right; margin-bottom: 10px">
 View dashboards for your Hubitat hub metrics.
