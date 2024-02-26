@@ -18,7 +18,7 @@ definition(
     namespace: "dandanache",
     author: "Dan Danache",
     description: "View dashboards for your Hubitat hub metrics",
-    documentationLink: "https://community.hubitat.com/t/release-zigbee-map-app/133888",
+    documentationLink: "https://community.hubitat.com/t/release-hub-a-dashery-app/134375",
     importUrl: "https://raw.githubusercontent.com/dan-danache/hubitat/hub-a-dashery_${APP_VERSION}/hub-a-dashery-app/hub-a-dashery.groovy",
     category: "Utility",
     singleInstance: true,
