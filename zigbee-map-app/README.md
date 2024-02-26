@@ -1,7 +1,7 @@
 # Hubitat Zigbee Map
 
 <img src="icon.png" style="height: 32px !important; weight: 32px !important; float: right; margin-bottom: 10px">
-This application allows you to visualize the topology and connectivity of your Zigbee network.
+Visualize the topology and connectivity of your Zigbee network.
 
 ![Zigbee Map](zigbee-map.png "Zigbee Map")
 
