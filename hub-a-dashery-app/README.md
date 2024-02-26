@@ -3,8 +3,6 @@
 <img src="icon.png" style="height: 32px !important; weight: 32px !important; float: right; margin-bottom: 10px">
 View dashboards for your Hubitat hub metrics.
 
-![Zigbee Map](hub-a-dashery.png "Memory and CPU history")
-
 ## Installation
 
 If you have already installed the **Hubitat Package Manager** app on your Hubitat hub, you can use it to install the **Hub-a-Dashery** app and receive automatic updates. To install the Hub-a-Dashery app using the Hubitat Package Manager, follow these steps:
@@ -27,10 +25,24 @@ To use the Hub-a-Dashery app, follow these steps:
 1. Go to the **Apps** menu in the Hubitat interface.
 2. Select **Hub-a-Dashery** from the list of apps.
 
-## Available metrics
+## Available dashboards
 
-### CPU and Memory hisotry (since last reboot)
+The app provides various dashboards to monitor the Hub's performance and status. Currently, the following dashboards are available:
 
+## Memory and CPU history dashboard
+
+This dashboard shows the free memory (RAM) and the processor [load average](https://phoenixnap.com/kb/linux-average-load) of the Hub over time. You can access the data source at `http://hubitat.local/hub/advanced/freeOSMemoryHistory`.
+
+**Note**: The data is reset after each Hub reboot and is not available for the first 15 minutes.
+
+### Dashboard features
+
+- The dashboard adapts to the window size and orientation.
+- You can zoom in and out with the mouse wheel or the pinch gesture on mobile devices.
+- You can drag the graphs left or right to see different time periods.
+- You can switch between light and dark modes from the app settings.
+
+![Hub-a-Dashery](hub-a-dashery.png "Memory and CPU history")
 
 
 ---
