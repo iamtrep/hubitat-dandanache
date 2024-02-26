@@ -38,10 +38,18 @@
         {
             "id": "46ce50b6-6513-4ae9-b4a3-1d392294b35f",
             "name": "Zigbee Map",
-            "description": "Allows you to visualize the topology and connectivity of your Zigbee network.",
+            "description": "Visualize the topology and connectivity of your Zigbee network.",
             "category": "Utility",
             "tags": [ "Zigbee", "Tools & Utilities" ],
             "location": "https://raw.githubusercontent.com/dan-danache/hubitat/main/zigbee-map-app/packageManifest.json"
+        },
+        {
+            "id": "e33f5425-15a2-48f5-8abb-887a3a41b3d6",
+            "name": "Hub-a-Dashery",
+            "description": "View dashboards for your Hubitat hub metrics.",
+            "category": "Utility",
+            "tags": [ "Tools & Utilities" ],
+            "location": "https://raw.githubusercontent.com/dan-danache/hubitat/main/hub-a-dashery-app/packageManifest.json"
         }
     ]
 }
