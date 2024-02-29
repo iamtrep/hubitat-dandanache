@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Hub-a-Dashery - v1.0.0</title>
+    <title>Hub-a-Dashery - v1.1.0</title>
     <meta charset="utf-8">
     <meta name="keywords" content="hubitat, memory, cpu">
     <meta name="author" content="Dan Danache">
@@ -42,6 +42,13 @@
     <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <!--script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-crosshair@2.0.0/dist/chartjs-plugin-crosshair.min.js"></script-->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-gauge-v3@3.0.0/dist/index.min.js"></script>
+
+    <!-- Grid -->
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.0/dist/gridstack-all.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/gridstack@10.1.0/dist/gridstack.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/gridstack@10.1.0/dist/gridstack-extra.min.css" rel="stylesheet">
 
     <style>
 
@@ -94,7 +101,7 @@
     body {
         margin: 0;
         padding: 0;
-        font: 1rem sans-serif;
+        font: 0.85rem sans-serif;
         background: var(--bg-color);
         color: var(--text-color);
         cursor: default;
@@ -109,11 +116,45 @@
         color: var(--Blue);
     }
 
-    #mem-chart-container,
-    #cpu-chart-container {
+    /* Charts */
+    .chart-container {
+        height: 100%;
         position: relative;
-        height: 50vh;
-        width: 100vw;
+    }
+
+    .chart-container .chart-title {
+        position: absolute;
+        top: 0; left: 50%;
+        transform: translate(-50%, 0);
+        cursor: move;
+        color: var(--text-color);
+        background-color: transparent;
+        text-align: center;
+        padding: 0.3em 1em;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .chart-container .chart-title:hover {
+        background-color: var(--bg-color);
+        box-shadow: 0 0 .3em var(--shadow-color);
+        border: 1px var(--border-color) solid;
+        border-radius: 0 0 5px 5px;
+        border-top: 0;
+    }
+
+    /* Grid stack */
+    .grid-stack {
+        top: 0; right: 0; bottom: 0; bottom: 0;
+        background: var(--bg-color);
+    }
+    .grid-stack-item-content {
+        background-color: var(--bg-color-darker);
+        color: var(--text-color);
+        border: 1px var(--border-color) solid;
+        border-radius: 5px;
+        box-shadow: 0 0 .3em var(--shadow-color);
     }
 
     /* Mobile view */
@@ -124,45 +165,9 @@
 </head>
 <body>
 
-    <div id="mem-chart-container">
-        <canvas id="mem-chart"></canvas>
-    </div>
-
-    <div id="cpu-chart-container">
-        <canvas id="cpu-chart"></canvas>
-    </div>
+    <div class="grid-stack"></div>
 
     <script type="text/javascript">
-
-    const plugin = {
-        id: 'verticalLiner',
-        afterInit: (chart, args, opts) => {
-            chart.verticalLiner = {}
-        },
-        afterEvent: (chart, args, options) => {
-            const {inChartArea} = args
-            chart.verticalLiner = {draw: inChartArea}
-        },
-        beforeTooltipDraw: (chart, args, options) => {
-            const {draw} = chart.verticalLiner;
-            if (!draw) return;
-
-            const {ctx} = chart;
-            const {top, bottom} = chart.chartArea;
-            const {tooltip} = args;
-            const x = tooltip?.caretX;
-            if (!x) return;
-
-            ctx.save();
-            ctx.strokeStyle = UI.colors().TextColorDarker;
-            ctx.beginPath();
-            ctx.moveTo(x, top);
-            ctx.lineTo(x, bottom);
-            ctx.stroke();
-            ctx.restore();
-        }
-    }
-
     class HubitatConnection {
 
         constructor(configuration) {
@@ -179,9 +184,47 @@
             }
         }
 
+        async getGridLayout() {
+            console.info('Fetching Grid layout ...');
+            return fetch(new Request(`./grid-layout.json?access_token=${this.accessToken}`), {cache: 'no-store'})
+                .then((response) => {
+                    if (!response.ok) {
+                        console.error('HubitatConnection.getGridLayout() - Bad response (not 200 OK)', response);
+                        throw new Error(`HubitatConnection.getGridLayout() - HTTP error, status = ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(text => JSON.parse(text));
+        }
+
+        async saveGridLayout(layout) {
+            console.info('Saving Grid layout ...');
+            return fetch(new Request(`./grid-layout.json?access_token=${this.accessToken}`), {
+                method: 'PUT',
+                body: JSON.stringify(layout),
+                cache: 'no-store'
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        console.error('HubitatConnection.saveGridLayout() - Bad response (not 200 OK)', response);
+                        throw new Error(`HubitatConnection.saveGridLayout() - HTTP error, status = ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(text => JSON.parse(text))
+                .then(json => {
+                    if (json.status !== true) {
+                        console.error('HubitatConnection#saveGridLayout() - Bad status attribute (not true)', json);
+                        throw new Error(`HubitatConnection#saveGridLayout() - JSON error, status = ${json.status}`);
+                    }
+                    return json;
+                });
+        }
+
         async fetchMemCpuHistory() {
             console.info('Fetching MEM/CPU history ...');
             return fetch(new Request('/hub/advanced/freeOSMemoryHistory'), {cache: 'no-store'})
+            //return fetch(new Request('/local/freeOSMemoryHistory.txt'), {cache: 'no-store'})
                 .then((response) => {
                     if (!response.ok) {
                         console.error('HubitatConnection.fetchMemCpuHistory() - Bad response (not 200 OK)', response);
@@ -190,12 +233,26 @@
                     return response.text();
                 })
                 .then(text => {
-                    const lines = text.split("\n");
+                    const lines = text.split("\n").filter(line => line !== '');
                     lines.shift();
+
+                    // Count year resets
+                    let yearResets = 0;
+                    let prevLine = lines[0];
+                    lines.forEach(line => {
+                        if (line < prevLine) yearResets++;
+                        prevLine = line;
+                    });
+
+                    const currYear = new Date().getFullYear();
+                    prevLine = lines[0];
                     return lines.map(line => { // 02-24 00:35:14,611576,0.94
+                        if (line < prevLine) yearResets--;
+                        prevLine = line;
+
                         const bits = line.split(',');
                         return {
-                            date: luxon.DateTime.fromFormat(bits[0], 'MM-dd TT').ts,
+                            date: luxon.DateTime.fromFormat(`${bits[0].substring(0, 5)}-${currYear - yearResets} ${bits[0].substring(6, bits[0].length)}`, 'MM-dd-yyyy TT').ts,
                             mem: Math.round(parseInt(bits[1]) / 1024),
                             cpu: parseFloat(bits[2])
                         }
@@ -204,6 +261,26 @@
                 .catch((ex) => {
                     console.error('HubitatConnection.fetchMemCpuHistory() - Failed to fetch data', ex);
                     alert(`HubitatConnection.fetchMemCpuHistory() - Failed to fetch data: ${ex.message}`);
+                });
+        }
+
+        async fetchMemCpuLast() {
+            console.info('Fetching MEM/CPU ...');
+            return fetch(new Request('/hub/advanced/freeOSMemoryLast'), {cache: 'no-store'})
+                .then((response) => {
+                    if (!response.ok) {
+                        console.error('HubitatConnection.fetchMemCpuLast() - Bad response (not 200 OK)', response);
+                        throw new Error(`HubitatConnection.fetchMemCpuLast() - HTTP error, status = ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    const bits = text.split("\n")[1].split(',');
+                    return {
+                        time: bits[0].split(' ')[1],
+                        mem: Math.round(parseInt(bits[1]) / 1024),
+                        cpu: Math.round(parseFloat(bits[2]) / 4 * 10000) / 100
+                    };
                 });
         }
     }
@@ -222,13 +299,7 @@
             this.eventListeners[eventName].push(callback);
         }
 
-        #onConfigChange() {
-            const eventName = 'config';
-            if (!Array.isArray(this.eventListeners[eventName])) return;
-            this.eventListeners[eventName].forEach(eventListener => eventListener(this));
-        }
-
-        loadFromURL() {
+        init() {
             const params = new URLSearchParams(window.location.search);
 
             // Access Token
@@ -241,6 +312,434 @@
 
             // Notify outside world of the changes
             this.#onConfigChange();
+        }
+
+        #onConfigChange() {
+            const eventName = 'config';
+            if (!Array.isArray(this.eventListeners[eventName])) return;
+            this.eventListeners[eventName].forEach(eventListener => eventListener(this));
+        }
+    }
+
+    class ChartHelper {
+
+        // Show/hide individual points depending on how many points are in view
+        static updatePointStyle(chart) {
+            if (chart.scales.x === undefined) return;
+            const currentPointStyle = chart.data.datasets[0].pointStyle;
+            const viewableInterval = chart.scales.x.ticks.slice(-1).pop().value - chart.scales.x.ticks[0].value;
+            const newPointStyle = viewableInterval / chart.width > 30000 ? false : 'circle';
+            if (newPointStyle !== currentPointStyle) {
+                chart.data.datasets[0].pointStyle = newPointStyle;
+                chart.update();
+            }
+        }
+
+        static lineChartDefaults() {
+            const colors = UI.colors();
+            return {
+                type: 'line',
+                options: {
+                    parsing: false,
+                    normalized: true,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onResize: chart => ChartHelper.updatePointStyle(chart),
+                    layout: {
+                        padding: {
+                            top: 20,
+                            bottom: 3
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                minUnit: 'minute',
+                                displayFormats: {
+                                    minute: 'd LLL T',
+                                    hour: 'd LLL T',
+                                    day: 'd LLL'
+                                },
+                                tooltipFormat: 'd LLL T'
+                            },
+                            title: { display: false },
+                            ticks: {
+                                color: colors.TextColorDarker,
+                                maxRotation: 0,
+                                autoSkipPadding: 15
+                            },
+                            grid: {
+                                color: colors.TextColorDarker + '22'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: false,
+                                color: colors.TextColor
+                            },
+                            ticks: {
+                                color: colors.TextColorDarker
+                            },
+                            grid: {
+                                color: colors.TextColorDarker + '22'
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: colors.BgColorDarker,
+                            titleColor: colors.TextColor,
+                            bodyColor: colors.TextColorDarker,
+                            borderColor: colors.TextColorDarker,
+                            borderWidth: 1
+                        },
+                        decimation: {
+                            enabled: true,
+                            algorithm: 'lttb'
+                        },
+                        zoom: {
+                            pan: {
+                                enabled: true,
+                                mode: 'x',
+                            },
+                            zoom: {
+                                wheel: { enabled: true },
+                                pinch: { enabled: true },
+                                mode: 'x',
+                                onZoomComplete: ({chart}) => ChartHelper.updatePointStyle(chart)
+                            },
+                            limits: {
+                                x: {min: 'original', max: 'original'},
+                            }
+                        },
+                        crosshair: {
+                            line: {
+                                color: colors.TextColor,
+                                width: 1,
+                                dashPattern: [1, 1]
+                            },
+                            sync: {
+                                enabled: true
+                            },
+                            zoom: { enabled: false }
+                        }
+                    }
+                }
+            }
+        }
+
+        static gaugeChartDefaults() {
+            const colors = UI.colors();
+            return {
+                type: 'gauge',
+                options: {
+                    layout: {
+                        padding: {
+                            top: 20,
+                            bottom: 20
+                        }
+                    },
+                    needle: {
+                        radius: '8%',
+                        width: '10%',
+                        length: '90%',
+                        color: colors.TextColor
+                    },
+                    cutout: '65%',
+                    valueLabel: {
+                        display: true,
+                        color: colors.BgColor,
+                        backgroundColor: colors.TextColorDarker,
+                        borderRadius: 5,
+                        padding: {
+                            top: 7, bottom: 7, left: 10, right: 10
+                        },
+                        offsetY: '-20%'
+                    }
+                }
+            };
+        }
+
+        static createLineChart(elementId, config) {
+            const element = document.getElementById(elementId);
+            if (element === null) throw new Error(`Cannot find HTML chart canvas element "${elementId}"`);
+
+            const chart = new Chart(element, DeepMerge.merge(ChartHelper.lineChartDefaults(), config));
+            element.addEventListener('dblclick', evt => chart.resetZoom());
+            //element.addEventListener('click', evt => { chart.options.plugins.decimation.enabled = !(chart.options.plugins.decimation.enabled); chart.update();});
+            return chart;
+        }
+
+        static createGaugeChart(elementId, config) {
+            const element = document.getElementById(elementId);
+            if (element === null) throw new Error(`Cannot find HTML chart canvas element "${elementId}"`);
+
+            const chart = new Chart(element, DeepMerge.merge(ChartHelper.gaugeChartDefaults(), config));
+            return chart;
+        }
+    }
+
+    class DeepMerge {
+        static merge(current, update) {
+            Object.keys(update).forEach(key => {
+                if (current.hasOwnProperty(key) && typeof current[key] === 'object' && !(current[key] instanceof Array)) {
+                    DeepMerge.merge(current[key], update[key]);
+                } else {
+                    current[key] = update[key];
+                }
+            });
+            return current;
+        }
+    }
+
+    class MemCpuHistoryChart {
+        constructor(connection) {
+            this.connection = connection;
+
+            this.memChart = undefined;
+            this.cpuChart = undefined;
+        }
+
+        metadata() {
+            return {
+                'mem-history': { w: 8, h: 2, title: 'Free OS Memory' },
+                'cpu-history': { w: 8, h: 2, title: 'CPU Load Average' }
+            }
+        }
+
+        async load() {
+            const colors = UI.colors();
+            return this.connection.fetchMemCpuHistory().then(history => {
+                this.memChart = ChartHelper.createLineChart('mem-history', {
+                    data: {
+                        datasets: [{
+                            label: 'Free memory',
+                            data: history.map(record => { return {'x': record.date, 'y': record.mem } }),
+                            pointStyle: false,
+                            backgroundColor: colors.Green + '44',
+                            borderColor: colors.Green,
+                            borderWidth: 1.2,
+                            tension: 0.5,
+                            fill: 'start'
+                        }]
+                    },
+                    options: {
+                        pointStyle: false,
+                        scales: {
+                            y: {
+                                title: {
+                                    text: 'Memory'
+                                },
+                                ticks: {
+                                    callback: label => `${(label).toLocaleString(UI.locale(), { style: 'unit', unit: 'megabyte'}) }`
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: t => `${t.dataset.label}: ${(t.parsed.y).toLocaleString(UI.locale(), { style: 'unit', unit: 'megabyte'}) }`
+                                }
+                            },
+                            annotation: {
+                                annotations: {
+                                    lowMemoryWarning: {
+                                        type: 'line',
+                                        yMin: 80,
+                                        yMax: 80,
+                                        borderColor: colors.Red,
+                                        borderWidth: 1,
+                                        borderDash: [2, 2]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                this.cpuChart = ChartHelper.createLineChart('cpu-history', {
+                    data: {
+                        datasets: [{
+                            fill: 'start',
+                            label: 'Load average',
+                            data: history.map(record => { return {'x': record.date, 'y': record.cpu } }),
+                            pointStyle: false,
+                            backgroundColor: colors.Blue + '44',
+                            borderColor: colors.Blue,
+                            borderWidth: 1.2,
+                            tension: 0.5,
+                            fill: 'start'
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                title: {
+                                    text: 'CPU'
+                                }
+                            }
+                        },
+                        plugins: {
+                            annotation: {
+                                annotations: {
+                                    highLoad: {
+                                        type: 'line',
+                                        yMin: 1,
+                                        yMax: 1,
+                                        borderColor: colors.Red,
+                                        borderWidth: 1,
+                                        borderDash: [2, 2]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        }
+    }
+
+    class MemCpuLastChart {
+        constructor(connection) {
+            this.connection = connection;
+
+            this.memChart = undefined;
+            this.cpuChart = undefined;
+            this.refreshInterval = undefined;
+        }
+
+        metadata() {
+            return {
+                'mem-last': { w: 1, h: 1, title: 'Free OS Memory' },
+                'cpu-last': { w: 1, h: 1, title: 'CPU Load' }
+            }
+        }
+
+        async load() {
+            const colors = UI.colors();
+            return this.connection.fetchMemCpuLast().then(data => {
+                this.lastUpdate = data.time;
+
+                this.memChart = ChartHelper.createGaugeChart('mem-last', {
+                    data: {
+                        datasets: [{
+                            value: data.mem,
+                            minValue: 0,
+                            data: [80, 200, 1024],
+                            backgroundColor: [colors.Orange, colors.Yellow, colors.Green],
+                            borderColor: colors.BgColorDarker,
+                        }]
+                    },
+                    options: {
+                        valueLabel: {
+                            formatter: (value) => {
+                                return `${(value).toLocaleString(UI.locale(), { style: 'unit', unit: 'megabyte'}) } @ ${this.lastUpdate}`
+                            }
+                        }
+                    }
+                });
+
+                this.cpuChart = ChartHelper.createGaugeChart('cpu-last', {
+                    data: {
+                        datasets: [{
+                            value: data.cpu,
+                            minValue: 0,
+                            data: [75, 90, 100],
+                            backgroundColor: [colors.Green, colors.Yellow, colors.Orange],
+                            borderColor: colors.BgColorDarker,
+                        }]
+                    },
+                    options: {
+                        valueLabel: {
+                            formatter: (value) => {
+                                return `${(value.toFixed(2))}% @ ${this.lastUpdate}`
+                            }
+                        }
+                    }
+                });
+
+                // Set auto-refresh every 1 minute
+                this.refreshInterval = setInterval(() => this.refresh(), 60000);
+            });
+        }
+
+        async refresh() {
+            return this.connection.fetchMemCpuLast().then(data => {
+                this.lastUpdate = data.time;
+                this.memChart.data.datasets[0].value = data.mem;
+                this.cpuChart.data.datasets[0].value = data.cpu;
+
+                this.memChart.update();
+                this.cpuChart.update();
+            });
+        }
+    }
+
+    class Grid {
+        constructor(connection) {
+            this.connection = connection;
+
+            this.layout = undefined;
+            this.grid = undefined;
+        }
+
+        async init() {
+            this.layout = await this.connection.getGridLayout();
+            console.log('gridLayout', this.layout);
+
+            // Init grid
+            this.grid = GridStack.init({
+                sizeToContent: false,
+                float: true,
+
+                // Non-configurable options
+                cellHeight: '25vh',
+                column: 8,
+                columnOpts: {
+                    layout: 'move', // moveScale move scale list compact none
+                    columnMax: 8,
+                    breakpointForWindow: true,
+                    breakpoints: [{w:700, c:1}, {w:900, c:4}] // TODO: fiddle with these until it behaves nicely on mobile/tablet/laptop
+                },
+                float: true,
+                handle: '.chart-title'
+            });
+
+            // Save grid changes to the Hub
+            //this.grid.on('change', () => this.saveLayout());
+        }
+
+        addChart(chart) {
+            Object.entries(chart.metadata()).forEach(([chartId, chartDefaults]) => {
+                const chartLayout = this.layout.widgets[chartId];
+                this.grid.addWidget(DeepMerge.merge(chartDefaults, {
+                    content: `<div id="${chartId}-container" class="chart-container"><div class="chart-title">${chartDefaults.title}</div><canvas id="${chartId}"></canvas></div>`,
+                    id: chartId,
+                    ...chartLayout
+                }));
+            });
+        }
+
+        async saveLayout() {
+            console.info('Saving layout', this.grid);
+            const newLayout = { widgets: {} };
+            this.grid.engine.nodes.forEach(node => {
+                newLayout.widgets[node.id] = {
+                    x: node.x, y: node.y, w: node.w, h: node.h
+                }
+            });
+
+            this.layout = newLayout;
+            return this.connection.saveGridLayout(newLayout);
         }
     }
 
@@ -274,219 +773,6 @@
             configuration.addEventListener('config', config => this.#repaintConfiguration(config));
         }
 
-        drawMemChart(history) {
-            const colors = UI.colors();
-            new Chart('mem-chart', {
-                type: 'line',
-                data: {
-                    datasets: [{
-                        label: 'Free memory',
-                        data: history.map(record => { return {'x': record.date, 'y': record.mem } }),
-                        pointStyle: false,
-                        backgroundColor: colors.Green + '44',
-                        borderColor: colors.Green,
-                        borderWidth: 1.2,
-                        tension: 0.5,
-                        fill: 'start'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'minute',
-                                displayFormats: {
-                                    minute: 'd LLL T'
-                                },
-                                tooltipFormat: 'd LLL T'
-                            },
-                            title: { display: false },
-                            ticks: {
-                                color: colors.TextColorDarker
-                            },
-                            grid: {
-                                color: colors.TextColorDarker + '22'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: false,
-                                text: 'Memory',
-                                color: colors.TextColor
-                            },
-                            ticks: {
-                                callback: label => `${(label).toLocaleString(UI.locale(), { style: 'unit', unit: 'megabyte'}) }`,
-                                color: colors.TextColorDarker
-                            },
-                            grid: {
-                                color: colors.TextColorDarker + '22'
-                            }
-                        }
-                    },
-                    interaction: {
-                        mode: 'nearest',
-                        axis: 'x',
-                        intersect: false
-                    },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Free OS Memory',
-                            color: colors.TextColor
-                        },
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: colors.BgColorDarker,
-                            titleColor: colors.TextColor,
-                            bodyColor: colors.TextColorDarker,
-                            borderColor: colors.TextColorDarker,
-                            borderWidth: 1,
-                            callbacks: {
-                                label: t => `${t.dataset.label}: ${(t.parsed.y).toLocaleString(UI.locale(), { style: 'unit', unit: 'megabyte'}) }`
-                            }
-                        },
-                        zoom: {
-                            pan: {
-                                enabled: true,
-                                mode: 'x',
-                            },
-                            zoom: {
-                                wheel: { enabled: true },
-                                pinch: { enabled: true },
-                                mode: 'x',
-                            },
-                            limits: {
-                                x: {min: 'original', max: 'original'},
-                            }
-                        },
-                        annotation: {
-                            annotations: {
-                                lowMemoryWarning: {
-                                    type: 'line',
-                                    yMin: 80,
-                                    yMax: 80,
-                                    borderColor: colors.Red,
-                                    borderWidth: 1,
-                                    borderDash: [2, 2]
-                                }
-                            }
-                        },
-                        verticalLiner: {}
-                    }
-                },
-                plugins: [ plugin ]
-            });
-        }
-
-        drawCpuChart(history) {
-            const colors = UI.colors();
-            new Chart('cpu-chart', {
-                type: 'line',
-                data: {
-                    datasets: [{
-                        fill: 'start',
-                        label: 'Load average',
-                        data: history.map(record => { return {'x': record.date, 'y': record.cpu } }),
-                        pointStyle: false,
-                        backgroundColor: colors.Blue + '44',
-                        borderColor: colors.Blue,
-                        borderWidth: 1.2,
-                        tension: 0.5,
-                        fill: 'start'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'minute',
-                                displayFormats: {
-                                    minute: 'd LLL T'
-                                },
-                                tooltipFormat: 'd LLL T'
-                            },
-                            title: { display: false },
-                            ticks: {
-                                color: colors.TextColorDarker
-                            },
-                            grid: {
-                                color: colors.TextColorDarker + '22'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: false,
-                                text: 'CPU',
-                                color: colors.TextColor
-                            },
-                            ticks: {
-                                color: colors.TextColorDarker
-                            },
-                            grid: {
-                                color: colors.TextColorDarker + '22'
-                            }
-                        }
-                    },
-                    interaction: {
-                        mode: 'nearest',
-                        axis: 'x',
-                        intersect: false
-                    },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'CPU Load Average',
-                            color: colors.TextColor
-                        },
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: colors.BgColorDarker,
-                            titleColor: colors.TextColor,
-                            bodyColor: colors.TextColorDarker,
-                            borderColor: colors.TextColorDarker,
-                            borderWidth: 1,
-                        },
-                        zoom: {
-                            pan: {
-                                enabled: true,
-                                mode: 'x',
-                            },
-                            zoom: {
-                                wheel: { enabled: true },
-                                pinch: { enabled: true },
-                                mode: 'x',
-                            },
-                            limits: {
-                                x: {min: 'original', max: 'original'},
-                            }
-                        },
-                        annotation: {
-                            annotations: {
-                                highLoad: {
-                                    type: 'line',
-                                    yMin: 1,
-                                    yMax: 1,
-                                    borderColor: colors.Red,
-                                    borderWidth: 1,
-                                    borderDash: [2, 2]
-                                }
-                            }
-                        },
-                        verticalLiner: {}
-                    }
-                },
-                plugins: [ plugin ]
-            });
-        }
-
         applyConfiguration() {
             var searchParams = new URLSearchParams();
 
@@ -512,23 +798,49 @@
     const configuration = new Configuration();
     const hubitatConnection = new HubitatConnection(configuration);
     const ui = new UI(configuration);
+    const grid = new Grid(hubitatConnection);
 
-    // On page load
-    window.addEventListener('load', () => {
+    // Init charts
+    const memCpuHistoryChart = new MemCpuHistoryChart(hubitatConnection);
+    const memCpuLastChart = new MemCpuLastChart(hubitatConnection)
 
+    // Run application on page load
+    window.addEventListener('load', () => run());
+
+    // Helper functions
+    async function saveGrid() {
+        await grid.saveLayout();
+        alert('Grid layout saved to Hub!');
+    }
+
+    async function run() {
         try {
-            configuration.loadFromURL();
+            configuration.init();
             hubitatConnection.init();
-
-            // Load data
-            hubitatConnection.fetchMemCpuHistory().then(history => {
-                ui.drawMemChart(history);
-                ui.drawCpuChart(history);
-            });
         } catch (ex) {
             alert(ex.message);
+            return;
         }
-    });
+
+        // Init grid (async as it loads its config from the Hub)
+        await grid.init();
+
+        // Place charts into the grid
+        grid.addChart(memCpuHistoryChart);
+        grid.addChart(memCpuLastChart);
+
+        // Render charts
+        await memCpuHistoryChart.load();
+        await memCpuLastChart.load()
+
+        // Setup Ctrl + S keyboard binding
+        document.addEventListener('keydown', event => {
+            if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+                event.preventDefault();
+                saveGrid();
+            }
+        });
+    }
     </script>
 </body>
 </html>

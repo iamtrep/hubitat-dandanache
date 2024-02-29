@@ -1,10 +1,10 @@
 {
     "packageName": "Hub-a-Dashery",
-    "version": "1.0.0",
-    "releaseNotes": "v1.0.0\n - Initial release",
+    "version": "1.1.0",
+    "releaseNotes": "v1.1.0\n - Add grid system to move charts around\n - Add Free Mem and CPU Load Avg gauge charts (refresh every 1 minute)\n - Reset graph zoom on double-click\n - Enable data decimation to reduce number of rendered points\n - Remove call to non-existing method \"fetchHelper()\" during install - @WarlockWeary\n - Fix year reset bug for history charts - @hubitrep",
     "minimumHEVersion": "2.1.9",
     "author": "Dan Danache (@dandanache)",
-    "dateReleased": "2024-02-26",
+    "dateReleased": "2024-02-29",
     "documentationLink": "https://dan-danache.github.io/hubitat/zigbee-map-app/",
     "communityLink": "https://community.hubitat.com/t/release-zigbee-map-app/133888",
     "licenseFile": "https://raw.githubusercontent.com/dan-danache/hubitat/master/LICENSE",
@@ -14,7 +14,7 @@
     "apps": [{
         "id": "a33fb8d7-22ac-4a87-b59c-253c06bf54cc",
         "namespace": "dandanache",
-        "location": "https://raw.githubusercontent.com/dan-danache/hubitat/hub-a-dashery_1.0.0/hub-a-dashery-app/hub-a-dashery.groovy",
+        "location": "https://raw.githubusercontent.com/dan-danache/hubitat/hub-a-dashery_1.1.0/hub-a-dashery-app/hub-a-dashery.groovy",
         "name": "Zigbee Map",
         "description": "View dashboards for your Hubitat hub metrics.",
         "oauth": true,
@@ -24,7 +24,7 @@
         "id": "cdbd0ce0-f8f9-4bde-90de-6bc321394871",
         "name": "hub-a-dashery.html",
         "namespace": "dandanache",
-        "location": "https://raw.githubusercontent.com/dan-danache/hubitat/hub-a-dashery_1.0.0/hub-a-dashery-app/hub-a-dashery.html",
+        "location": "https://raw.githubusercontent.com/dan-danache/hubitat/hub-a-dashery_1.1.0/hub-a-dashery-app/hub-a-dashery.html",
         "required": true,
         "oauth": false,
         "description": "View dashboards for your Hubitat hub metrics."
