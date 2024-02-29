@@ -198,7 +198,7 @@ def getGridLayoutMapping() {
      return render(
          status: 200,
          contentType: "application/json",
-         data: state.gridLayout != null ? state.gridLayout : "{}"
+         data: state.gridLayout != null ? state.gridLayout : "{\"widgets\":{}}"
      )
 }
 

@@ -510,8 +510,8 @@
 
         metadata() {
             return {
-                'mem-history': { w: 8, h: 2, title: 'Free OS Memory' },
-                'cpu-history': { w: 8, h: 2, title: 'CPU Load Average' }
+                'mem-history': { w: 6, h: 1, title: 'Free OS Memory' },
+                'cpu-history': { w: 6, h: 1, title: 'CPU Load Average' }
             }
         }
 
@@ -619,8 +619,8 @@
 
         metadata() {
             return {
-                'mem-last': { w: 1, h: 1, title: 'Free OS Memory' },
-                'cpu-last': { w: 1, h: 1, title: 'CPU Load' }
+                'mem-last': { w: 2, h: 1, title: 'Free OS Memory' },
+                'cpu-last': { w: 2, h: 1, title: 'CPU Load' }
             }
         }
 
@@ -694,6 +694,7 @@
 
         async init() {
             this.layout = await this.connection.getGridLayout();
+            if (this.layout.widgets === undefined) this.layout.widgets = {};
             console.log('gridLayout', this.layout);
 
             // Init grid
