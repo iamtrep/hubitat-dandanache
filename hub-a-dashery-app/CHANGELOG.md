@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Add
 - Add hub information table chart (refresh every 5 min) - `@iEnam`
 
-## Changed
+### Changed
 - Charts have now a fixed 206px height per "grid unit" instead of 25% of the window height
 
 ### Fixed
