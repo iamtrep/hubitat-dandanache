@@ -9,7 +9,7 @@ import groovy.transform.Field
 import com.hubitat.app.ChildDeviceWrapper
 
 @Field static final String APP_NAME = "Hub-a-Dashery"
-@Field static final String APP_VERSION = "1.2.0"
+@Field static final String APP_VERSION = "1.2.1"
 @Field static final String HTML_FILE_NAME = "hub-a-dashery.html"
 @Field static final def URL_PATTERN = ~/^https?:\/\/[^\/]+(.+)/
 
@@ -119,7 +119,11 @@ Map changelog() {
         install: false,
         uninstall: false
     ) {
-        section ("v1.2.0 - 2024-03-01", hideable: true, hidden: false) {
+        section ("v1.2.1 - 2024-03-01", hideable: true, hidden: false) {
+            paragraph "<li>Fix grid layout saving function - @amithalp</li>"
+        }
+
+        section ("v1.2.0 - 2024-03-01", hideable: true, hidden: true) {
             paragraph "<li>Add hub information table chart (refresh every 5 min) - @iEnam</li>" +
             "<li>Charts have now a fixed 206px height per \"grid unit\" instead of 25% of the window height</li>" +
             "<li>Restore crosshair vertical marker for line charts - @WarlockWeary</li>"
@@ -211,12 +215,12 @@ def getGridLayoutMapping() {
 }
 
 def setGridLayoutMapping() {
-    debug "Saving grid layout"
-    return render(
-        status: 200,
-        contentType: "application/json",
-        data: state.gridLayout != null ? state.gridLayout : "{\"widgets\":{}}"
-    )
+     runIn(1, "saveGridLayout", [data: "${request.body}"])
+     return render(
+         status: 200,
+         contentType: "application/json",
+         data: "{\"status\": true}"
+     )
 }
 
 def saveGridLayout(data) {
