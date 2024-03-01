@@ -42,7 +42,6 @@
     <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-    <!--script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-crosshair@2.0.0/dist/chartjs-plugin-crosshair.min.js"></script-->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-gauge-v3@3.0.0/dist/index.min.js"></script>
 
     <!-- Grid -->
@@ -323,6 +322,48 @@
 
     class ChartHelper {
 
+        static crosshairPlugin() {
+            return {
+                id: 'crosshair',
+                defaults: {
+                    width: 1,
+                    color: 'red',
+                    dash: [2, 2],
+                },
+                afterInit: (chart, args, opts) => {
+                    chart.crosshair = {
+                        x: 0,
+                        y: 0,
+                    }
+                },
+                afterEvent: (chart, args) => {
+                    const {inChartArea} = args
+                    const {type,x,y} = args.event
+
+                    chart.crosshair = {x, y, draw: inChartArea}
+                    chart.draw()
+                },
+                beforeDatasetsDraw: (chart, args, opts) => {
+                    const {ctx} = chart;
+                    const {top, bottom, left, right} = chart.chartArea;
+                    const {x, y, draw} = chart.crosshair;
+                    if (!draw) return;
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.lineWidth = opts.width;
+                    ctx.strokeStyle = opts.color;
+                    ctx.setLineDash(opts.dash);
+                    ctx.moveTo(x, bottom);
+                    ctx.lineTo(x, top);
+                    //ctx.moveTo(left, y)
+                    //ctx.lineTo(right, y)
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            };
+        }
+
         // Show/hide individual points depending on how many points are in view
         static updatePointStyle(chart) {
             if (chart.scales.x === undefined) return;
@@ -421,18 +462,11 @@
                             }
                         },
                         crosshair: {
-                            line: {
-                                color: colors.TextColor,
-                                width: 1,
-                                dashPattern: [1, 1]
-                            },
-                            sync: {
-                                enabled: true
-                            },
-                            zoom: { enabled: false }
+                            color: colors.TextColorDarker,
                         }
                     }
-                }
+                },
+                plugins: [ ChartHelper.crosshairPlugin() ]
             }
         }
 
@@ -456,13 +490,14 @@
                     cutout: '65%',
                     valueLabel: {
                         display: true,
-                        color: colors.BgColor,
-                        backgroundColor: colors.TextColorDarker,
+                        color: colors.TextColorDarker,
+                        backgroundColor: colors.BgColorDarker,
+                        borderWidth: 1,
                         borderRadius: 5,
                         padding: {
-                            top: 7, bottom: 7, left: 10, right: 10
+                            top: 2, bottom: 2, left: 4, right: 4
                         },
-                        offsetY: '-20%'
+                        offsetY: '-22%'
                     }
                 }
             };
@@ -614,6 +649,8 @@
 
             this.memChart = undefined;
             this.cpuChart = undefined;
+            this.memTitleElement = undefined;
+            this.cpuTitleElement = undefined;
             this.refreshInterval = undefined;
         }
 
@@ -626,9 +663,10 @@
 
         async load() {
             const colors = UI.colors();
-            return this.connection.fetchMemCpuLast().then(data => {
-                this.lastUpdate = data.time;
+            this.memTitleElement = document.getElementById('mem-last-title');
+            this.cpuTitleElement = document.getElementById('cpu-last-title');
 
+            return this.connection.fetchMemCpuLast().then(data => {
                 this.memChart = ChartHelper.createGaugeChart('mem-last', {
                     data: {
                         datasets: [{
@@ -636,13 +674,13 @@
                             minValue: 0,
                             data: [80, 200, 1024],
                             backgroundColor: [colors.Orange, colors.Yellow, colors.Green],
-                            borderColor: colors.BgColorDarker,
+                            borderColor: 'transparent',
                         }]
                     },
                     options: {
                         valueLabel: {
                             formatter: (value) => {
-                                return `${(value).toLocaleString(UI.locale(), { style: 'unit', unit: 'megabyte'}) } @ ${this.lastUpdate}`
+                                return `${(value).toLocaleString(UI.locale(), { style: 'unit', unit: 'megabyte'}) }`
                             }
                         }
                     }
@@ -655,17 +693,19 @@
                             minValue: 0,
                             data: [75, 90, 100],
                             backgroundColor: [colors.Green, colors.Yellow, colors.Orange],
-                            borderColor: colors.BgColorDarker,
+                            borderColor: 'transparent',
                         }]
                     },
                     options: {
                         valueLabel: {
                             formatter: (value) => {
-                                return `${(value.toFixed(2))}% @ ${this.lastUpdate}`
+                                return `${(value.toFixed(2))}%`
                             }
                         }
                     }
                 });
+
+                this.#updateTitle(data.time);
 
                 // Set auto-refresh every 1 minute
                 this.refreshInterval = setInterval(() => this.refresh(), 60000);
@@ -674,13 +714,19 @@
 
         async refresh() {
             return this.connection.fetchMemCpuLast().then(data => {
-                this.lastUpdate = data.time;
                 this.memChart.data.datasets[0].value = data.mem;
                 this.cpuChart.data.datasets[0].value = data.cpu;
 
                 this.memChart.update();
                 this.cpuChart.update();
+                this.#updateTitle(data.time);
             });
+        }
+
+        #updateTitle(time) {
+            const metadata = this.metadata();
+            this.memTitleElement.innerText = `${metadata['mem-last'].title} @ ${time}`;
+            this.cpuTitleElement.innerText = `${metadata['cpu-last'].title} @ ${time}`;
         }
     }
 
@@ -723,7 +769,7 @@
             Object.entries(chart.metadata()).forEach(([chartId, chartDefaults]) => {
                 const chartLayout = this.layout.widgets[chartId];
                 this.grid.addWidget(DeepMerge.merge(chartDefaults, {
-                    content: `<div id="${chartId}-container" class="chart-container"><div class="chart-title">${chartDefaults.title}</div><canvas id="${chartId}"></canvas></div>`,
+                    content: `<div id="${chartId}-container" class="chart-container"><div id="${chartId}-title" class="chart-title">${chartDefaults.title}</div><canvas id="${chartId}"></canvas></div>`,
                     id: chartId,
                     ...chartLayout
                 }));
