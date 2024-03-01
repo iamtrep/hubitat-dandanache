@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Hub-a-Dashery - v1.1.0</title>
+    <title>Hub-a-Dashery - v1.2.0</title>
     <meta charset="utf-8">
     <meta name="keywords" content="hubitat, memory, cpu">
     <meta name="author" content="Dan Danache">
     <meta name="description" content="View dashboards for your Hubitat hub metrics.">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes"/>
     <meta name="apple-mobile-web-app-title" content="Hub-a-Dashery"/>
@@ -74,7 +74,7 @@
         --bg-color-darker: var(--Base3);
         --text-color: var(--Base03);
         --text-color-darker: var(--Base00);
-        --border-color: var(--Base1);
+        --border-color: var(--Base0);
         --shadow-color: var(--Base1);
         --separator-color: var(--Base1);
         --Gray: var(--Base0);
@@ -88,7 +88,7 @@
         --bg-color-darker: var(--Base02);
         --text-color: var(--Base3);
         --text-color-darker: var(--Base1);
-        --border-color: var(--Base01);
+        --border-color: var(--Base00);
         --shadow-color: var(--Black);
         --separator-color: var(--Base01);
         --Gray: var(--Base01);
@@ -129,7 +129,7 @@
         color: var(--text-color);
         background-color: transparent;
         text-align: center;
-        padding: 0.3em 1em;
+        padding: 0.2em 1em;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
@@ -141,6 +141,43 @@
         border: 1px var(--border-color) solid;
         border-radius: 0 0 5px 5px;
         border-top: 0;
+    }
+
+    canvas {
+        image-rendering: optimizeSpeed !important;             /* Older versions of FF          */
+        image-rendering: -moz-crisp-edges !important;          /* FF 6.0+                       */
+        image-rendering: -webkit-optimize-contrast !important; /* Safari                        */
+        image-rendering: -o-crisp-edges !important;            /* OS X & Windows Opera (12.02+) */
+        image-rendering: pixelated !important;                 /* Awesome future-browsers       */
+        -ms-interpolation-mode: nearest-neighbor !important;   /* IE                            */
+        box-sizing: initial !important;
+    }
+
+    .chart-container table {
+        width: 100%;
+        height: 100%;
+        border-collapse: collapse;
+        color: var(--text-color-darker);
+        table-layout: fixed;
+    }
+
+    .chart-container table tr:first-child td {
+        height: 20px;
+        padding: 0;
+        border: 0;
+    }
+
+    .chart-container table td {
+        border-top: 1px var(--bg-color) solid;
+        padding: 0 0.5em;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .chart-container table tr td:first-child {
+        text-align: right;
+        font-weight: bold;
     }
 
     /* Grid stack */
@@ -282,6 +319,29 @@
                     };
                 });
         }
+
+        async fetchHubMetrics() {
+            console.info('Fetching Hub metrics ...');
+            return fetch(new Request(`./hub-metrics.json?access_token=${this.accessToken}`), {cache: 'no-store'})
+                .then((response) => {
+                    if (!response.ok) {
+                        console.error('HubitatConnection.fetchHubMetrics() - Bad response (not 200 OK)', response);
+                        throw new Error(`HubitatConnection.fetchHubMetrics() - HTTP error, status = ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(text => JSON.parse(text))
+                .then(json => {
+                    return json.map(hub => {
+                        const dt = luxon.DateTime
+                        const lastRestart = dt.now().minus({ seconds: hub.uptime }).setLocale(UI.locale())
+                        return DeepMerge.merge(hub, {
+                            alive: lastRestart.toRelative({ round: false }).replace(' ago', ''),
+                            reboot: lastRestart.toLocaleString(dt.DATETIME_SHORT)
+                        });
+                    });
+                });
+        }
     }
 
     class Configuration {
@@ -317,6 +377,19 @@
             const eventName = 'config';
             if (!Array.isArray(this.eventListeners[eventName])) return;
             this.eventListeners[eventName].forEach(eventListener => eventListener(this));
+        }
+    }
+
+    class DeepMerge {
+        static merge(current, update) {
+            Object.keys(update).forEach(key => {
+                if (current.hasOwnProperty(key) && typeof current[key] === 'object' && !(current[key] instanceof Array)) {
+                    DeepMerge.merge(current[key], update[key]);
+                } else {
+                    current[key] = update[key];
+                }
+            });
+            return current;
         }
     }
 
@@ -411,7 +484,7 @@
                                 autoSkipPadding: 15
                             },
                             grid: {
-                                color: colors.TextColorDarker + '22'
+                                color: colors.BgColor
                             }
                         },
                         y: {
@@ -424,7 +497,7 @@
                                 color: colors.TextColorDarker
                             },
                             grid: {
-                                color: colors.TextColorDarker + '22'
+                                color: colors.BgColor
                             }
                         }
                     },
@@ -439,7 +512,7 @@
                             backgroundColor: colors.BgColorDarker,
                             titleColor: colors.TextColor,
                             bodyColor: colors.TextColorDarker,
-                            borderColor: colors.TextColorDarker,
+                            borderColor: colors.BorderColor,
                             borderWidth: 1
                         },
                         decimation: {
@@ -459,7 +532,7 @@
                             },
                             limits: {
                                 x: {min: 'original', max: 'original'},
-                            }
+                            },
                         },
                         crosshair: {
                             color: colors.TextColorDarker,
@@ -494,6 +567,7 @@
                         backgroundColor: colors.BgColorDarker,
                         borderWidth: 1,
                         borderRadius: 5,
+                        borderColor: colors.BorderColor,
                         padding: {
                             top: 2, bottom: 2, left: 4, right: 4
                         },
@@ -510,6 +584,7 @@
             const chart = new Chart(element, DeepMerge.merge(ChartHelper.lineChartDefaults(), config));
             element.addEventListener('dblclick', evt => chart.resetZoom());
             //element.addEventListener('click', evt => { chart.options.plugins.decimation.enabled = !(chart.options.plugins.decimation.enabled); chart.update();});
+            //chart.canvas.style.touchAction = "pan-y";
             return chart;
         }
 
@@ -522,19 +597,6 @@
         }
     }
 
-    class DeepMerge {
-        static merge(current, update) {
-            Object.keys(update).forEach(key => {
-                if (current.hasOwnProperty(key) && typeof current[key] === 'object' && !(current[key] instanceof Array)) {
-                    DeepMerge.merge(current[key], update[key]);
-                } else {
-                    current[key] = update[key];
-                }
-            });
-            return current;
-        }
-    }
-
     class MemCpuHistoryChart {
         constructor(connection) {
             this.connection = connection;
@@ -543,11 +605,11 @@
             this.cpuChart = undefined;
         }
 
-        metadata() {
-            return {
+        async metadata() {
+            return Promise.resolve({
                 'mem-history': { w: 6, h: 1, title: 'Free OS Memory' },
                 'cpu-history': { w: 6, h: 1, title: 'CPU Load Average' }
-            }
+            });
         }
 
         async load() {
@@ -654,11 +716,11 @@
             this.refreshInterval = undefined;
         }
 
-        metadata() {
-            return {
+        async metadata() {
+            return Promise.resolve({
                 'mem-last': { w: 2, h: 1, title: 'Free OS Memory' },
                 'cpu-last': { w: 2, h: 1, title: 'CPU Load' }
-            }
+            });
         }
 
         async load() {
@@ -708,25 +770,102 @@
                 this.#updateTitle(data.time);
 
                 // Set auto-refresh every 1 minute
-                this.refreshInterval = setInterval(() => this.refresh(), 60000);
+                this.refreshInterval = setInterval(() => this.refresh(), 1 * 60 * 1000);
             });
         }
 
         async refresh() {
-            return this.connection.fetchMemCpuLast().then(data => {
-                this.memChart.data.datasets[0].value = data.mem;
-                this.cpuChart.data.datasets[0].value = data.cpu;
+            const data = await this.connection.fetchMemCpuLast();
+            
+            this.memChart.data.datasets[0].value = data.mem;
+            this.cpuChart.data.datasets[0].value = data.cpu;
 
-                this.memChart.update();
-                this.cpuChart.update();
-                this.#updateTitle(data.time);
+            this.memChart.update();
+            this.cpuChart.update();
+            this.#updateTitle(data.time);
+        }
+
+        async #updateTitle(time) {
+            const metadata = await this.metadata();
+            this.memTitleElement.innerText = `${metadata['mem-last'].title} @ ${time}`;
+            this.cpuTitleElement.innerText = `${metadata['cpu-last'].title} @ ${time}`;
+        }
+    }
+
+    class TableChart {
+        constructor(connection) {
+            this.connection = connection;
+
+            this.table = undefined;
+            this.hubMetrics = undefined;
+        }
+
+        async metadata() {
+            if (this.hubMetrics === undefined) {
+                this.hubMetrics = await this.connection.fetchHubMetrics();
+            }
+
+            const retVal = {};
+            this.hubMetrics.forEach(hub => {
+                retVal[hub.name] = { w: 2, h: 1, title: hub.name }
+            });
+            return Promise.resolve(retVal);
+        }
+
+        async load() {
+            this.hubMetrics.forEach(hub => {
+                const id = hub.name;
+                const canvas = document.getElementById(id)
+                const parentElement = canvas.parentElement
+                parentElement.removeChild(canvas)
+                
+                const tbl = document.createElement('table')
+                tbl.setAttribute('id', id)
+                const tblBody = document.createElement('tbody')
+                tbl.appendChild(tblBody)
+                parentElement.appendChild(tbl)
+
+                tblBody.appendChild(this.#buildRow())
+                tblBody.appendChild(this.#buildRow('IP Address', hub.ip))
+                tblBody.appendChild(this.#buildRow('FW Ver', hub.fw))
+                tblBody.appendChild(this.#buildRow('Uptime', hub.alive))
+                tblBody.appendChild(this.#buildRow('Reboot', hub.reboot))
+            });
+
+            // Set auto-refresh every 5 minutes
+            this.refreshInterval = setInterval(() => this.refresh(), 5 * 60 * 1000);
+        }
+
+        async refresh() {
+            this.hubMetrics = await this.connection.fetchHubMetrics();
+            this.hubMetrics.forEach(hub => {
+                const tbl = document.getElementById(hub.name);
+                if (tbl === null) return console.log('I do not know this hub, it is no friend of mine:', hub.name)
+                tbl.rows[1].cells[1].innerText = hub.ip
+                tbl.rows[2].cells[1].innerText = hub.fw
+                tbl.rows[3].cells[1].innerText = hub.alive
+                tbl.rows[4].cells[1].innerText = hub.reboot
             });
         }
 
-        #updateTitle(time) {
-            const metadata = this.metadata();
-            this.memTitleElement.innerText = `${metadata['mem-last'].title} @ ${time}`;
-            this.cpuTitleElement.innerText = `${metadata['cpu-last'].title} @ ${time}`;
+        #buildRow(label, value) {
+            const row = document.createElement('tr')
+            let cell = document.createElement('td')
+            cell.appendChild(document.createTextNode(label === undefined ? '' : label))
+            row.appendChild(cell)
+
+            if (label === undefined) {
+                cell.setAttribute('colspan', 3)
+            } else {
+                cell.setAttribute('title', label)
+                cell = document.createElement('td')
+                cell.setAttribute('title', value)
+                cell.setAttribute('colspan', 2)
+                cell.appendChild(document.createTextNode(value))
+            }
+
+            row.appendChild(cell)
+            return row
         }
     }
 
@@ -749,13 +888,15 @@
                 float: true,
 
                 // Non-configurable options
-                cellHeight: '25vh',
+                cellHeight: 206, //'25vh',
                 column: 8,
                 columnOpts: {
                     layout: 'move', // moveScale move scale list compact none
                     columnMax: 8,
                     breakpointForWindow: true,
-                    breakpoints: [{w:700, c:1}, {w:900, c:4}] // TODO: fiddle with these until it behaves nicely on mobile/tablet/laptop
+
+                    // TODO: fiddle with these until it behaves nicely on mobile/tablet/laptop
+                    breakpoints: [{w:420, c:1}, {w:800, c:2}, {w:1024, c:4}, {w:1366, c:6}]
                 },
                 float: true,
                 handle: '.chart-title'
@@ -765,8 +906,8 @@
             //this.grid.on('change', () => this.saveLayout());
         }
 
-        addChart(chart) {
-            Object.entries(chart.metadata()).forEach(([chartId, chartDefaults]) => {
+        async addChart(chart) {
+            Object.entries(await chart.metadata()).forEach(([chartId, chartDefaults]) => {
                 const chartLayout = this.layout.widgets[chartId];
                 this.grid.addWidget(DeepMerge.merge(chartDefaults, {
                     content: `<div id="${chartId}-container" class="chart-container"><div id="${chartId}-title" class="chart-title">${chartDefaults.title}</div><canvas id="${chartId}"></canvas></div>`,
@@ -798,6 +939,7 @@
                 BgColorDarker: css.getPropertyValue('--bg-color-darker'),
                 TextColor: css.getPropertyValue('--text-color'),
                 TextColorDarker: css.getPropertyValue('--text-color-darker'),
+                BorderColor: css.getPropertyValue('--border-color'),
                 Yellow: css.getPropertyValue('--Yellow'),
                 Orange: css.getPropertyValue('--Orange'),
                 Red: css.getPropertyValue('--Red'),
@@ -850,6 +992,7 @@
     // Init charts
     const memCpuHistoryChart = new MemCpuHistoryChart(hubitatConnection);
     const memCpuLastChart = new MemCpuLastChart(hubitatConnection)
+    const tableChart = new TableChart(hubitatConnection)
 
     // Run application on page load
     window.addEventListener('load', () => run());
@@ -873,12 +1016,14 @@
         await grid.init();
 
         // Place charts into the grid
-        grid.addChart(memCpuHistoryChart);
-        grid.addChart(memCpuLastChart);
+        await grid.addChart(memCpuHistoryChart);
+        await grid.addChart(memCpuLastChart);
+        await grid.addChart(tableChart);
 
         // Render charts
-        await memCpuHistoryChart.load();
+        await memCpuHistoryChart.load()
         await memCpuLastChart.load()
+        await tableChart.load()
 
         // Setup Ctrl + S keyboard binding
         document.addEventListener('keydown', event => {

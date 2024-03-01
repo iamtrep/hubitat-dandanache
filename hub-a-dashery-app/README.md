@@ -67,6 +67,8 @@ The app provides various widgets to monitor the Hub's performance and status. Cu
 
 These 4 widgets show the OS free memory (RAM) and the processor [load average](https://phoenixnap.com/kb/linux-average-load) of the Hub over time and in the last 15 minutes.
 
+Refresh time: 1 min
+
 You can access the data source at:
 - `http://hubitat.local/hub/advanced/freeOSMemoryHistory`
 - `http://hubitat.local/hub/advanced/hub/advanced/freeOSMemoryLast`
@@ -74,6 +76,15 @@ You can access the data source at:
 **Note**: The history data is reset after each Hub reboot and this data is not available for the first 15 minutes.
 
 ![Memory and CPU information](img/charts/mem-cpu.png "Memory and CPU widgets")
+
+### Hub information
+
+This simple table widget shows information about your Hubitat hub.
+
+Refresh time: 5 min
+
+![Hub information](img/charts/hub-info.png "Hub info widget")
+
 
 ---
 [<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px !important;width: 162px !important">](https://www.buymeacoffee.com/dandanache)
