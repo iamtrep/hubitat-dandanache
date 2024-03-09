@@ -1,23 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Hubitat Zigbee Map - v1.5.0</title>
+    <title>Zigbee Neighbors Map - v2.0.0</title>
     <meta charset="utf-8">
-    <meta name="keywords" content="hubitat, zigbee, map">
+    <meta name="keywords" content="hubitat, zigbee, neighbors, map">
     <meta name="author" content="Dan Danache">
     <meta name="description" content="Visualize the topology and connectivity of your Zigbee network.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes"/>
-    <meta name="apple-mobile-web-app-title" content="Zigbee Map"/>
-    <meta name="application-name" content="Zigbee Map"/>
+    <meta name="apple-mobile-web-app-title" content="Neighbors Map"/>
+    <meta name="application-name" content="Neighbors Map"/>
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="msapplication-config" content="/ui2/images/browserconfig.xml">
-    <meta name="theme-color" content="#fdf6e3">
+    <meta name="theme-color" content="#eee8d5">
     <meta name="x5-orientation" content="portrait">
     <meta name="x5-page-mode" content="app">
     <meta name="screen-orientation" content="portrait">
     <meta name="browsermode" content="application">
+    <meta name="color-scheme" content="dark light">
 
     <link rel="apple-touch-icon" sizes="180x180" href="/ui2/images/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/ui2/images/favicon-32x32.png">
@@ -25,7 +26,7 @@
     <link rel="icon" type="image/png" sizes="512x512" href="/ui2/images/android-chrome-512x512.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/ui2/images/android-chrome-192x192.png">
     <link rel="icon" sizes="192x192" href="/ui2/images/favicon.ico">
-    <link rel="manifest" href="./zigbee-map.webmanifest?access_token=${access_token}">
+    <link rel="manifest" href="./neighbors.webmanifest?access_token=${access_token}">
     <link rel="mask-icon" href="/ui2/images/safari-pinned-tab.svg" color="#5bbad5">
     <link rel="shortcut icon" href="/ui2/images/favicon.ico">
     <link rel="preconnect" href="//unpkg.com" crossorigin="anonymous" />
@@ -167,6 +168,10 @@
         border-radius: 0 .3em .3em .3em;
         box-shadow: 0 0 .3em var(--shadow-color);
         background: var(--bg-color-darker);
+
+        display: block;
+        max-height: calc(100vh - 70px);
+        overflow-y: scroll;
     }
 
     /* Tabs */
@@ -183,6 +188,7 @@
         margin-bottom: 10px;
         min-width: 18em;
         max-width: 33em;
+        max-height: calc(100vh - 20px);
     }
 
     .long-line {
@@ -329,6 +335,16 @@
         border-bottom: 1px solid var(--separator-color);
         margin: 0;
         padding-bottom: .3em;
+    }
+
+    .tooltip-fade {
+        animation: tooltip-fade 0.5s;
+        animation-delay: 1.5s;
+        animation-fill-mode: forwards;
+    }
+
+    @keyframes tooltip-fade {
+        100% { opacity: 0 }
     }
 
     /* Config */
@@ -617,394 +633,394 @@
     class NeighborTableEntry {
         constructor(bytes) {
             if (bytes.length != 22) {
-                console.error(`NeighborTableEntry.constructor(${bytes}) - Bytes length != 22`);
-                throw new Error(`NeighborTableEntry.constructor(${bytes}) - Bytes length != 22`);
+                console.error(`NeighborTableEntry.constructor(${bytes}) - Bytes length != 22`)
+                throw new Error(`NeighborTableEntry.constructor(${bytes}) - Bytes length != 22`)
             }
 
-            this.panId = bytes.slice(0, 8).reverse().join('');
-            this.ieee = bytes.slice(8, 16).reverse().join('');
-            this.addr = bytes.slice(16, 18).reverse().join('');
+            this.panId = bytes.slice(0, 8).reverse().join('')
+            this.ieee = bytes.slice(8, 16).reverse().join('')
+            this.addr = bytes.slice(16, 18).reverse().join('')
 
-            let octet = parseInt(bytes.slice(18, 19), 16).toString(2).padStart(8, '0');
+            let octet = parseInt(bytes.slice(18, 19), 16).toString(2).padStart(8, '0')
 
             switch (parseInt(octet.substring(6, 8), 2)) {
-                case 0: this.deviceType = 'Zigbee Coordinator'; break;
-                case 1: this.deviceType = 'Zigbee Router'; break;
-                case 2: this.deviceType = 'Zigbee End Device'; break;
-                default: this.deviceType = 'Unknown';
+                case 0: this.deviceType = 'Zigbee Coordinator'; break
+                case 1: this.deviceType = 'Zigbee Router'; break
+                case 2: this.deviceType = 'Zigbee End Device'; break
+                default: this.deviceType = 'Unknown'
             }
 
             switch (parseInt(octet.substring(4, 6), 2)) {
-                case 0: this.rxOnWhenIdle = 'Rx Off'; break;
-                case 1: this.rxOnWhenIdle = 'Rx On'; break;
-                default: this.rxOnWhenIdle = 'Unknown';
+                case 0: this.rxOnWhenIdle = 'Rx Off'; break
+                case 1: this.rxOnWhenIdle = 'Rx On'; break
+                default: this.rxOnWhenIdle = 'Unknown'
             }
 
             switch (parseInt(octet.substring(1, 4), 2)) {
-                case 0: this.affinity = 'Parent'; break;
-                case 1: this.affinity = 'Child'; break;
-                case 2: this.affinity = 'Sibling'; break;
-                default: this.affinity = 'Unknown';
+                case 0: this.affinity = 'Parent'; break
+                case 1: this.affinity = 'Child'; break
+                case 2: this.affinity = 'Sibling'; break
+                default: this.affinity = 'Unknown'
             }
 
-            octet = parseInt(bytes.slice(19, 20), 16).toString(2).padStart(8, '0');
+            octet = parseInt(bytes.slice(19, 20), 16).toString(2).padStart(8, '0')
 
-            this.permitJoining = 'Unknown';
+            this.permitJoining = 'Unknown'
             switch (parseInt(octet.substring(6, 8), 2)) {
-                case 0:  this.permitJoining = 'No'; break;
-                case 1:  this.permitJoining = 'Yes'; break;
-                default: this.permitJoining = 'Unknown';
+                case 0:  this.permitJoining = 'No'; break
+                case 1:  this.permitJoining = 'Yes'; break
+                default: this.permitJoining = 'Unknown'
             }
 
-            this.depth = parseInt(bytes.slice(20, 21), 16);
-            this.lqi = parseInt(bytes.slice(21, 22), 16);
+            this.depth = parseInt(bytes.slice(20, 21), 16)
+            this.lqi = parseInt(bytes.slice(21, 22), 16)
         }
     }
 
     class NeighborTablePart {
         constructor(bytes) {
             if (bytes[1] !== '00') {
-                console.warn('NeighborTablePart.constructor() - Status != SUCEESS (0)', bytes);
-                throw new Error('NeighborTablePart.constructor() - Status != SUCEESS (0)', bytes);
+                console.warn('NeighborTablePart.constructor() - Status != SUCEESS (0)', bytes)
+                throw new Error('NeighborTablePart.constructor() - Status != SUCEESS (0)', bytes)
             }
 
-            this.neighbors = [];
-            this.total = parseInt(bytes[2], 16);
-            if (this.total === 0) return;
+            this.neighbors = []
+            this.total = parseInt(bytes[2], 16)
+            if (this.total === 0) return
 
-            this.startIndex = parseInt(bytes[3], 16);
-            const receivedEntriesCount = parseInt(bytes[4], 16);
+            this.startIndex = parseInt(bytes[3], 16)
+            const receivedEntriesCount = parseInt(bytes[4], 16)
 
             for (let i = 0; i < receivedEntriesCount; i++) {
-                this.neighbors.push(new NeighborTableEntry(bytes.slice(5 + i * 22, 5 + i * 22 + 22)));
+                this.neighbors.push(new NeighborTableEntry(bytes.slice(5 + i * 22, 5 + i * 22 + 22)))
             }
 
-            this.nextIndex = this.startIndex + receivedEntriesCount;
+            this.nextIndex = this.startIndex + receivedEntriesCount
         }
     }
 
     class Device {
         constructor(addr, name, link) {
-            this.addr = addr;
-            this.name = name;
-            this.link = link;
-            this.type = addr === '0000' ? 'Zigbee Coordinator' : 'Unknown';
-            this.talking = undefined;
-            this.error = undefined;
-            this.interviewTime = undefined;
+            this.addr = addr
+            this.name = name
+            this.link = link
+            this.type = addr === '0000' ? 'Zigbee Coordinator' : 'Unknown'
+            this.talking = undefined
+            this.error = undefined
+            this.interviewTime = undefined
         }
 
         setType(type) {
-            if (type === 'Unknown') return;
-            this.type = type;
+            if (type === 'Unknown') return
+            this.type = type
         }
 
         setError(error) {
-            this.error = error;
+            this.error = error
         }
 
         setInterviewTime(setInterviewTime) {
-            this.interviewTime = setInterviewTime;
+            this.interviewTime = setInterviewTime
         }
 
         startInterview() {
-            this.talking = true;
+            this.talking = true
         }
 
         stopInterview() {
-            this.talking = false;
+            this.talking = false
         }
     }
 
     class HubitatConnection {
-        static TIME_BETWEEN_POKES = 800;
-        static POKE_TIMOUT = 25000;
+        static TIME_BETWEEN_POKES = 800
+        static POKE_TIMOUT = 25000
 
         constructor(configuration) {
 
-            this.socketURL = `${window.location.href.startsWith('https://') ? 'wss' : 'ws'}://${new URL(window.location.href).host}/zigbeeLogsocket`;
-            this.socket = null;
+            this.socketURL = `${window.location.href.startsWith('https://') ? 'wss' : 'ws'}://${new URL(window.location.href).host}/zigbeeLogsocket`
+            this.socket = null
 
-            this.accessToken = undefined;
-            this.queue = [];
-            this.promises = {};
+            this.accessToken = undefined
+            this.queue = []
+            this.promises = {}
 
-            configuration.addEventListener('config', config => this.accessToken = config.accessToken);
+            configuration.addEventListener('config', config => this.accessToken = config.accessToken)
         }
 
         init() {
 
             // Check Access Token
             if (this.accessToken === undefined) {
-                throw new Error('HubitatConnection: Cannot find Access Token in URL');
+                throw new Error('HubitatConnection: Cannot find Access Token in URL')
             }
 
             // Start poking interval: time between pokes = 500 ms
-            setInterval(() => this.#pokeNextDeviceInQueue(), HubitatConnection.TIME_BETWEEN_POKES);
+            setInterval(() => this.#pokeNextDeviceInQueue(), HubitatConnection.TIME_BETWEEN_POKES)
 
             // Start Zigbee websocket if not already started
             if (this.socket === null) {
-                console.info('Starting Zigbee websocket', this.socketURL);
+                console.info('Starting Zigbee websocket', this.socketURL)
                 try {
-                    this.socket = new WebSocket(this.socketURL);
-                    this.socket.onmessage = event => this.#onWebsocketMessage(JSON.parse(event.data));
+                    this.socket = new WebSocket(this.socketURL)
+                    this.socket.onmessage = event => this.#onWebsocketMessage(JSON.parse(event.data))
                     this.socket.onerror = ex => {
-                        console.error('[Zigbee Websocket] Error encountered', ex);
-                        alert('[Zigbee Websocket] Error encountered');
-                    };
+                        console.error('[Zigbee Websocket] Error encountered', ex)
+                        alert('[Zigbee Websocket] Error encountered')
+                    }
                 } catch (ex) {
-                    this.socket = undefined;
-                    console.error('Failed to open websocket', ex);
-                    alert('Failed to open websocket: ' + ex);
+                    this.socket = undefined
+                    console.error('Failed to open websocket', ex)
+                    alert('Failed to open websocket: ' + ex)
                 }
             }
         }
 
         async fetchDevicesList() {
-            console.info('Fetching Zigbee devices list ...');
+            console.info('Fetching Zigbee devices list ...')
             return fetch(new Request('/hub/zigbee/getChildAndRouteInfoJson'), {cache: 'no-store'})
                 .then((response) => {
                     if (!response.ok) {
-                        console.error('HubitatConnection.fetchDevicesList() - Bad response (not 200 OK)', response);
-                        throw new Error(`HubitatConnection.fetchDevicesList() - HTTP error, status = ${response.status}`);
+                        console.error('HubitatConnection.fetchDevicesList() - Bad response (not 200 OK)', response)
+                        throw new Error(`HubitatConnection.fetchDevicesList() - HTTP error, status = ${response.status}`)
                     }
-                    return response.text();
+                    return response.text()
                 })
                 .then(text => JSON.parse(text))
                 .then(json => {
                     if (json.status !== true) {
-                        console.error('HubitatConnection.fetchDevicesList() - Bad status attribute (not true)', json);
-                        throw new Error(`HubitatConnection.fetchDevicesList() - JSON error, status = ${json.status}`);
+                        console.error('HubitatConnection.fetchDevicesList() - Bad status attribute (not true)', json)
+                        throw new Error(`HubitatConnection.fetchDevicesList() - JSON error, status = ${json.status}`)
                     }
-                    return json.devices;
+                    return json.devices
                 })
                 .catch((ex) => {
-                    console.error('HubitatConnection.fetchDevicesList() - Failed to fetch data', ex);
-                    alert(`HubitatConnection.fetchDevicesList() - Failed to fetch data: ${ex.message}`);
-                });
+                    console.error('HubitatConnection.fetchDevicesList() - Failed to fetch data', ex)
+                    alert(`HubitatConnection.fetchDevicesList() - Failed to fetch data: ${ex.message}`)
+                })
         }
 
         async poke(addr, startIndex) {
             return new Promise((resolve, reject) => {
-                this.queue.push({addr, startIndex, promise: { resolve, reject }});
-            });
+                this.queue.push({addr, startIndex, promise: { resolve, reject }})
+            })
         }
 
         #pokeNextDeviceInQueue() {
-            const pokeCoordinates = this.queue.shift();
-            if (pokeCoordinates === undefined) return;
+            const pokeCoordinates = this.queue.shift()
+            if (pokeCoordinates === undefined) return
 
-            const {addr, startIndex, promise: { resolve, reject } } = pokeCoordinates;
+            const {addr, startIndex, promise: { resolve, reject } } = pokeCoordinates
 
             // Timeout this promise if we don't receive back a response on the websocket
             const timeout = setTimeout(() => {
-                delete this.promises[`${addr}:${startIndex}`];
+                delete this.promises[`${addr}:${startIndex}`]
                 reject(`Poke timeout after ${HubitatConnection.POKE_TIMOUT} ms`)
-            }, HubitatConnection.POKE_TIMOUT);
-            this.promises[`${addr}:${startIndex}`] = { resolve, reject, timeout };
+            }, HubitatConnection.POKE_TIMOUT)
+            this.promises[`${addr}:${startIndex}`] = { resolve, reject, timeout }
 
             // Poke device
-            return fetch(new Request(`./poke/${addr}/${startIndex}?access_token=${this.accessToken}`), {cache: 'no-store'})
+            return fetch(new Request(`./neighbors/${addr}/${startIndex}?access_token=${this.accessToken}`), {cache: 'no-store'})
                 .then((response) => {
                     if (!response.ok) {
-                        console.error('HubitatConnection#pokeNextDeviceInQueue() - Bad response (not 200 OK)', response);
-                        throw new Error(`HubitatConnection#pokeNextDeviceInQueue() - HTTP error, status = ${response.status}`);
+                        console.error('HubitatConnection#pokeNextDeviceInQueue() - Bad response (not 200 OK)', response)
+                        throw new Error(`HubitatConnection#pokeNextDeviceInQueue() - HTTP error, status = ${response.status}`)
                     }
-                    return response.text();
+                    return response.text()
                 })
                 .then(text => JSON.parse(text))
                 .then(json => {
                     if (json.status !== true) {
-                        console.error('HubitatConnection#pokeNextDeviceInQueue() - Bad status attribute (not true)', json);
-                        throw new Error(`HubitatConnection#pokeNextDeviceInQueue() - JSON error, status = ${json.status}`);
+                        console.error('HubitatConnection#pokeNextDeviceInQueue() - Bad status attribute (not true)', json)
+                        throw new Error(`HubitatConnection#pokeNextDeviceInQueue() - JSON error, status = ${json.status}`)
                     }
 
                     // Return response from the app/driver
-                    return json;
+                    return json
                 })
                 .catch((ex) => {
-                    console.error('HubitatConnection#pokeNextDeviceInQueue() - Failed to fetch data', ex);
-                    delete this.promises[`${addr}:${startIndex}`];
-                    reject(ex);
-                });
+                    console.error('HubitatConnection#pokeNextDeviceInQueue() - Failed to fetch data', ex)
+                    delete this.promises[`${addr}:${startIndex}`]
+                    reject(ex)
+                })
         }
 
         #onWebsocketMessage(message) {
-            //console.log('HubitatConnection::#onWebsocketMessage()', message);
+            //console.log('HubitatConnection::#onWebsocketMessage()', message)
 
-            const addr = message.id.toString(16).toUpperCase().padStart(4, '0');
-            if (message.clusterId === '8031') this.#onLqiResponse(addr, message.payload);
+            const addr = message.id.toString(16).toUpperCase().padStart(4, '0')
+            if (message.clusterId === '8031') this.#onLqiResponse(addr, message.payload)
         }
 
         #onLqiResponse(addr, payload) {
             try {
-                const tablePart = new NeighborTablePart(payload);
-                const promise = this.promises[`${addr}:${tablePart.startIndex}`];
+                const tablePart = new NeighborTablePart(payload)
+                const promise = this.promises[`${addr}:${tablePart.startIndex}`]
                 if (promise === undefined) {
-                    return console.warn(`Received unsolicited LQI Response message from ${addr}`, payload, tablePart);
+                    return console.warn(`Received unsolicited Mgmt_Lqi_rsp Response message from ${addr}`, payload, tablePart)
                 }
 
-                const { resolve, reject, timeout } = promise;
-                clearTimeout(timeout);
-                resolve(tablePart);
-                delete this.promises[`${addr}:${tablePart.startIndex}`];
+                const { resolve, reject, timeout } = promise
+                clearTimeout(timeout)
+                resolve(tablePart)
+                delete this.promises[`${addr}:${tablePart.startIndex}`]
             } catch (ex) {
-                console.error('Exception while processing LQI Response message', ex);
+                console.error('Exception while processing LQI Response message', ex)
             }
         }
     }
 
     class DeviceRepository {
-        static TIME_BETWEEN_INTERVIEWS = 1000;
+        static TIME_BETWEEN_INTERVIEWS = 1000
 
         constructor(connection) {
-            this.connection = connection;
-            this.devices = [];
-            this.neighbors = {};
+            this.connection = connection
+            this.devices = []
+            this.neighbors = {}
 
-            this.eventListeners = {};
-            this.queue = [];
-            this.busy = false;
+            this.eventListeners = {}
+            this.queue = []
+            this.busy = false
 
             // Start interview interval: time between interviews = 500 ms
-            setInterval(() => this.#fetchNeighborsInQueue(), DeviceRepository.TIME_BETWEEN_INTERVIEWS);
+            setInterval(() => this.#fetchNeighborsInQueue(), DeviceRepository.TIME_BETWEEN_INTERVIEWS)
         }
 
         addEventListener(eventName, callback) {
-            if (!Array.isArray(this.eventListeners[eventName])) this.eventListeners[eventName] = [];
-            this.eventListeners[eventName].push(callback);
+            if (!Array.isArray(this.eventListeners[eventName])) this.eventListeners[eventName] = []
+            this.eventListeners[eventName].push(callback)
         }
 
         #getDevicebyAddr(addr) {
-            return this.devices.find(device => device.addr === addr);
+            return this.devices.find(device => device.addr === addr)
         }
 
         #onDevicesChange() {
-            const eventName = 'devices';
-            if (!Array.isArray(this.eventListeners[eventName])) return;
-            this.eventListeners[eventName].forEach(eventListener => eventListener(this.devices));
+            const eventName = 'devices'
+            if (!Array.isArray(this.eventListeners[eventName])) return
+            this.eventListeners[eventName].forEach(eventListener => eventListener(this.devices))
         }
 
         #onNeighborsChange(addr) {
-            const eventName = 'neighbors';
-            if (!Array.isArray(this.eventListeners[eventName])) return;
-            this.eventListeners[eventName].forEach(eventListener => eventListener(this.neighbors));
+            const eventName = 'neighbors'
+            if (!Array.isArray(this.eventListeners[eventName])) return
+            this.eventListeners[eventName].forEach(eventListener => eventListener(this.neighbors))
         }
 
         #onQueueChange() {
-            const eventName = 'queue';
-            if (!Array.isArray(this.eventListeners[eventName])) return;
-            this.eventListeners[eventName].forEach(eventListener => eventListener(this.queue));
+            const eventName = 'queue'
+            if (!Array.isArray(this.eventListeners[eventName])) return
+            this.eventListeners[eventName].forEach(eventListener => eventListener(this.queue))
         }
 
         setDevices(devices) {
-            this.devices = devices;
-            this.#onDevicesChange();
-            return this.devices;
+            this.devices = devices
+            this.#onDevicesChange()
+            return this.devices
         }
 
         setNeighbors(addr, neighbors) {
-            this.neighbors[addr] = neighbors;
+            this.neighbors[addr] = neighbors
 
             // Look for the neighbors' neighbors
             neighbors.forEach(neighbor => {
 
                 // Update neightbor node type
-                this.#getDevicebyAddr(neighbor.addr)?.setType(neighbor.deviceType);
+                this.#getDevicebyAddr(neighbor.addr)?.setType(neighbor.deviceType)
 
                 // Interview neighbor; only if it not a sleepy device
                 if (neighbor.deviceType != 'Zigbee End Device') {
-                    this.fetchNeighbors(neighbor.addr);
+                    this.fetchNeighbors(neighbor.addr)
                 }
-            });
+            })
 
-            this.#onNeighborsChange(addr);
-            return this.neighbors[addr];
+            this.#onNeighborsChange(addr)
+            return this.neighbors[addr]
         }
 
         #startInterview(addr) {
-            this.#getDevicebyAddr(addr)?.startInterview();
-            this.#onDevicesChange();
+            this.#getDevicebyAddr(addr)?.startInterview()
+            this.#onDevicesChange()
         }
 
         #stopInterview(addr) {
-            this.#getDevicebyAddr(addr)?.stopInterview();
-            this.#onDevicesChange();
+            this.#getDevicebyAddr(addr)?.stopInterview()
+            this.#onDevicesChange()
         }
 
         async fetchKnownDevices() {
             return this.connection.fetchDevicesList()
                 .then(jsonDevices => jsonDevices.map(jsonDevice => new Device(jsonDevice.zigbeeId, jsonDevice.name, jsonDevice.id)))
-                .then(devices => this.setDevices(devices));
+                .then(devices => this.setDevices([new Device('0000', 'Hubitat', null)].concat(devices)))
         }
 
         fetchNeighbors(addr, force = false) {
 
             // We already know the neighbors of this device
-            if (this.neighbors[addr] !== undefined && force !== true) return;
+            if (this.neighbors[addr] !== undefined && force !== true) return
 
             // Check device already in queue
-            if (this.queue.some(item => item.addr === addr)) return;
+            if (this.queue.some(item => item.addr === addr)) return
 
             // Add to queue
-            this.queue.push({ addr });
-            this.#onQueueChange();
+            this.queue.push({ addr })
+            this.#onQueueChange()
         }
 
         async #fetchNeighborsInQueue() {
-            if (this.busy === true) return;
+            if (this.busy === true) return
 
             // Get next item from the queue; keep current interviewing device in the queue
-            if (this.queue.length === 0) return;
-            const queueItem = this.queue[0];
+            if (this.queue.length === 0) return
+            const queueItem = this.queue[0]
 
-            const { addr } = queueItem;
+            const { addr } = queueItem
 
             // Mark device as busy
-            console.info('Starting interview for device', addr);
-            this.busy = true;
-            this.#startInterview(addr);
+            console.info('Starting interview for device', addr)
+            this.busy = true
+            this.#startInterview(addr)
 
             return this.#fetchNeighborsTable(addr, 0, [])
                 .then(neighbors => {
-                    this.setNeighbors(addr, neighbors);
+                    this.setNeighbors(addr, neighbors)
                 })
                 .catch(ex => {
-                    this.setNeighbors(addr, []);
-                    this.#getDevicebyAddr(addr)?.setError(ex);
+                    this.setNeighbors(addr, [])
+                    this.#getDevicebyAddr(addr)?.setError(ex)
                 })
                 .finally(() => {
-                    this.busy = false;
-                    this.#stopInterview(addr);
-                    this.#getDevicebyAddr(addr)?.setInterviewTime(new Date());
+                    this.busy = false
+                    this.#stopInterview(addr)
+                    this.#getDevicebyAddr(addr)?.setInterviewTime(new Date())
 
                     // Remove device from the interview queue
-                    this.queue.shift();
-                    this.#onQueueChange();
-                });
+                    this.queue.shift()
+                    this.#onQueueChange()
+                })
         }
 
         async #fetchNeighborsTable(addr, startIndex = 0, neighbors = []) {
             return this.connection.poke(addr, startIndex)
                 .then(part => {
-                    const result = neighbors.concat(part.neighbors);
-                    if (part.nextIndex >= part.total) return result;
-                    return this.#fetchNeighborsTable(addr, part.nextIndex, result);
+                    const result = neighbors.concat(part.neighbors)
+                    if (part.nextIndex >= part.total) return result
+                    return this.#fetchNeighborsTable(addr, part.nextIndex, result)
                 })
                 .catch(ex => {
-                    console.error(`DeviceRepository#fetchNeighborsTable(${addr}, ${startIndex}) - Exception encountered: ${ex}`);
-                    return Promise.reject(ex);
-                });
+                    console.error(`DeviceRepository#fetchNeighborsTable(${addr}, ${startIndex}) - Exception encountered: ${ex}`)
+                    return Promise.reject(ex)
+                })
         }
     }
 
     class GraphModel {
         constructor() {
-            this.nodes = [];
-            this.links = [];
-            this.empty = true;
+            this.nodes = []
+            this.links = []
+            this.empty = true
 
-            this.addNode('0000', 'Hubitat');
+            this.addNode('0000', 'Hubitat')
         }
 
         buildData(includeUnknowns = true) {
@@ -1012,50 +1028,50 @@
             // Update node types
             this.nodes.forEach(node => {
                 if (node.addr === '0000') {
-                    node.type = 'Zigbee Coordinator';
-                    return;
+                    node.type = 'Zigbee Coordinator'
+                    return
                 }
-            });
+            })
 
             // Calculate link curvature
-            this.links.forEach(link => link.curvature = undefined);
+            this.links.forEach(link => link.curvature = undefined)
             this.links.forEach(link => {
-                if (link.curvature !== undefined) return;
-                const otherLink = this.links.find(other => other.sourceAddr === link.targetAddr && other.targetAddr === link.sourceAddr);
-                if (otherLink === undefined) return link.curvature = 0;
-                link.curvature = 0.2;
-                otherLink.curvature = 0.2;
-            });
+                if (link.curvature !== undefined) return
+                const otherLink = this.links.find(other => other.sourceAddr === link.targetAddr && other.targetAddr === link.sourceAddr)
+                if (otherLink === undefined) return link.curvature = 0
+                link.curvature = 0.2
+                otherLink.curvature = 0.2
+            })
 
             // Return data
-            const unknownAddrs = this.nodes.filter(node => node.type === undefined).map(node => node.addr);
+            const unknownAddrs = this.nodes.filter(node => node.type === undefined).map(node => node.addr)
             return {
                 nodes: this.nodes.filter(node => includeUnknowns || node.type !== undefined),
                 links: this.links.filter(link => includeUnknowns || (!unknownAddrs.includes(link.sourceAddr) && !unknownAddrs.includes(link.targetAddr)))
-            };
+            }
         }
 
         static #deviceName(addr, devices) {
-            if (addr === '0000') return 'Hubitat';
-            return (devices.find(device => device.addr === addr) || {name: 'Unknown'}).name;
+            if (addr === '0000') return 'Hubitat'
+            return (devices.find(device => device.addr === addr) || {name: 'Unknown'}).name
         }
 
         static #tooltip(header, props) {
-            let text = `<header>${header}</header>`;
+            let text = `<header>${header}</header>`
             for (const key in props) {
-                text += `<li>${key}${props[key] !== null ? `: ${props[key]}` : ''}</li>`;
+                text += `<li>${key}${props[key] !== null ? `: ${props[key]}` : ''}</li>`
             }
-            return text;
+            return text
         }
 
         load(neighbors, devices) {
             for (const [addr, neighborsList] of Object.entries(neighbors)) {
-                const nodeAddr = addr;
-                const nodeName = GraphModel.#deviceName(nodeAddr, devices);
+                const nodeAddr = addr
+                const nodeName = GraphModel.#deviceName(nodeAddr, devices)
                 neighborsList.forEach(neighbor => {
-                    const neighborAddr = neighbor.addr;
-                    const neighborName = GraphModel.#deviceName(neighborAddr, devices);
-                    const tooltip = GraphModel.#tooltip('Neighbor', {Affinity: neighbor.affinity, LQI: neighbor.lqi});
+                    const neighborAddr = neighbor.addr
+                    const neighborName = GraphModel.#deviceName(neighborAddr, devices)
+                    const tooltip = GraphModel.#tooltip('Neighbor', {Affinity: neighbor.affinity, LQI: neighbor.lqi})
                     this.addLink(
                         nodeAddr,       // source addr
                         nodeName,       // source name
@@ -1064,82 +1080,82 @@
                         'neighbor',     // link type
                         neighbor.lqi,   // link quality index
                         tooltip         // link label (tooltip)
-                    );
-                });
+                    )
+                })
             }
 
             // Enhance node properties
             devices.forEach(device => {
-                const node = this.nodes.find(node => node.addr === device.addr);
-                if (node === undefined) return;
-                node.talking = device.talking;
-                node.type = device.type;
-                node.error = device.error;
-                node.interviewTime = device.interviewTime;
-            });
-            return this;
+                const node = this.nodes.find(node => node.addr === device.addr)
+                if (node === undefined) return
+                node.talking = device.talking
+                node.type = device.type
+                node.error = device.error
+                node.interviewTime = device.interviewTime
+            })
+            return this
         }
 
         addLink(sourceAddr, sourceName, targetAddr, targetName, type, lqi, tooltip) {
-            this.addNode(sourceAddr, sourceName);
-            this.addNode(targetAddr, targetName);
+            this.addNode(sourceAddr, sourceName)
+            this.addNode(targetAddr, targetName)
 
             // Update existing link; if the case
-            const existingLink = this.links.find(link => link.sourceAddr === sourceAddr && link.targetAddr === targetAddr && link.type === type);
+            const existingLink = this.links.find(link => link.sourceAddr === sourceAddr && link.targetAddr === targetAddr && link.type === type)
             if (existingLink) {
-                existingLink.sourceName = sourceName;
-                existingLink.targetName = targetName;
-                existingLink.lqi = lqi;
-                existingLink.tooltip = tooltip;
-                return false;
+                existingLink.sourceName = sourceName
+                existingLink.targetName = targetName
+                existingLink.lqi = lqi
+                existingLink.tooltip = tooltip
+                return false
             }
 
             // Add new link
-            this.links.push({ sourceName, sourceAddr, targetName, targetAddr, type, lqi, tooltip });
-            return true;
+            this.links.push({ sourceName, sourceAddr, targetName, targetAddr, type, lqi, tooltip })
+            return true
         }
 
         addNode(addr, name) {
 
             // Update existing node; if the case
-            const existingNode = this.nodes.find(node => node.addr === addr);
+            const existingNode = this.nodes.find(node => node.addr === addr)
             if (existingNode) {
-                existingNode.name = name;
-                return;
+                existingNode.name = name
+                return
             }
 
             // Add new node
-            let tooltip = GraphModel.#tooltip(name, {Address: addr});
+            let tooltip = GraphModel.#tooltip(name, {Address: addr})
             if (addr === '0000') {
-                tooltip = GraphModel.#tooltip(name, {'Zigbee Coordinator': null});
+                tooltip = GraphModel.#tooltip(name, {'Zigbee Coordinator': null})
             }
-            this.nodes.push({ name, addr, tooltip });
+            this.nodes.push({ name, addr, tooltip })
         }
 
         removeLink(link) {
-            const idx = this.links.findIndex(oldLink => oldLink.sourceAddr === link.sourceAddr && oldLink.targetAddr === link.targetAddr && oldLink.type === link.type);
-            if (idx < 0) return false;
+            const idx = this.links.findIndex(oldLink => oldLink.sourceAddr === link.sourceAddr && oldLink.targetAddr === link.targetAddr && oldLink.type === link.type)
+            if (idx < 0) return false
 
             // Remove link, then the nodes
-            this.links.splice(idx, 1);
-            this.removeNode(link.sourceAddr);
-            this.removeNode(link.targetAddr);
-            return true;
+            this.links.splice(idx, 1)
+            this.removeNode(link.sourceAddr)
+            this.removeNode(link.targetAddr)
+            return true
         }
 
         removeNode(addr) {
-            const idx = this.nodes.findIndex(node => node.addr === addr);
-            if (idx < 0) return;
+            const idx = this.nodes.findIndex(node => node.addr === addr)
+            if (idx < 0) return
 
             // This node still has some links
-            if (this.links.some(link => link.sourceAddr === addr || link.targetAddr === addr)) return;
+            if (this.links.some(link => link.sourceAddr === addr || link.targetAddr === addr)) return
 
             // Remove node
-            this.nodes.splice(idx, 1);
+            this.nodes.splice(idx, 1)
         }
 
         merge(newData) {
-            let somethingChanged = false;
+            let somethingChanged = false
 
             // Add new links; if any
             newData.links.forEach(link => somethingChanged = this.addLink(
@@ -1150,55 +1166,55 @@
                 link.type,
                 link.lqi,
                 link.tooltip
-            ) || somethingChanged);
+            ) || somethingChanged)
 
             // Remove old links, if any
             this.links
                 .filter(link => !newData.links.some(newLink => link.sourceAddr === newLink.sourceAddr && link.targetAddr === newLink.targetAddr && link.type === newLink.type))
-                .forEach(deadLink => somethingChanged = this.removeLink(deadLink) || somethingChanged);
+                .forEach(deadLink => somethingChanged = this.removeLink(deadLink) || somethingChanged)
 
             // Update nodes
             this.nodes.forEach(node => {
-                const found = newData.nodes.find(newNode => newNode.addr === node.addr);
-                if (found === undefined) return;
+                const found = newData.nodes.find(newNode => newNode.addr === node.addr)
+                if (found === undefined) return
 
-                node.talking = found.talking;
-                if (found.type !== undefined) node.type = found.type;
-                node.error = found.error;
-                node.interviewTime = found.interviewTime;
-            });
+                node.talking = found.talking
+                if (found.type !== undefined) node.type = found.type
+                node.error = found.error
+                node.interviewTime = found.interviewTime
+            })
 
-            this.empty = false;
-            return somethingChanged;
+            this.empty = false
+            return somethingChanged
         }
     }
 
     class ZigbeeGraph {
         constructor(element, deviceRepository, configuration) {
-            this.deviceRepository = deviceRepository;
+            this.deviceRepository = deviceRepository
 
             // State variables
-            this.createdAt = null;
-            this.graphModel = new GraphModel();
-            this.eventListeners = {};
+            this.createdAt = null
+            this.graphModel = new GraphModel()
+            this.eventListeners = {}
 
-            this.highlightLinks = new Set();
-            this.highlightNodes = new Set();
-            this.colorsCache = {};
+            this.highlightLinks = new Set()
+            this.highlightNodes = new Set()
+            this.colorsCache = {}
 
-            this.showUnknown = true;
-            this.drawLqi = true;
+            this.showUnknown = true
+            this.drawLqi = true
 
             // Add event handlers
-            configuration.addEventListener('config', config => this.applyConfiguration(config));
+            configuration.addEventListener('config', config => this.applyConfiguration(config))
             deviceRepository.addEventListener('neighbors', () => {
-                const newGraphData = new GraphModel().load(deviceRepository.neighbors, deviceRepository.devices);
-                this.#render(newGraphData);
-            });
+                const newGraphData = new GraphModel().load(deviceRepository.neighbors, deviceRepository.devices)
+                this.#render(newGraphData)
+            })
             deviceRepository.addEventListener('devices', () => {
-                const newGraphData = new GraphModel().load(deviceRepository.neighbors, deviceRepository.devices);
-                this.#render(newGraphData);
-            });
+                const newGraphData = new GraphModel().load(deviceRepository.neighbors, deviceRepository.devices)
+                this.#render(newGraphData)
+            })
 
             // Init graph container
             this.graph = ForceGraph()(element)
@@ -1216,140 +1232,143 @@
                 .cooldownTime(5000)
                 .autoPauseRedraw(false)
                 .onNodeDragEnd(node => {
-                    node.fx = node.x;
-                    node.fy = node.y;
+                    node.fx = node.x
+                    node.fy = node.y
                 })
                 .onNodeRightClick(node => {
-                    deviceRepository.fetchNeighbors(node.addr, true);
+                    deviceRepository.fetchNeighbors(node.addr, true)
                 })
                 .onNodeClick(node => {
-                    node.fx = undefined;
-                    node.fy = undefined;
-                    this.graph.graphData(this.graph.graphData());
+                    node.fx = undefined
+                    node.fy = undefined
+                    this.graph.graphData(this.graph.graphData())
                 })
                 .onNodeHover(node => {
-                    this.highlightLinks.clear();
-                    this.highlightNodes.clear();
-                    if (!node) return;
-                    this.highlightNodes.add(node.addr);
+                    const tooltip = document.getElementsByClassName('graph-tooltip')[0]
+                    this.highlightLinks.clear()
+                    this.highlightNodes.clear()
+                    if (!node) {
+                        tooltip.classList.remove('tooltip-fade')
+                        //tooltip.style.opacity = 1.0
+                        return
+                    }
+
+                    tooltip.classList.add('tooltip-fade')
+                    //tooltip.style.opacity = 0.3
+
+                    this.highlightNodes.add(node.addr)
                     this.graphModel.links.forEach(link => {
                         if (link.sourceAddr === node.addr) {
-                            this.highlightLinks.add(link);
-                            this.highlightNodes.add(link.targetAddr);
+                            this.highlightLinks.add(link)
+                            this.highlightNodes.add(link.targetAddr)
                         }
-                    });
-                });
+                    })
+                })
 
             // Init node repulsion force 
-            this.graph.d3Force('charge').strength(() => -100);
+            this.graph.d3Force('charge').strength(() => -100)
         }
 
         addEventListener(eventName, callback) {
-            if (!Array.isArray(this.eventListeners[eventName])) this.eventListeners[eventName] = [];
-            this.eventListeners[eventName].push(callback);
+            if (!Array.isArray(this.eventListeners[eventName])) this.eventListeners[eventName] = []
+            this.eventListeners[eventName].push(callback)
         }
 
         #onNodesChange(nodes) {
-            const eventName = 'nodes';
-            if (!Array.isArray(this.eventListeners[eventName])) return;
-            this.eventListeners[eventName].forEach(eventListener => eventListener(nodes));
+            const eventName = 'nodes'
+            if (!Array.isArray(this.eventListeners[eventName])) return
+            this.eventListeners[eventName].forEach(eventListener => eventListener(nodes))
         }
 
         hasNode(addr) {
-            return this.graphModel.nodes.some(node => node.addr === addr);
+            return this.graphModel.nodes.some(node => node.addr === addr)
         }
 
         zoomToFit() {
-            this.graph.zoomToFit(500, 10);
+            this.graph.zoomToFit(500, 10)
         }
 
         zoomOn(addr) {
-            const node = this.graphModel.nodes.find(node => node.addr === addr);
-            if (!node) return;
+            const node = this.graphModel.nodes.find(node => node.addr === addr)
+            if (!node) return
 
-            this.graph.zoomToFit(350, 10);
+            this.graph.zoomToFit(350, 10)
             setTimeout(() => {
-                this.graph.centerAt(node.x, node.y, 1500);
-                this.graph.zoom(12, 2000);
-            }, 350);
+                this.graph.centerAt(node.x, node.y, 1500)
+                this.graph.zoom(12, 2000)
+            }, 350)
         }
 
         applyConfiguration(configuration) {
-            let refreshGraph = false;
+            let refreshGraph = false
 
             if (configuration.dots) {
-                this.graph.linkDirectionalParticles(1);
-                this.graph.linkDirectionalArrowLength(0);
+                this.graph.linkDirectionalParticles(1)
+                this.graph.linkDirectionalArrowLength(0)
             } else {
-                this.graph.linkDirectionalParticles(0);
-                this.graph.linkDirectionalArrowLength(3);
+                this.graph.linkDirectionalParticles(0)
+                this.graph.linkDirectionalArrowLength(3)
                 this.graph.linkDirectionalArrowRelPos(1)
             }
 
             if (configuration.duplex) {
-                this.graph.linkCurvature(0);
+                this.graph.linkCurvature(0)
             } else {
-                this.graph.linkCurvature('curvature');
+                this.graph.linkCurvature('curvature')
             }
 
-            if (configuration.duplex) {
-                this.graph.linkCurvature(0);
-            } else {
-                this.graph.linkCurvature('curvature');
-            }
-
-            const currentShowUnknown = this.showUnknown;
-            this.showUnknown = configuration.unknown;
+            const currentShowUnknown = this.showUnknown
+            this.showUnknown = configuration.unknown
             if (currentShowUnknown !== this.showUnknown) {
-                refreshGraph = true;
+                refreshGraph = true
             }
 
-            const currentDrawLqi = this.drawLqi;
-            this.drawLqi = configuration.lqi;
+            const currentDrawLqi = this.drawLqi
+            this.drawLqi = configuration.lqi
             if (currentDrawLqi !== this.drawLqi) {
-                refreshGraph = true;
+                refreshGraph = true
             }
 
-            const currentCharge = this.graph.d3Force('charge').strength()();
-            const newCharge = -1 * (configuration.charge + 1) * (configuration.charge + 1) * 50;
+            const currentCharge = this.graph.d3Force('charge').strength()()
+            const newCharge = -1 * (configuration.charge + 1) * (configuration.charge + 1) * 50
             if (currentCharge != newCharge) {
-                this.graph.d3Force('charge').strength(() => newCharge);
-                refreshGraph = true;
+                this.graph.d3Force('charge').strength(() => newCharge)
+                refreshGraph = true
             }
 
             // Refresh graph; if needed
-            if (refreshGraph) this.#render();
+            if (refreshGraph) this.#render()
         }
 
         #render(graphModel) {
 
             // #render() -> force refresh/reload graph with the same data
-            const needsRedraw = graphModel === undefined ? true : this.graphModel.merge(graphModel);
+            const needsRedraw = graphModel === undefined ? true : this.graphModel.merge(graphModel)
 
-            let data = this.graphModel.buildData(this.showUnknown);
+            let data = this.graphModel.buildData(this.showUnknown)
 
             // Init graph
             if (this.createdAt === null) {
-                console.log('First paint', data);
-                this.createdAt = new Date().valueOf();
-                this.graph.graphData(data);
+                //console.log('First paint', data)
+                this.createdAt = new Date().valueOf()
+                this.graph.graphData(data)
 
-                this.#onNodesChange(data.nodes);
-                return;
+                this.#onNodesChange(data.nodes)
+                return
             }
 
             // Redraw graph only if something changed
-            if (needsRedraw === false) return;
+            if (needsRedraw === false) return
 
-            console.log('Repainting graph', data);
-            this.graph.graphData(data);
-            this.#onNodesChange(data.nodes);
+            //console.log('Repainting graph', data)
+            this.graph.graphData(data)
+            this.#onNodesChange(data.nodes)
         }
 
         #translateDates(html) {
             return html.replace(/\$\{\d+\}/, matched => {
-                const date = new Date(parseInt(matched.substring(2, matched.length - 1)));
-                const formatter = new Intl.RelativeTimeFormat('en');
+                const date = new Date(parseInt(matched.substring(2, matched.length - 1)))
+                const formatter = new Intl.RelativeTimeFormat('en')
                 const ranges = {
                     years: 3600 * 24 * 365,
                     months: 3600 * 24 * 30,
@@ -1358,172 +1377,172 @@
                     hours: 3600,
                     minutes: 60,
                     seconds: 1
-                };
-                const secondsElapsed = (date.getTime() - Date.now()) / 1000;
+                }
+                const secondsElapsed = (date.getTime() - Date.now()) / 1000
                 for (let key in ranges) {
                     if (ranges[key] < Math.abs(secondsElapsed)) {
-                    const delta = secondsElapsed / ranges[key];
-                    return formatter.format(Math.round(delta), key);
+                    const delta = secondsElapsed / ranges[key]
+                    return formatter.format(Math.round(delta), key)
                     }
                 }
-            });
+            })
         }
 
         #nodePaint(node, ctx) {
-            const animateTime = 1000;
+            const animateTime = 1000
 
             // Pulse device under interview
-            let t = 0;
+            let t = 0
             if (node.talking) {
-                t = ((+new Date() - this.createdAt) % animateTime) / animateTime;
+                t = ((+new Date() - this.createdAt) % animateTime) / animateTime
                 if (t < 0.10) {
                     t = t * 10
                 } else {
-                    t = 1 - (t - 0.10) * 1.1111;
+                    t = 1 - (t - 0.10) * 1.1111
                 }
             }
 
             // Circle
-            const nodeColor = this.#nodeColor(node);
-            ctx.fillStyle = nodeColor;
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, 3 + 2 * t, 0, 2 * Math.PI, false);
-            ctx.fill();
+            const nodeColor = this.#nodeColor(node)
+            ctx.fillStyle = nodeColor
+            ctx.beginPath()
+            ctx.arc(node.x, node.y, 3 + 2 * t, 0, 2 * Math.PI, false)
+            ctx.fill()
 
-            ctx.lineWidth = 0.2;
-            ctx.strokeStyle = this.#adjustColor(ctx.fillStyle, -30);
-            ctx.stroke();
+            ctx.lineWidth = 0.2
+            ctx.strokeStyle = this.#adjustColor(ctx.fillStyle, -30)
+            ctx.stroke()
 
             if (node.talking === true || node.talking === false) {
-                ctx.fillStyle = this.#adjustColor(ctx.fillStyle, 40);
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, 1 + 2 * t, 0, 2 * Math.PI, false);
-                ctx.fill();
+                ctx.fillStyle = this.#adjustColor(ctx.fillStyle, 40)
+                ctx.beginPath()
+                ctx.arc(node.x, node.y, 1 + 2 * t, 0, 2 * Math.PI, false)
+                ctx.fill()
             }
 
             // Text
-            ctx.fillStyle = UI.colors().TextColor + (nodeColor.length === 7 ? '' : nodeColor.substring(7));
-            ctx.font = '3px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(node.name, node.x, node.y + 5);
+            ctx.fillStyle = UI.colors().TextColor + (nodeColor.length === 7 ? '' : nodeColor.substring(7))
+            ctx.font = '3px sans-serif'
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'middle'
+            ctx.fillText(node.name, node.x, node.y + 5)
         }
 
         #nodeColor(node) {
-            const colors = UI.colors();
-            const alpha = this.highlightLinks.size === 0 || this.highlightNodes.has(node.addr) ? '' : '44';
+            const colors = UI.colors()
+            const alpha = this.highlightLinks.size === 0 || this.highlightNodes.has(node.addr) ? '' : '44'
 
-            if (node.error !== undefined) return colors.Magenta + alpha;
+            if (node.error !== undefined) return colors.Magenta + alpha
             return {
                 'Zigbee Router': colors.Blue + alpha,
                 'Zigbee End Device': colors.Green + alpha,
                 'Zigbee Coordinator': colors.Orange + alpha
-            }[node.type] || colors.Violet + alpha;
+            }[node.type] || colors.Violet + alpha
         }
 
         #linkColor(link) {
-            const colors = UI.colors();
-            const alpha = this.highlightLinks.size === 0 || this.highlightLinks.has(link) ? '' : '44';
+            const colors = UI.colors()
+            const alpha = this.highlightLinks.size === 0 || this.highlightLinks.has(link) ? '' : '44'
 
-            if (this.drawLqi === false) return colors.TextColorDarker + alpha;
+            if (this.drawLqi === false) return colors.TextColorDarker + alpha
 
-            if (link.lqi >= 220) return colors.Green + alpha;
-            if (link.lqi >= 200) return colors.Cyan + alpha;
-            if (link.lqi >= 150) return colors.Blue + alpha;
-            if (link.lqi >= 50) return colors.Yellow + alpha;
-            return colors.Red + alpha;
+            if (link.lqi >= 220) return colors.Green + alpha
+            if (link.lqi >= 200) return colors.Cyan + alpha
+            if (link.lqi >= 150) return colors.Blue + alpha
+            if (link.lqi >= 50) return colors.Yellow + alpha
+            return colors.Red + alpha
         }
 
         #adjustColor(color, amount) {
 
             // This method is called pretty often, try to cache its results
-            const cacheKey = `_${color}-${amount}`;
-            if (this.colorsCache.hasOwnProperty(cacheKey)) return this.colorsCache[cacheKey];
+            const cacheKey = `_${color}-${amount}`
+            if (this.colorsCache.hasOwnProperty(cacheKey)) return this.colorsCache[cacheKey]
 
             if (color.startsWith('rgba(')) {
                 const newColor = 'rgba(' + color.substring(5, color.length - 1)
                     .split(',')
                     .map(val => val.trim())
                     .map((val, idx) => {
-                        if (idx === 3) return val;
-                        return Math.min(255, parseInt(val) + amount);
+                        if (idx === 3) return val
+                        return Math.min(255, parseInt(val) + amount)
                     })
-                    .join(', ') + ')';
-                    this.colorsCache[cacheKey] = newColor;
-                    return newColor;
+                    .join(', ') + ')'
+                    this.colorsCache[cacheKey] = newColor
+                    return newColor
             }
 
-            const newColor = '#' + color.replace(/^#/, '').replace(/../g, color => ('0' + Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
-            this.colorsCache[cacheKey] = newColor;
-            return newColor;
+            const newColor = '#' + color.replace(/^#/, '').replace(/../g, color => ('0' + Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2))
+            this.colorsCache[cacheKey] = newColor
+            return newColor
         }
     }
 
     class Configuration {
         constructor() {
-            this.accessToken = undefined;
-            this.dots = true;
-            this.duplex = false;
-            this.lqi = true;
-            this.unknown = true;
-            this.dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            this.charge = 0;
+            this.accessToken = undefined
+            this.dots = true
+            this.duplex = false
+            this.lqi = true
+            this.unknown = true
+            this.dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+            this.charge = 0
 
             // Event listeners
-            this.eventListeners = {};
+            this.eventListeners = {}
         }
 
         addEventListener(eventName, callback) {
-            if (!Array.isArray(this.eventListeners[eventName])) this.eventListeners[eventName] = [];
-            this.eventListeners[eventName].push(callback);
+            if (!Array.isArray(this.eventListeners[eventName])) this.eventListeners[eventName] = []
+            this.eventListeners[eventName].push(callback)
         }
 
         #onConfigChange() {
-            const eventName = 'config';
-            if (!Array.isArray(this.eventListeners[eventName])) return;
-            this.eventListeners[eventName].forEach(eventListener => eventListener(this));
+            const eventName = 'config'
+            if (!Array.isArray(this.eventListeners[eventName])) return
+            this.eventListeners[eventName].forEach(eventListener => eventListener(this))
         }
 
         loadFromURL() {
-            const params = new URLSearchParams(window.location.search);
+            const params = new URLSearchParams(window.location.search)
 
             // Access Token
-            const accessToken = params.get('access_token');
-            if (accessToken != null) this.accessToken = accessToken;
+            const accessToken = params.get('access_token')
+            if (accessToken != null) this.accessToken = accessToken
 
             // Link particles
-            const showDots = params.get('dots');
-            if (showDots != null) this.dots = showDots !== 'false';
+            const showDots = params.get('dots')
+            if (showDots != null) this.dots = showDots !== 'false'
 
             // Duplex links
-            const showDuplex = params.get('duplex');
-            if (showDuplex != null) this.duplex = showDuplex === 'true';
+            const showDuplex = params.get('duplex')
+            if (showDuplex != null) this.duplex = showDuplex === 'true'
 
             // Draw LQI colors
-            const showLqi = params.get('lqi');
-            if (showLqi != null) this.lqi = showLqi !== 'false';
+            const showLqi = params.get('lqi')
+            if (showLqi != null) this.lqi = showLqi !== 'false'
 
 
             // Hide "Unknown" devices
-            const showUnknown = params.get('unknown');
-            if (showUnknown != null) this.unknown = showUnknown !== 'false';
+            const showUnknown = params.get('unknown')
+            if (showUnknown != null) this.unknown = showUnknown !== 'false'
 
             // Dark mode
-            const darkTheme = params.get('dark');
-            if (darkTheme != null) this.dark = darkTheme === 'true';
+            const darkTheme = params.get('dark')
+            if (darkTheme != null) this.dark = darkTheme === 'true'
 
             // Nodes charge
-            const charge = parseInt(params.get('charge'));
-            this.charge = (isNaN(charge) || charge < 0 || charge > 9) ? 0 : charge;
+            const charge = parseInt(params.get('charge'))
+            this.charge = (isNaN(charge) || charge < 0 || charge > 9) ? 0 : charge
 
             // Notify outside world of the changes
-            this.#onConfigChange();
+            this.#onConfigChange()
         }
     }
 
     class UI {
         static colors() {
-            const css = getComputedStyle(document.documentElement);
+            const css = getComputedStyle(document.documentElement)
             return {
                 BgColorDarker: css.getPropertyValue('--bg-color-darker'),
                 TextColor: css.getPropertyValue('--text-color'),
@@ -1537,164 +1556,165 @@
                 Cyan: css.getPropertyValue('--Cyan'),
                 Green: css.getPropertyValue('--Green'),
                 Gray: css.getPropertyValue('--Gray')
-            };
+            }
         }
 
         constructor(deviceRepository, zigbeeGraph, configuration) {
-            this.deviceRepository = deviceRepository;
-            this.zigbeeGraph = zigbeeGraph;
-            this.configuration = configuration;
+            this.deviceRepository = deviceRepository
+            this.zigbeeGraph = zigbeeGraph
+            this.configuration = configuration
 
-            this.deviceFilter = '';
-            const searchField = document.getElementById('device-search');
+            this.deviceFilter = ''
+            const searchField = document.getElementById('device-search')
             window.addEventListener('load', () => {
-                searchField.value = '';
+                searchField.value = ''
                 searchField.setAttribute('placeholder', '-- click here to search device --')
                 searchField.addEventListener('keyup', event => {
                     if (event.keyCode === 27) {
-                        searchField.value = '';
+                        searchField.value = ''
                     }
 
-                    this.search(searchField.value.toLowerCase());
-                });
+                    this.search(searchField.value.toLowerCase())
+                })
 
-                searchField.addEventListener('focus', event => searchField.setAttribute('placeholder', ''));
-                searchField.addEventListener('blur', event => searchField.setAttribute('placeholder', '-- click here to search device --'));
+                searchField.addEventListener('focus', event => searchField.setAttribute('placeholder', ''))
+                searchField.addEventListener('blur', event => searchField.setAttribute('placeholder', '-- click here to search device --'))
 
                 document.getElementById('config-form').addEventListener('change', () => {
-                    this.applyConfiguration();
-                    configuration.loadFromURL();
-                });
+                    this.applyConfiguration()
+                    configuration.loadFromURL()
+                })
 
                 document.getElementById('conf-layout').addEventListener('change', () => {
-                    this.#applyHomeLayout();
-                });
+                    this.#applyHomeLayout()
+                })
 
                 document.body.addEventListener('keydown', e => {
-                    if (e.key !== 'Escape') return;
-                    if (document.body.classList.toggle('embedded'));
-                });
+                    if (e.key !== 'Escape') return
+                    document.body.classList.toggle('embedded')
+                })
 
                 // Embeddable
                 if (window.location.href.includes('embed=true')) {
-                    document.body.classList.add('embedded');
+                    document.body.classList.add('embedded')
                 }
-            });
+            })
 
             // Setup event handlers
-            zigbeeGraph.addEventListener('nodes', nodes => this.#repaintNodesCount(nodes));
-            deviceRepository.addEventListener('devices', devices => this.#repaintDevicesList(devices));
-            deviceRepository.addEventListener('queue', queue => this.#repaintInterviewQueue(queue));
-            configuration.addEventListener('config', config => this.#repaintConfiguration(config));
+            zigbeeGraph.addEventListener('nodes', nodes => this.#repaintNodesCount(nodes))
+            deviceRepository.addEventListener('devices', devices => this.#repaintDevicesList(devices))
+            deviceRepository.addEventListener('queue', queue => this.#repaintInterviewQueue(queue))
+            configuration.addEventListener('config', config => this.#repaintConfiguration(config))
         }
 
         search(deviceFilter) {
-            this.deviceFilter = deviceFilter;
-            const rows = document.getElementById('zigbee-devices-list').rows;
+            this.deviceFilter = deviceFilter
+            const rows = document.getElementById('zigbee-devices-list').rows
             
             for(let idx = 0; idx < rows.length; idx++) {
-                const row = rows.item(idx);
-                row.style.display = this.deviceFilter === '' || row.innerText.toLowerCase().includes(this.deviceFilter) ? 'table-row' : 'none';
+                const row = rows.item(idx)
+                row.style.display = this.deviceFilter === '' || row.innerText.toLowerCase().includes(this.deviceFilter) ? 'table-row' : 'none'
             }
         }
 
         #repaintNodesCount(nodes) {
-            document.getElementById('nodesCount').innerText = `${nodes.length - 1}`;
+            document.getElementById('nodesCount').innerText = `${nodes.length - 1}`
         }
 
         #repaintConfiguration(config) {
-            document.getElementById('conf-dots').checked = config.dots;
-            document.getElementById('conf-duplex').checked = config.duplex;
-            document.getElementById('conf-lqi').checked = config.lqi;
-            document.getElementById('conf-unknown').checked = config.unknown;
-            document.getElementById('conf-dark').checked = config.dark;
-            document.getElementById('conf-charge').value = config.charge % 11;
+            document.getElementById('conf-dots').checked = config.dots
+            document.getElementById('conf-duplex').checked = config.duplex
+            document.getElementById('conf-lqi').checked = config.lqi
+            document.getElementById('conf-unknown').checked = config.unknown
+            document.getElementById('conf-dark').checked = config.dark
+            document.getElementById('conf-charge').value = config.charge % 11
 
-            document.documentElement.setAttribute('data-theme', config.dark ? 'dark' : 'light');
-            document.querySelector('meta[name="theme-color"]').setAttribute('content',  UI.colors().BgColorDarker);
+            document.documentElement.setAttribute('data-theme', config.dark ? 'dark' : 'light')
+            document.querySelector('meta[name="theme-color"]').setAttribute('content',  UI.colors().BgColor)
         }
 
         #repaintInterviewQueue(queue) {
-            if (queue.length === 0) return document.getElementById('interview-queue').innerText = 'Interview Queue: empty';
-            document.getElementById('interview-queue').innerHTML = `Interview Queue (${queue.length}): [${queue.map((device, idx) => idx === 0 ? `<span style="color:var(--Red)">▸${device.addr}◂</span>` : device.addr).join(', ')}]`;
+            if (queue.length === 0) return document.getElementById('interview-queue').innerText = 'Interview Queue: empty'
+            document.getElementById('interview-queue').innerHTML = `Interview Queue (${queue.length}): [${queue.map((device, idx) => idx === 0 ? `<span style="color:var(--Red)">▸${device.addr}◂</span>` : device.addr).join(', ')}]`
         }
 
         #repaintDevicesList(devices) {
-            document.getElementById('devicesCount').innerText = `${devices.length}`;
+            document.getElementById('devicesCount').innerText = `${devices.length - 1}`
 
             // Update devices list
-            const tbl = document.getElementById('zigbee-devices-list');
-            while (tbl.rows.length > 0) tbl.deleteRow(0);
+            const tbl = document.getElementById('zigbee-devices-list')
+            while (tbl.rows.length > 0) tbl.deleteRow(0)
             devices
+                .filter(device => device.addr !== '0000')
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .forEach(device => {
-                    const row = tbl.insertRow();
-                    let link = document.createElement('a');
-                    link.setAttribute('title', 'Click to add this device to the Interview Queue');
-                    link.setAttribute('href', `javascript:deviceRepository.fetchNeighbors('${device.addr}', true)`);
-                    link.innerText = device.addr;
-                    row.insertCell().appendChild(link);
+                    const row = tbl.insertRow()
+                    let link = document.createElement('a')
+                    link.setAttribute('title', 'Click to add this device to the Interview Queue')
+                    link.setAttribute('href', `javascript:deviceRepository.fetchNeighbors('${device.addr}', true)`)
+                    link.innerText = device.addr
+                    row.insertCell().appendChild(link)
 
-                    const found = this.zigbeeGraph.hasNode(device.addr);
+                    const found = this.zigbeeGraph.hasNode(device.addr)
                     if (!found) {
-                        const cell = row.insertCell();
-                        cell.appendChild(document.createTextNode('⛔'));
+                        const cell = row.insertCell()
+                        cell.appendChild(document.createTextNode('⛔'))
                         cell.classList.add('device-missing')
                     } else {
-                        link = document.createElement('a');
-                        link.setAttribute('title', 'Click to zoom map on this device');
-                        link.setAttribute('href', `javascript:zigbeeGraph.zoomOn('${device.addr}')`);
-                        link.innerText = '👁️';
-                        row.insertCell().appendChild(link);
+                        link = document.createElement('a')
+                        link.setAttribute('title', 'Click to zoom map on this device')
+                        link.setAttribute('href', `javascript:zigbeeGraph.zoomOn('${device.addr}')`)
+                        link.innerText = '👁️'
+                        row.insertCell().appendChild(link)
                     }
 
-                    link = document.createElement('a');
-                    link.setAttribute('href', `/device/edit/${device.link}`);
-                    link.setAttribute('target', '_blank');
-                    link.setAttribute('rel', 'noopener noreferrer');
-                    link.innerText = device.name;
-                    row.insertCell().appendChild(link);
+                    link = document.createElement('a')
+                    link.setAttribute('href', `/device/edit/${device.link}`)
+                    link.setAttribute('target', '_blank')
+                    link.setAttribute('rel', 'noopener noreferrer')
+                    link.innerText = device.name
+                    row.insertCell().appendChild(link)
 
                     // Apply filtering
                     if (this.deviceFilter !== '') {
-                        row.style.display = row.innerText.toLowerCase().includes(this.deviceFilter) ? 'table-row' : 'none';
+                        row.style.display = row.innerText.toLowerCase().includes(this.deviceFilter) ? 'table-row' : 'none'
                     }
-                });
+                })
         }
 
         #applyHomeLayout() {
-            const files = document.getElementById('conf-layout').files;
-            if (files.length !== 1) return;
-            document.getElementById('home-layout').style.backgroundImage = `url(${URL.createObjectURL(files[0])})`;
+            const files = document.getElementById('conf-layout').files
+            if (files.length !== 1) return
+            document.getElementById('home-layout').style.backgroundImage = `url(${URL.createObjectURL(files[0])})`
         }
 
         applyConfiguration() {
-            var searchParams = new URLSearchParams();
+            var searchParams = new URLSearchParams()
 
-            const params = new URLSearchParams(window.location.search);
-            const accessToken = params.get('access_token');
-            if (accessToken) searchParams.set('access_token', accessToken);
+            const params = new URLSearchParams(window.location.search)
+            const accessToken = params.get('access_token')
+            if (accessToken) searchParams.set('access_token', accessToken)
 
-            const dots = document.getElementById('conf-dots').checked;
-            searchParams.set('dots', dots);
+            const dots = document.getElementById('conf-dots').checked
+            searchParams.set('dots', dots)
 
-            const duplex = document.getElementById('conf-duplex').checked;
-            searchParams.set('duplex', duplex);
+            const duplex = document.getElementById('conf-duplex').checked
+            searchParams.set('duplex', duplex)
 
-            const lqi = document.getElementById('conf-lqi').checked;
-            searchParams.set('lqi', lqi);
+            const lqi = document.getElementById('conf-lqi').checked
+            searchParams.set('lqi', lqi)
 
-            const unknown = document.getElementById('conf-unknown').checked;
-            searchParams.set('unknown', unknown);
+            const unknown = document.getElementById('conf-unknown').checked
+            searchParams.set('unknown', unknown)
 
-            const dark = document.getElementById('conf-dark').checked;
-            searchParams.set('dark', dark);
+            const dark = document.getElementById('conf-dark').checked
+            searchParams.set('dark', dark)
 
-            const charge = document.getElementById('conf-charge').value;
-            searchParams.set('charge', charge);
+            const charge = document.getElementById('conf-charge').value
+            searchParams.set('charge', charge)
 
-            var goto = window.location.pathname + '?' + searchParams.toString();
-            history.pushState(null, '', goto);
+            var goto = window.location.pathname + '?' + searchParams.toString()
+            history.pushState(null, '', goto)
         }
     }
 
@@ -1703,29 +1723,29 @@
     /////////////////////////////////////////////////////////////////
 
     // Init instances
-    const configuration = new Configuration();
-    const hubitatConnection = new HubitatConnection(configuration);
-    const deviceRepository = new DeviceRepository(hubitatConnection);
-    const zigbeeGraph = new ZigbeeGraph(document.getElementById('graph'), deviceRepository, configuration);
-    const ui = new UI(deviceRepository, zigbeeGraph, configuration);
+    const configuration = new Configuration()
+    const hubitatConnection = new HubitatConnection(configuration)
+    const deviceRepository = new DeviceRepository(hubitatConnection)
+    const zigbeeGraph = new ZigbeeGraph(document.getElementById('graph'), deviceRepository, configuration)
+    const ui = new UI(deviceRepository, zigbeeGraph, configuration)
 
     // On page load
     window.addEventListener('load', () => {
 
         try {
-            configuration.loadFromURL();
-            hubitatConnection.init();
+            configuration.loadFromURL()
+            hubitatConnection.init()
 
-            window.ondblclick = () => zigbeeGraph.zoomToFit();
+            window.ondblclick = () => zigbeeGraph.zoomToFit()
 
             // Once the devices list is loaded, start poking at the hub
             deviceRepository.fetchKnownDevices().then(_ => {
-                deviceRepository.fetchNeighbors('0000');
-            });
+                deviceRepository.fetchNeighbors('0000')
+            })
         } catch (ex) {
-            alert(ex.message);
+            alert(ex.message)
         }
-    });
+    })
     </script>
 </body>
 </html>

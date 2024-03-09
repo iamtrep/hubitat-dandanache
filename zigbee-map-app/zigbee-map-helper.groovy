@@ -7,14 +7,14 @@ import groovy.transform.Field
 import hubitat.helper.HexUtils
 
 @Field static final String DRIVER_NAME = "Zigbee Map Helper"
-@Field static final String DRIVER_VERSION = "1.5.0"
+@Field static final String DRIVER_VERSION = "2.0.0"
 
 metadata {
     definition(
         name: DRIVER_NAME,
         namespace: "dandanache",
         author: "Dan Danache",
-        importUrl: "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_${DRIVER_VERSION}/zigbee-map-app/zigbee-map-helper.groovy"
+        importUrl: "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_2.0.0/zigbee-map-app/zigbee-map-helper.groovy"
     ) {
         capability "Actuator"
         attribute "poked", "string"
@@ -35,10 +35,18 @@ def updated() {
    if (logEnable) runIn(1800, "logsOff")
 }
 
-String poke(String addr, Integer startIndex = 0) {
+String interviewNeighbors(String addr, Integer startIndex = 0) {
     List<String> cmds = ["he raw 0x${addr} 0x00 0x00 0x0031 {40 ${HexUtils.integerToHexString(startIndex, 1)}} {0x0000}"]
     if (logEnable) log.debug "◀ Sending Zigbee messages: ${cmds}"
     sendHubCommand new hubitat.device.HubMultiAction(cmds, hubitat.device.Protocol.ZIGBEE)
-    sendEvent name:"poked", value:"${addr}:${startIndex}", descriptionText:"Poking ${addr}:${startIndex}"
+    sendEvent name:"poked", value:"${addr}:${startIndex}", descriptionText:"Poking ${addr}:${startIndex} for neighbors"
+    return "Done"
+}
+
+String interviewRoutes(String addr, Integer startIndex = 0) {
+    List<String> cmds = ["he raw 0x${addr} 0x00 0x00 0x0032 {40 ${HexUtils.integerToHexString(startIndex, 1)}} {0x0000}"]
+    if (logEnable) log.debug "◀ Sending Zigbee messages: ${cmds}"
+    sendHubCommand new hubitat.device.HubMultiAction(cmds, hubitat.device.Protocol.ZIGBEE)
+    sendEvent name:"poked", value:"${addr}:${startIndex}", descriptionText:"Poking ${addr}:${startIndex} for routes"
     return "Done"
 }

@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2024-03-09
+
+### Changed
+- **Breaking change**: Some files were renamed therefore your bookmarks or PWA installs might be broken
+
+### Added
+- Add Zigbee routes map - `@Tony`
+- Fade-out the nodes tooltip to see better how things are connected - `@danabw`
+
 ## [1.5.0] - 2024-02-23
 ### Added
 - Add config option to show/hide link colors
