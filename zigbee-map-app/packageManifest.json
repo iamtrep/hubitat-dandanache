@@ -1,7 +1,7 @@
 {
     "packageName": "Zigbee Map",
     "version": "2.0.0",
-    "releaseNotes": "v2.0.0\n- Breaking change: Some files were renamed therefore your bookmarks or PWA installs might be broken\n - Add Zigbee routes map - @Tony\n - Fade-out the nodes tooltip to see better how things are connected - @danabw",
+    "releaseNotes": "v2.0.0\n - Breaking change: Some files were renamed therefore your bookmarks or PWA installs might be broken\n - Add Zigbee routes map - @Tony\n - Fade-out the nodes tooltip to see better how things are connected - @danabw",
     "minimumHEVersion": "2.3.8.117",
     "author": "Dan Danache (@dandanache)",
     "dateReleased": "2024-03-09",
