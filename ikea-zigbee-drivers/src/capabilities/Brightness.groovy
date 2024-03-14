@@ -56,7 +56,7 @@ if (turnOnBehavior == "FIXED_VALUE") {
         name: "onLevelValue",
         type: "number",
         title: "Fixed brightness value",
-        description: "<small>Range 1~100</small>",
+        description: "<small>Range 1..100</small>",
         defaultValue: 50,
         range: "1..100",
         required: true
@@ -218,7 +218,6 @@ Log.info "🛠️ prestaging = ${prestaging}"
 sendEvent name:"level", value:"100", type:"digital", descriptionText:"Brightness initialized to 100%"
 cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0008 {${device.zigbeeId}} {}" // Level Control cluster
 cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0008 0x0000 0x20 0x0000 0x0258 {01} {}" // Report CurrentLevel (uint8) at least every 10 minutes (Δ = 1)
-cmds += zigbee.readAttribute(0x0008, 0x0000) // CurrentLevel
 {{/ @configure }}
 {{!--------------------------------------------------------------------------}}
 {{# @events }}

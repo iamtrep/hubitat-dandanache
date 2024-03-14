@@ -29,7 +29,7 @@ device:
         - { cluster: '0x0000', attr: '0x0031', type: '0x19', value: '0x0B00', mfgCode: '0x100B', description: 'Philips magic attribute' }
     - file: src/capabilities/ReleasableButton.groovy
     - file: src/capabilities/FirmwareUpdate.groovy
-    - file: src/devices/RDM001/RDM001_SwitchStyle.groovy
+    - file: src/devices/RDM001/RDM001.groovy
 
 zigbee:
   fingerprints:

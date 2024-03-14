@@ -18,7 +18,12 @@ metadata {
     definition(name:DRIVER_NAME, namespace:"{{ driver.namespace }}", author:"{{ driver.author }}", importUrl:"{{ device.importUrl }}") {
         capability "Configuration"
         {{# device.capabilities }}
+        {{#name}}
+        capability "{{ name }}"
+        {{/name}}
+        {{# file }}
         {{> file@definition }}
+        {{/ file }}
         {{/ device.capabilities }}
         {{# zigbee.fingerprints }}
 
@@ -38,7 +43,7 @@ metadata {
             name: "logLevel",
             type: "enum",
             title: "Log verbosity",
-            description: "<small>Choose the kind of messages that appear in the \"Logs\" section.</small>",
+            description: "<small>Select what type of messages appear in the \"Logs\" section.</small>",
             options: [
                 "1" : "Debug - log everything",
                 "2" : "Info - log important events",
@@ -76,11 +81,12 @@ def updated(auto = false) {
         device.updateSetting("logLevel", [value:logLevel, type:"enum"])
     }
     if (logLevel == "1") runIn 1800, "logsOff"
-    Log.info "🛠️ logLevel = ${logLevel}"
+    Log.info "🛠️ logLevel = ${["1":"Debug", "2":"Info", "3":"Warning", "4":"Error"].get(logLevel)}"
     {{# device.capabilities }}
     {{> file@updated }}
     {{/ device.capabilities }}
 
+    if (auto) return cmds
     Utils.sendZigbeeCommands cmds
 }
 
@@ -110,7 +116,8 @@ def configure(auto = false) {
     }
 
     // Apply preferences first
-    updated(true)
+    List<String> cmds = []
+    cmds += updated(true)
 
     // Clear data (keep firmwareMT information though)
     device.getData()?.collect { it.key }.each { if (it != "firmwareMT") device.removeDataValue it }
@@ -121,11 +128,9 @@ def configure(auto = false) {
     state.lastRx = 0
     state.lastCx = DRIVER_VERSION
 
-    List<String> cmds = []
-
     // Configure {{ device.model }} specific Zigbee reporting
     {{# zigbee.reporting }}
-    cmds += zigbee.configureReporting({{ cluster }}, {{ attribute }}, {{ type }}, {{ min }}, {{ max }}, {{ delta }}) // {{ reason }}
+    cmds += "he cr 0x${device.deviceNetworkId} {{ endpoint }} {{ cluster }} {{ attr }} {{ type }} {{ min }} {{ max }} {00} {}" // {{ reason }}
     {{/ zigbee.reporting }}
     {{^ zigbee.reporting }}
     // -- No reporting needed
@@ -146,12 +151,12 @@ def configure(auto = false) {
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x0005, 0x000A, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, ModelIdentifier, ProductCode, SWBuildID
     Utils.sendZigbeeCommands cmds
 
-    Log.info "Configuration done; refreshing device current state in 10 seconds ..."
-    runIn(10, "tryToRefresh")
+    Log.info "Configuration done; refreshing device current state in 7 seconds ..."
+    runIn 7, "tryToRefresh"
 }
 private autoConfigure() {
     Log.warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
-    configure(true)
+    configure true
 }
 {{# device.capabilities }}
 {{> file@implementation }}
@@ -171,11 +176,15 @@ def parse(String description) {
     }
 
     // Extract msg
-    def msg = zigbee.parseDescriptionAsMap description
+    def msg = [:]
+    if (description.startsWith("zone status")) msg += [ clusterInt:0x500, commandInt:0x00, isClusterSpecific:true ]
+    if (description.startsWith("enroll request")) msg += [ clusterInt:0x500, commandInt:0x01, isClusterSpecific:true ]
+
+    msg += zigbee.parseDescriptionAsMap description
     if (msg.containsKey("endpoint")) msg.endpointInt = Integer.parseInt(msg.endpoint, 16)
     if (msg.containsKey("sourceEndpoint")) msg.endpointInt = Integer.parseInt(msg.sourceEndpoint, 16)
-    if (msg.clusterInt == null) msg.clusterInt = Integer.parseInt(msg.cluster, 16)
-    msg.commandInt = Integer.parseInt(msg.command, 16)
+    if (msg.containsKey("cluster")) msg.clusterInt = Integer.parseInt(msg.cluster, 16)
+    if (msg.containsKey("command")) msg.commandInt = Integer.parseInt(msg.command, 16)
     Log.debug "msg=[${msg}]"
 
     state.lastRx = now()
@@ -213,21 +222,23 @@ def parse(String description) {
             Log.warn "Rejoined the Zigbee mesh; refreshing device state in 3 seconds ..."
             return runIn(3, "tryToRefresh")
 
-        // Read Attributes Response (Basic cluster)
+        // Report/Read Attributes Response (Basic cluster)
         case { contains it, [clusterInt:0x0000, commandInt:0x01] }:
-            Utils.processedZclMessage("Read Attributes Response", "cluster=0x${msg.cluster}, attribute=0x${msg.attrId}, value=${msg.value}")
+        case { contains it, [clusterInt:0x0000, commandInt:0x0A] }:
             Utils.zigbeeDataValue(msg.attrInt, msg.value)
             msg.additionalAttrs?.each { Utils.zigbeeDataValue(it.attrInt, it.value) }
-            return
+            return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "cluster=0x${msg.cluster}, attribute=0x${msg.attrId}, value=${msg.value}")
 
         // Mgmt_Leave_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8034, commandInt:0x00] }:
             return Log.warn("Device is leaving the Zigbee mesh. See you later, Aligator!")
 
         // Ignore the following Zigbee messages
-        case { contains it, [commandInt:0x0A] }:                                       // ZCL: Attribute report we don't care about (configured by other driver)
+        case { contains it, [commandInt:0x0A, isClusterSpecific:false] }:              // ZCL: Attribute report we don't care about (configured by other driver)
+        case { contains it, [commandInt:0x0B, isClusterSpecific:false] }:              // ZCL: Default Response
         case { contains it, [clusterInt:0x0003, commandInt:0x01] }:                    // ZCL: Identify Query Command
         case { contains it, [endpointInt:0x00, clusterInt:0x8001, commandInt:0x00] }:  // ZDP: IEEE_addr_rsp
+        case { contains it, [endpointInt:0x00, clusterInt:0x8004, commandInt:0x00] }:  // ZDP: Simple_Desc_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8005, commandInt:0x00] }:  // ZDP: Active_EP_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x0006, commandInt:0x00] }:  // ZDP: MatchDescriptorRequest
         case { contains it, [endpointInt:0x00, clusterInt:0x8021, commandInt:0x00] }:  // ZDP: Mgmt_Bind_rsp
@@ -246,7 +257,7 @@ def parse(String description) {
 // Logging helpers (something like this should be part of the SDK and not implemented by each driver)
 // ===================================================================================================================
 
-@Field def Map Log = [
+@Field Map Log = [
     debug: { if (logLevel == "1") log.debug "${device.displayName} ${it.uncapitalize()}" },
     info:  { if (logLevel <= "2") log.info  "${device.displayName} ${it.uncapitalize()}" },
     warn:  { if (logLevel <= "3") log.warn  "${device.displayName} ${it.uncapitalize()}" },
@@ -276,6 +287,7 @@ def parse(String description) {
     },
 
     dataValue: { String key, String value ->
+        if (value == null || value == "") return
         Log.debug "Update data value: ${key}=${value}"
         updateDataValue key, value
     },
@@ -307,5 +319,5 @@ private boolean contains(Map msg, Map spec) {
 
 // Call refresh() if available
 private tryToRefresh() {
-    try { refresh(false) } catch(e) {}
+    try { refresh(false) } catch(ex) {}
 }

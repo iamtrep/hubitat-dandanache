@@ -8,7 +8,7 @@ device:
   - https://static.homesmart.ikea.com/releaseNotes/
 
   capabilities:
-    - file: src/capabilities/AirPurifier.groovy
+    - file: src/devices/E2006/AirPurifier.groovy
     - file: src/capabilities/HealthCheck.groovy
       params:
         schedule: 0 0 0/1 ? * * *
@@ -35,6 +35,3 @@ zigbee:
 
   - firmwares: 1.1.001 (117C-110C-00011001)
     value: fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0003,0004,0005,0202,FC57,FC7C,FC7D", outClusters:"0019,0400,042A", model:"STARKVIND Air purifier table", manufacturer:"IKEA of Sweden"
-
-  messages:
-  - file: src/devices/E2006/events.groovy

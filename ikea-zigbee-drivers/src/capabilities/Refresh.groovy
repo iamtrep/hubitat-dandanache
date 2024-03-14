@@ -13,12 +13,13 @@ def refresh(buttonPress = true) {
             Log.warn '[IMPORTANT] Click the "Refresh" button immediately after pushing any button on the device in order to first wake it up!'
         }
     }
+
     List<String> cmds = []
     {{# params.readAttributes }}
-    cmds += zigbee.readAttribute({{ cluster }}, {{ attr }}{{# mfgCode }}, [mfgCode:"{{ mfgCode }}"]{{/ mfgCode }}{{# endpoint }}, [destEndpoint:{{ endpoint }}]{{/ endpoint }}) // {{ description }}
+    cmds += zigbee.readAttribute({{ cluster }}, {{ attr }}, [{{# mfgCode }}mfgCode:"{{ mfgCode }}", {{/ mfgCode }}{{# endpoint }}destEndpoint:{{ endpoint }}, {{/ endpoint }}{{^ mfgCode}}{{^ endpoint}}:{{/ endpoint}}{{/ mfgCode}}]) // {{ description }}
     {{/ params.readAttributes }}
     {{# params.writeAttributes }}
-    cmds += zigbee.writeAttribute({{ cluster }}, {{ attr }}, {{ type }}, {{ value }}{{# mfgCode }}, [mfgCode:"{{ mfgCode }}"]{{/ mfgCode }}{{# endpoint }}, [destEndpoint:{{ endpoint }}]{{/ endpoint }}) // {{ description }}
+    cmds += zigbee.writeAttribute({{ cluster }}, {{ attr }}, {{ type }}, {{ value }}{{# mfgCode }}, [mfgCode:"{{ mfgCode }}"]{{/ mfgCode }}{{# endpoint }}, [destEndpoint:{{ endpoint }}]{{/ endpoint }}{{^ mfgCode}}{{^ endpoint}}:{{/ endpoint}}{{/ mfgCode}}) // {{ description }}
     {{/ params.writeAttributes }}
     Utils.sendZigbeeCommands cmds
 }

@@ -80,7 +80,6 @@ cmds += zigbee.writeAttribute(0x0006, 0x4003, 0x30, powerOnBehavior == "TURN_POW
 sendEvent name:"switch", value:"on", type:"digital", descriptionText:"Switch initialized to on"
 cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
 cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes
-cmds += zigbee.readAttribute(0x0006, 0x0000) // OnOff
 {{/ @configure }}
 {{!--------------------------------------------------------------------------}}
 {{# @events }}

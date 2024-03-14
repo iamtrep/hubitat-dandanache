@@ -1,7 +1,7 @@
 {{!--------------------------------------------------------------------------}}
 {{# @fields }}
 
-// Fields for capability.RDM001_SwitchStyle
+// Fields for devices.RDM001
 @Field static final Map<Integer, String> RDM001_SWITCH_STYLE = [
     "00": "Single Rocker",
     "01": "Single Push Button",
@@ -12,7 +12,7 @@
 {{!--------------------------------------------------------------------------}}
 {{# @inputs }}
 
-// Inputs for capability.RDM001_SwitchStyle
+// Inputs for devices.RDM001
 input(
     name: "switchStyle",
     type: "enum",
@@ -26,7 +26,7 @@ input(
 {{!--------------------------------------------------------------------------}}
 {{# @configure }}
 
-// Configuration for capability.RDM001_SwitchStyle
+// Configuration for devices.RDM001
 cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0001 0x0021 0x20 0x0000 0x4650 {01} {}" // Report battery at least every 5 hours
 cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0001 {${device.zigbeeId}} {}" // Power Configuration cluster
 cmds += zigbee.readAttribute(0x0001, 0x0021)  // BatteryPercentage
@@ -39,7 +39,7 @@ cmds += zigbee.writeAttribute(0x0000, 0x0031, 0x19, 0x0B00, [mfgCode: "0x100B"])
 {{!--------------------------------------------------------------------------}}
 {{# @updated }}
 
-// Preferences for capability.RDM001_SwitchStyle
+// Preferences for devices.RDM001
 if (switchStyle == null) {
     switchStyle = "02"
     device.updateSetting("switchStyle", [value:switchStyle, type:"enum"])
@@ -54,11 +54,11 @@ Log.info "🛠️ numberOfButtons = ${numberOfButtons}"
 {{!--------------------------------------------------------------------------}}
 {{# @events }}
 
-// Events for capability.RDM001_SwitchStyle (Write Attributes Response)
+// Events for devices.RDM001 (Write Attributes Response)
 case { contains it, [endpointInt:0x01, clusterInt:0x0000, commandInt:0x04, isClusterSpecific:false, isManufacturerSpecific:true, manufacturerId:"100B"] }:
     return Log.info("Switch Style successfully configured!")
 
-// Events for capability.RDM001_SwitchStyle (Read Attributes Response)
+// Events for devices.RDM001 (Read Attributes Response)
 case { contains it, [endpointInt:0x01, clusterInt:0x0000, commandInt:0x01, attrInt:0x0034] }:
 case { contains it, [endpointInt:0x01, clusterInt:0x0000, commandInt:0x0A, attrInt:0x0034] }:
     device.clearSetting "switchStyle"
@@ -70,7 +70,7 @@ case { contains it, [endpointInt:0x01, clusterInt:0x0000, commandInt:0x0A, attrI
     Log.info "🛠️ numberOfButtons = ${numberOfButtons}"
     return
 
-// Other events that we expect but are not usefull for capability.RDM001_SwitchStyle behavior
+// Other events that we expect but are not usefull for devices.RDM001 behavior
 case { contains it, [clusterInt:0x0000, commandInt:0x07] }:  // ConfigureReportingResponse
     return
 {{/ @events }}

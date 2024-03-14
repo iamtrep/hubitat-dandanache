@@ -26,7 +26,6 @@ device:
         - { cluster: '0x0006', attr: '0x0000', description: 'OnOff' }
         - { cluster: '0x0006', attr: '0x4003', description: 'PowerOnBehavior' }
         - { cluster: '0x0008', attr: '0x0000', description: 'CurrentLevel' }
-    - file: src/capabilities/ZigbeeRouter.groovy
     - file: src/capabilities/FirmwareUpdate.groovy
 
 zigbee:
@@ -40,5 +39,5 @@ zigbee:
   - firmwares: 30EU-IL-2/1.0.002 (117C-4109-00010002)
     value: fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0003,0004,0005,0006,0008,1000,FC57", outClusters:"0019", model:"TRADFRI Driver 30W", manufacturer:"IKEA of Sweden"
 
-  messages:
-  - file: src/devices/ICPSHC24/events.groovy
+  - firmwares: 30-IL44-1/1.0.021 (117C-4104-00010021)
+    value: fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0003,0004,0005,0006,0008,1000,FC57", outClusters:"0019", model:"SILVERGLANS IP44 LED driver", manufacturer:"IKEA of Sweden"

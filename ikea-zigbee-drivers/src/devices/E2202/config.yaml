@@ -1,14 +1,16 @@
 device:
-  model: IKEA Tradfri Motion Sensor (E1745)
-  importUrl: https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E1745.groovy
+  model: IKEA Badring Water Leakage Sensor (E2202)
+  importUrl: https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E2202.groovy
   links:
   - https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/
-  - https://zigbee.blakadder.com/Ikea_E1745.html
+  - https://zigbee.blakadder.com/Ikea_E2202.html
   - https://ww8.ikea.com/ikeahomesmart/releasenotes/releasenotes.html
   - https://static.homesmart.ikea.com/releaseNotes/
 
   capabilities:
-    - file: src/devices/E1745/MotionSensor.groovy
+    - name: WaterSensor
+    - name: Sensor
+    - file: src/capabilities/IAS.groovy
     - file: src/capabilities/Battery.groovy
       params:
         half: true
@@ -22,12 +24,15 @@ device:
       params:
         readAttributes:
         - { cluster: '0x0001', attr: '0x0021', description: 'BatteryPercentage' }
+        - { cluster: '0x0500', attr: '0x0000', description: 'IAS ZoneState' }
+        - { cluster: '0x0500', attr: '0x0001', description: 'IAS ZoneType' }
+        - { cluster: '0x0500', attr: '0x0002', description: 'IAS ZoneStatus' }
     - file: src/capabilities/FirmwareUpdate.groovy
 
 zigbee:
   fingerprints:
-  - firmwares: 24.4.5 (117C-11C8-24040005)
-    value: fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0001,0003,0020,1000,FC57,FC7C", outClusters:"0003,0004,0006,0008,0019,1000", model:"TRADFRI motion sensor", manufacturer:"IKEA of Sweden"
+  - firmwares: 1.0.7 (117C-24D4-01000007)
+    value: fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0001,0003,0020,0500,0B05,FC7C,FC81", outClusters:"0003,0004,0019", model:"BADRING Water Leakage Sensor", manufacturer:"IKEA of Sweden"
 
-  binds:
-  - { endpoint: '0x01', cluster: '0x0006', reason: On/Off cluster }
+  messages:
+  - file: src/devices/E2202/events.groovy

@@ -10,7 +10,7 @@ import groovy.time.TimeCategory
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = "IKEA Askvader On/Off Switch (E1836)"
-@Field static final String DRIVER_VERSION = "3.8.0"
+@Field static final String DRIVER_VERSION = "3.9.0"
 
 // Fields for capability.HealthCheck
 @Field static final Map<String, String> HEALTH_CHECK = [
@@ -26,26 +26,17 @@ metadata {
         capability "HealthCheck"
         capability "PowerSource"
         capability "Refresh"
-        capability "HealthCheck"
 
         // For firmware: 1.0.002 (117C-110D-00010002)
         fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0003,0004,0005,0006,0008,1000,FC57", outClusters:"0019", model:"ASKVADER on/off switch", manufacturer:"IKEA of Sweden"
         
         // Attributes for capability.HealthCheck
         attribute "healthStatus", "enum", ["offline", "online", "unknown"]
-        
-        // Attributes for capability.ZigbeeRouter
-        attribute "neighbors", "string"
-        attribute "routes", "string"
     }
     
     // Commands for capability.Switch
     command "toggle"
     command "onWithTimedOff", [[name:"On time*", type:"NUMBER", description:"After how many seconds power will be turned Off [1..6500]"]]
-    
-    // Commands for capability.ZigbeeRouter
-    command "requestRoutingData"
-    command "startZigbeePairing", [[name:"Router device*", type:"STRING", description:"Enter the Device Network Id (0000 for Hubitat Hub)"]]
     
     // Commands for capability.FirmwareUpdate
     command "updateFirmware"
@@ -55,7 +46,7 @@ metadata {
             name: "logLevel",
             type: "enum",
             title: "Log verbosity",
-            description: "<small>Choose the kind of messages that appear in the \"Logs\" section.</small>",
+            description: "<small>Select what type of messages appear in the \"Logs\" section.</small>",
             options: [
                 "1" : "Debug - log everything",
                 "2" : "Info - log important events",
@@ -105,7 +96,7 @@ def updated(auto = false) {
         device.updateSetting("logLevel", [value:logLevel, type:"enum"])
     }
     if (logLevel == "1") runIn 1800, "logsOff"
-    Log.info "🛠️ logLevel = ${logLevel}"
+    Log.info "🛠️ logLevel = ${["1":"Debug", "2":"Info", "3":"Warning", "4":"Error"].get(logLevel)}"
     
     // Preferences for capability.Switch
     if (powerOnBehavior == null) {
@@ -118,6 +109,7 @@ def updated(auto = false) {
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, "healthCheck"
 
+    if (auto) return cmds
     Utils.sendZigbeeCommands cmds
 }
 
@@ -151,7 +143,8 @@ def configure(auto = false) {
     }
 
     // Apply preferences first
-    updated(true)
+    List<String> cmds = []
+    cmds += updated(true)
 
     // Clear data (keep firmwareMT information though)
     device.getData()?.collect { it.key }.each { if (it != "firmwareMT") device.removeDataValue it }
@@ -161,8 +154,6 @@ def configure(auto = false) {
     state.lastTx = 0
     state.lastRx = 0
     state.lastCx = DRIVER_VERSION
-
-    List<String> cmds = []
 
     // Configure IKEA Askvader On/Off Switch (E1836) specific Zigbee reporting
     // -- No reporting needed
@@ -174,7 +165,6 @@ def configure(auto = false) {
     sendEvent name:"switch", value:"on", type:"digital", descriptionText:"Switch initialized to on"
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes
-    cmds += zigbee.readAttribute(0x0006, 0x0000) // OnOff
     
     // Configuration for capability.HealthCheck
     sendEvent name:"healthStatus", value:"online", descriptionText:"Health status initialized to online"
@@ -188,12 +178,12 @@ def configure(auto = false) {
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x0005, 0x000A, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, ModelIdentifier, ProductCode, SWBuildID
     Utils.sendZigbeeCommands cmds
 
-    Log.info "Configuration done; refreshing device current state in 10 seconds ..."
-    runIn(10, "tryToRefresh")
+    Log.info "Configuration done; refreshing device current state in 7 seconds ..."
+    runIn 7, "tryToRefresh"
 }
 private autoConfigure() {
     Log.warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
-    configure(true)
+    configure true
 }
 
 // Implementation for capability.Switch
@@ -253,28 +243,11 @@ def refresh(buttonPress = true) {
             Log.warn '[IMPORTANT] Click the "Refresh" button immediately after pushing any button on the device in order to first wake it up!'
         }
     }
-    List<String> cmds = []
-    cmds += zigbee.readAttribute(0x0006, 0x0000) // OnOff
-    cmds += zigbee.readAttribute(0x0006, 0x4003) // PowerOnBehavior
-    Utils.sendZigbeeCommands cmds
-}
 
-// Implementation for capability.ZigbeeRouter
-def requestRoutingData() {
-    Log.info "Asking the device to send its Neighbors Table and the Routing Table data ..."
-    Utils.sendZigbeeCommands([
-        "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0031 {40} {0x0000}",
-        "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0032 {41} {0x0000}"
-    ])
-}
-def startZigbeePairing(deviceNetworkId) {
-    Log.info "Stopping Zigbee pairing on all devices. Please wait 5 seconds ..."
-    Utils.sendZigbeeCommands(["he raw 0xFFFC 0x00 0x00 0x0036 {42 0001} {0x0000}"])
-    runIn(5, "singleDeviceZigbeePairing", [data:deviceNetworkId])
-}
-private singleDeviceZigbeePairing(data) {
-    Log.warn "Starting Zigbee pairing on device ${data}. Now is the moment to put the device in pairing mode!"
-    Utils.sendZigbeeCommands(["he raw 0x${data} 0x00 0x00 0x0036 {43 5A01} {0x0000}"])
+    List<String> cmds = []
+    cmds += zigbee.readAttribute(0x0006, 0x0000, [:]) // OnOff
+    cmds += zigbee.readAttribute(0x0006, 0x4003, [:]) // PowerOnBehavior
+    Utils.sendZigbeeCommands cmds
 }
 
 // Implementation for capability.FirmwareUpdate
@@ -300,11 +273,15 @@ def parse(String description) {
     }
 
     // Extract msg
-    def msg = zigbee.parseDescriptionAsMap description
+    def msg = [:]
+    if (description.startsWith("zone status")) msg += [ clusterInt:0x500, commandInt:0x00, isClusterSpecific:true ]
+    if (description.startsWith("enroll request")) msg += [ clusterInt:0x500, commandInt:0x01, isClusterSpecific:true ]
+
+    msg += zigbee.parseDescriptionAsMap description
     if (msg.containsKey("endpoint")) msg.endpointInt = Integer.parseInt(msg.endpoint, 16)
     if (msg.containsKey("sourceEndpoint")) msg.endpointInt = Integer.parseInt(msg.sourceEndpoint, 16)
-    if (msg.clusterInt == null) msg.clusterInt = Integer.parseInt(msg.cluster, 16)
-    msg.commandInt = Integer.parseInt(msg.command, 16)
+    if (msg.containsKey("cluster")) msg.clusterInt = Integer.parseInt(msg.cluster, 16)
+    if (msg.containsKey("command")) msg.commandInt = Integer.parseInt(msg.command, 16)
     Log.debug "msg=[${msg}]"
 
     state.lastRx = now()
@@ -323,8 +300,6 @@ def parse(String description) {
         // ---------------------------------------------------------------------------------------------------------------
         // Handle IKEA Askvader On/Off Switch (E1836) specific Zigbee messages
         // ---------------------------------------------------------------------------------------------------------------
-
-        // No specific events
 
         // ---------------------------------------------------------------------------------------------------------------
         // Handle capabilities Zigbee messages
@@ -385,38 +360,6 @@ def parse(String description) {
             }
             Utils.sendEvent name:"powerSource", value:powerSource, type:"digital", descriptionText:"Power source is ${powerSource}"
             return Utils.processedZclMessage("Read Attributes Response", "PowerSource=${msg.value}")
-        
-        // Events for capability.ZigbeeRouter
-        
-        // Mgmt_Lqi_rsp := { 08:Status, 08:NeighborTableEntries, 08:StartIndex, 08:NeighborTableListCount, n*176:NeighborTableList }
-        // NeighborTableList := { 64:ExtendedPanId, 64:IEEEAddress, 16:NetworkAddress, 02:DeviceType, 02:RxOnWhenIdle, 03:Relationship, 01:Reserved, 02:PermitJoining, 06:Reserved, 08:Depth, 08:LQI }
-        // Example: [6E, 00, 08, 00, 03, 50, 53, 3A, 0D, 00, DF, 66, 15, E9, A6, C9, 17, 00, 6F, 0D, 00, 00, 00, 24, 02, 00, CF, 50, 53, 3A, 0D, 00, DF, 66, 15, 80, BF, CA, 6B, 6A, 38, C1, A4, 4A, 16, 05, 02, 0F, CD, 50, 53, 3A, 0D, 00, DF, 66, 15, D3, FA, E1, 25, 00, 4B, 12, 00, 64, 17, 25, 02, 0F, 36]
-        case { contains it, [endpointInt:0x00, clusterInt:0x8031, commandInt:0x00] }:
-            if (msg.data[1] != "00") return Log.warn("Failed to retrieve Neighbors Table: data=${msg.data}")
-            Integer entriesCount = Integer.parseInt(msg.data[4], 16)
-        
-            // Use base64 encoding instead of hex encoding to make the message a bit shorter
-            String base64 = msg.data.join().decodeHex().encodeBase64().toString() // Decode test: https://base64.guru/converter/decode/hex
-            sendEvent name:"neighbors", value:"${entriesCount} entries", type:"digital", descriptionText:base64
-            return Utils.processedZdoMessage("Neighbors Table Response", "entries=${entriesCount}, data=${msg.data}")
-        
-        // Mgmt_Rtg_rsp := { 08:Status, 08:RoutingTableEntries, 08:StartIndex, 08:RoutingTableListCount, n*40:RoutingTableList }
-        // RoutingTableList := { 16:DestinationAddress, 03:RouteStatus, 01:MemoryConstrained, 01:ManyToOne, 01:RouteRecordRequired, 02:Reserved, 16:NextHopAddress }
-        // Example: [6F, 00, 0A, 00, 0A, 00, 00, 10, 00, 00, AD, 56, 00, AD, 56, ED, EE, 00, 4A, 16, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00, 00, 00, 03, 00, 00]
-        case { contains it, [endpointInt:0x00, clusterInt:0x8032, commandInt:0x00] }:
-            if (msg.data[1] != "00") return Log.warn("Failed to retrieve Routing Table: data=${msg.data}")
-            Integer entriesCount = Integer.parseInt(msg.data[4], 16)
-        
-            // Use base64 encoding instead of hex encoding to make the message a bit shorter
-            String base64 = msg.data.join().decodeHex().encodeBase64().toString()
-            sendEvent name:"routes", value:"${entriesCount} entries", type:"digital", descriptionText:base64
-            return Utils.processedZdoMessage("Routing Table Response", "entries=${entriesCount}, data=${msg.data}")
-        
-        // Mgmt_Permit_Joining_rsp := { 08:Status }
-        case { contains it, [endpointInt:0x00, clusterInt:0x8036, commandInt:0x00] }:
-            if (msg.data[1] != "00") return Log.warn("Failed to Start Zigbee pairing for 90 seconds")
-            return Log.info("Started Zigbee Pairing: data=${msg.data}")
-        
 
         // ---------------------------------------------------------------------------------------------------------------
         // Handle common messages (e.g.: received during pairing when we query the device for information)
@@ -427,21 +370,23 @@ def parse(String description) {
             Log.warn "Rejoined the Zigbee mesh; refreshing device state in 3 seconds ..."
             return runIn(3, "tryToRefresh")
 
-        // Read Attributes Response (Basic cluster)
+        // Report/Read Attributes Response (Basic cluster)
         case { contains it, [clusterInt:0x0000, commandInt:0x01] }:
-            Utils.processedZclMessage("Read Attributes Response", "cluster=0x${msg.cluster}, attribute=0x${msg.attrId}, value=${msg.value}")
+        case { contains it, [clusterInt:0x0000, commandInt:0x0A] }:
             Utils.zigbeeDataValue(msg.attrInt, msg.value)
             msg.additionalAttrs?.each { Utils.zigbeeDataValue(it.attrInt, it.value) }
-            return
+            return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "cluster=0x${msg.cluster}, attribute=0x${msg.attrId}, value=${msg.value}")
 
         // Mgmt_Leave_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8034, commandInt:0x00] }:
             return Log.warn("Device is leaving the Zigbee mesh. See you later, Aligator!")
 
         // Ignore the following Zigbee messages
-        case { contains it, [commandInt:0x0A] }:                                       // ZCL: Attribute report we don't care about (configured by other driver)
+        case { contains it, [commandInt:0x0A, isClusterSpecific:false] }:              // ZCL: Attribute report we don't care about (configured by other driver)
+        case { contains it, [commandInt:0x0B, isClusterSpecific:false] }:              // ZCL: Default Response
         case { contains it, [clusterInt:0x0003, commandInt:0x01] }:                    // ZCL: Identify Query Command
         case { contains it, [endpointInt:0x00, clusterInt:0x8001, commandInt:0x00] }:  // ZDP: IEEE_addr_rsp
+        case { contains it, [endpointInt:0x00, clusterInt:0x8004, commandInt:0x00] }:  // ZDP: Simple_Desc_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8005, commandInt:0x00] }:  // ZDP: Active_EP_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x0006, commandInt:0x00] }:  // ZDP: MatchDescriptorRequest
         case { contains it, [endpointInt:0x00, clusterInt:0x8021, commandInt:0x00] }:  // ZDP: Mgmt_Bind_rsp
@@ -460,7 +405,7 @@ def parse(String description) {
 // Logging helpers (something like this should be part of the SDK and not implemented by each driver)
 // ===================================================================================================================
 
-@Field def Map Log = [
+@Field Map Log = [
     debug: { if (logLevel == "1") log.debug "${device.displayName} ${it.uncapitalize()}" },
     info:  { if (logLevel <= "2") log.info  "${device.displayName} ${it.uncapitalize()}" },
     warn:  { if (logLevel <= "3") log.warn  "${device.displayName} ${it.uncapitalize()}" },
@@ -490,6 +435,7 @@ def parse(String description) {
     },
 
     dataValue: { String key, String value ->
+        if (value == null || value == "") return
         Log.debug "Update data value: ${key}=${value}"
         updateDataValue key, value
     },
@@ -521,5 +467,5 @@ private boolean contains(Map msg, Map spec) {
 
 // Call refresh() if available
 private tryToRefresh() {
-    try { refresh(false) } catch(e) {}
+    try { refresh(false) } catch(ex) {}
 }

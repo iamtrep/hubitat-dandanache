@@ -10,7 +10,7 @@ capability "Sensor"
 {{!--------------------------------------------------------------------------}}
 {{# @fields }}
 
-// Fields for capability.PushableButton
+// Fields for E2006.AirPurifier
 @Field static final List<String> SUPPORTED_FAN_SPEEDS = [
     "auto", "low", "medium-low", "medium", "medium-high", "high", "off"
 ]
@@ -18,7 +18,7 @@ capability "Sensor"
 {{!--------------------------------------------------------------------------}}
 {{# @attributes }}
 
-// Attributes for capability.AirPurifier
+// Attributes for E2006.AirPurifier
 attribute "airQuality", "enum", ["good", "moderate", "unhealthy for sensitive groups", "unhealthy", "hazardous"]
 attribute "filterUsage", "number"
 attribute "pm25", "number"
@@ -27,14 +27,14 @@ attribute "auto", "enum", ["on", "off"]
 {{!--------------------------------------------------------------------------}}
 {{# @commands }}
 
-// Commands for capability.AirPurifier
+// Commands for E2006.AirPurifier
 command "setSpeed", [[name:"Fan speed*", type:"ENUM", description:"Fan speed to set", constraints:SUPPORTED_FAN_SPEEDS]]
 command "toggle"
 {{/ @commands }}
 {{!--------------------------------------------------------------------------}}
 {{# @inputs }}
 
-// Inputs for capability.AirPurifier
+// Inputs for E2006.AirPurifier
 input(
     name: "pm25ReportDelta",
     type: "enum",
@@ -82,7 +82,7 @@ input(
 {{!--------------------------------------------------------------------------}}
 {{# @implementation }}
 
-// Implementation for capability.AirPurifier
+// Implementation for E2006.AirPurifier
 def on() {
     if (device.currentValue("switch", true) == "on") return
     Log.debug "Sending On command"
@@ -175,7 +175,7 @@ private pm25Aqi(pm25) { // See: https://en.wikipedia.org/wiki/Air_quality_index#
 {{!--------------------------------------------------------------------------}}
 {{# @updated }}
 
-// Preferences for capability.AirPurifier
+// Preferences for E2006.AirPurifier
 if (pm25ReportDelta == null) {
     pm25ReportDelta = "03"
     device.updateSetting("pm25ReportDelta", [value:pm25ReportDelta, type:"enum"])
@@ -208,7 +208,7 @@ cmds += zigbee.writeAttribute(0xFC7D, 0x0003, 0x10, panelIndicator ? 0x00 : 0x01
 {{!--------------------------------------------------------------------------}}
 {{# @configure }}
 
-// Configuration for capability.AirPurifier
+// Configuration for E2006.AirPurifier
 sendEvent name:"switch", value:"on", type:"digital", descriptionText:"Switch initialized to on"
 sendEvent name:"supportedFanSpeeds", value:SUPPORTED_FAN_SPEEDS, type:"digital", descriptionText:"Supported fan speeds initialized to ${SUPPORTED_FAN_SPEEDS}"
 
@@ -226,7 +226,7 @@ cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0007 0x20 0x0000 0x0000
 {{!--------------------------------------------------------------------------}}
 {{# @events }}
 
-// Events for capability.AirPurifier
+// Events for E2006.AirPurifier
 
 // Report/Read Attributes: PM25
 case { contains it, [clusterInt:0xFC7D, commandInt:0x0A, attrInt:0x0004] }:
@@ -326,7 +326,7 @@ case { contains it, [clusterInt:0xFC7D, commandInt:0x01, attrInt:0x0005] }:
     device.updateSetting("childLock", [value:childLock, type:"bool"])
     return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "ChildLock=${msg.value}")
 
-// Other events that we expect but are not usefull for capability.AirPurifier behavior
+// Other events that we expect but are not usefull for E2006.AirPurifier behavior
 case { contains it, [clusterInt:0xFC7D, commandInt:0x04] }: // Write Attribute Response (0x04)
 case { contains it, [clusterInt:0xFC7D, commandInt:0x07] }: // Configure Reporting Response
     return

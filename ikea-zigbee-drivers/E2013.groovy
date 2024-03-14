@@ -10,7 +10,10 @@ import groovy.time.TimeCategory
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = "IKEA Parasoll Door/Window Sensor (E2013)"
-@Field static final String DRIVER_VERSION = "3.8.0"
+@Field static final String DRIVER_VERSION = "3.9.0"
+
+// Fields for capability.IAS
+import hubitat.zigbee.clusters.iaszone.ZoneStatus
 
 // Fields for capability.HealthCheck
 @Field static final Map<String, String> HEALTH_CHECK = [
@@ -31,6 +34,9 @@ metadata {
         // For firmware: 1.0.19 (117C-3277-01000019)
         fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0001,0003,0020,0B05,1000,FC7C,FC81", outClusters:"0003,0004,0006,0019,1000", model:"PARASOLL Door/Window Sensor", manufacturer:"IKEA of Sweden"
         
+        // Attributes for capability.IAS
+        attribute "ias", "enum", ["enrolled", "not enrolled"]
+        
         // Attributes for capability.HealthCheck
         attribute "healthStatus", "enum", ["offline", "online", "unknown"]
     }
@@ -43,7 +49,7 @@ metadata {
             name: "logLevel",
             type: "enum",
             title: "Log verbosity",
-            description: "<small>Choose the kind of messages that appear in the \"Logs\" section.</small>",
+            description: "<small>Select what type of messages appear in the \"Logs\" section.</small>",
             options: [
                 "1" : "Debug - log everything",
                 "2" : "Info - log important events",
@@ -78,11 +84,12 @@ def updated(auto = false) {
         device.updateSetting("logLevel", [value:logLevel, type:"enum"])
     }
     if (logLevel == "1") runIn 1800, "logsOff"
-    Log.info "🛠️ logLevel = ${logLevel}"
+    Log.info "🛠️ logLevel = ${["1":"Debug", "2":"Info", "3":"Warning", "4":"Error"].get(logLevel)}"
     
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, "healthCheck"
 
+    if (auto) return cmds
     Utils.sendZigbeeCommands cmds
 }
 
@@ -116,7 +123,8 @@ def configure(auto = false) {
     }
 
     // Apply preferences first
-    updated(true)
+    List<String> cmds = []
+    cmds += updated(true)
 
     // Clear data (keep firmwareMT information though)
     device.getData()?.collect { it.key }.each { if (it != "firmwareMT") device.removeDataValue it }
@@ -127,22 +135,22 @@ def configure(auto = false) {
     state.lastRx = 0
     state.lastCx = DRIVER_VERSION
 
-    List<String> cmds = []
-
     // Configure IKEA Parasoll Door/Window Sensor (E2013) specific Zigbee reporting
     // -- No reporting needed
 
     // Add IKEA Parasoll Door/Window Sensor (E2013) specific Zigbee binds
     // -- No binds needed
     
-    // Configuration for capability.ContactSensor
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x02 0x01 0x0500 {${device.zigbeeId}} {}" // IAS Zone cluster (ep 02)
-    cmds += "he cr 0x${device.deviceNetworkId} 0x02 0x0500 0x0002 0x19 0x0000 0x4650 {00} {}" // Report ZoneStatus (map16)
+    // Configuration for capability.IAS
+    String ep_0500 = "0x02"
+    cmds += "he wattr 0x${device.deviceNetworkId} ${ep_0500} 0x0500 0x0010 0xF0 {${"${location.hub.zigbeeEui}".split("(?<=\\G.{2})").reverse().join("")}}"
+    cmds += "he raw 0x${device.deviceNetworkId} 0x01 ${ep_0500} 0x0500 {01 23 00 00 00}" // Zone Enroll Response (0x00): status=Success, zoneId=0x00
+    cmds += "zdo bind 0x${device.deviceNetworkId} ${ep_0500} 0x01 0x0500 {${device.zigbeeId}} {}" // IAS Zone cluster
+    cmds += "he cr 0x${device.deviceNetworkId} ${ep_0500} 0x0500 0x0002 0x19 0x0000 0x4650 {00} {}" // Report ZoneStatus (map16) at least every 5 hours (Δ = 0)
     
     // Configuration for capability.Battery
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0001 {${device.zigbeeId}} {}" // Power Configuration cluster
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0001 0x0021 0x20 0x0000 0x4650 {02} {}" // Report BatteryPercentage (uint8) at least every 5 hours (Δ = 1%)
-    cmds += zigbee.readAttribute(0x0001, 0x0021)  // BatteryPercentage
     
     // Configuration for capability.HealthCheck
     sendEvent name:"healthStatus", value:"online", descriptionText:"Health status initialized to online"
@@ -156,12 +164,12 @@ def configure(auto = false) {
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x0005, 0x000A, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, ModelIdentifier, ProductCode, SWBuildID
     Utils.sendZigbeeCommands cmds
 
-    Log.info "Configuration done; refreshing device current state in 10 seconds ..."
-    runIn(10, "tryToRefresh")
+    Log.info "Configuration done; refreshing device current state in 7 seconds ..."
+    runIn 7, "tryToRefresh"
 }
 private autoConfigure() {
     Log.warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
-    configure(true)
+    configure true
 }
 
 // Implementation for capability.HealthCheck
@@ -198,9 +206,12 @@ def refresh(buttonPress = true) {
             Log.warn '[IMPORTANT] Click the "Refresh" button immediately after pushing any button on the device in order to first wake it up!'
         }
     }
+
     List<String> cmds = []
-    cmds += zigbee.readAttribute(0x0001, 0x0021) // BatteryPercentage
-    cmds += zigbee.readAttribute(0x0500, 0x0002, [destEndpoint:0x02]) // ZoneStatus
+    cmds += zigbee.readAttribute(0x0001, 0x0021, [:]) // BatteryPercentage
+    cmds += zigbee.readAttribute(0x0500, 0x0000, [destEndpoint:0x02, ]) // IAS ZoneState
+    cmds += zigbee.readAttribute(0x0500, 0x0001, [destEndpoint:0x02, ]) // IAS ZoneType
+    cmds += zigbee.readAttribute(0x0500, 0x0002, [destEndpoint:0x02, ]) // IAS ZoneStatus
     Utils.sendZigbeeCommands cmds
 }
 
@@ -227,11 +238,15 @@ def parse(String description) {
     }
 
     // Extract msg
-    def msg = zigbee.parseDescriptionAsMap description
+    def msg = [:]
+    if (description.startsWith("zone status")) msg += [ clusterInt:0x500, commandInt:0x00, isClusterSpecific:true ]
+    if (description.startsWith("enroll request")) msg += [ clusterInt:0x500, commandInt:0x01, isClusterSpecific:true ]
+
+    msg += zigbee.parseDescriptionAsMap description
     if (msg.containsKey("endpoint")) msg.endpointInt = Integer.parseInt(msg.endpoint, 16)
     if (msg.containsKey("sourceEndpoint")) msg.endpointInt = Integer.parseInt(msg.sourceEndpoint, 16)
-    if (msg.clusterInt == null) msg.clusterInt = Integer.parseInt(msg.cluster, 16)
-    msg.commandInt = Integer.parseInt(msg.command, 16)
+    if (msg.containsKey("cluster")) msg.clusterInt = Integer.parseInt(msg.cluster, 16)
+    if (msg.containsKey("command")) msg.commandInt = Integer.parseInt(msg.command, 16)
     Log.debug "msg=[${msg}]"
 
     state.lastRx = now()
@@ -251,14 +266,6 @@ def parse(String description) {
         // Handle IKEA Parasoll Door/Window Sensor (E2013) specific Zigbee messages
         // ---------------------------------------------------------------------------------------------------------------
 
-        // No specific events
-
-        // ---------------------------------------------------------------------------------------------------------------
-        // Handle capabilities Zigbee messages
-        // ---------------------------------------------------------------------------------------------------------------
-        
-        // Events for capability.ContactSensor
-        
         // Report/Read Attributes Reponse: ZoneStatus
         case { contains it, [clusterInt:0x0500, commandInt:0x0A, attrInt:0x0002] }:
         case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0002] }:
@@ -266,15 +273,64 @@ def parse(String description) {
             Utils.sendEvent name:"contact", value:contact, descriptionText:"Is ${contact}", type:type
             return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "ZoneStatus=${msg.value}")
         
-        // Other events that we expect but are not usefull for capability.ContactSensor behavior
+        // Ignore Configure Reporting Response for attribute ZoneStatus
         case { contains it, [clusterInt:0x0500, commandInt:0x07] }:
             return Utils.processedZclMessage("Configure Reporting Response", "attribute=contact, data=${msg.data}")
+
+        // ---------------------------------------------------------------------------------------------------------------
+        // Handle capabilities Zigbee messages
+        // ---------------------------------------------------------------------------------------------------------------
+        
+        // Events for capability.IAS
+        
+        // Zone Status Change Notification
+        case { contains it, [clusterInt:0x500, commandInt:0x00, isClusterSpecific:true] }:
+            ZoneStatus zs = zigbee.parseZoneStatus(description)
+            boolean alarm1             = zs.alarm1Set
+            boolean alarm2             = zs.alarm2Set
+            boolean tamper             = zs.tamperSet
+            boolean lowBattery         = zs.batterySet
+            boolean supervisionReports = zs.supervisionReportsSet
+            boolean restoreReports     = zs.restoreReportsSet
+            boolean trouble            = zs.troubleSet
+            boolean mainsFault         = zs.acSet
+            boolean testMode           = zs.testSet
+            boolean batteryDefect      = zs.batteryDefectSet
+            return Utils.processedZclMessage("Zone Status Change Notification", "alarm1=${alarm1} alarm2=${alarm2} tamper=${tamper} lowBattery=${lowBattery} supervisionReports=${supervisionReports} restoreReports=${restoreReports} trouble=${trouble} mainsFault=${mainsFault} testMode=${testMode} batteryDefect=${batteryDefect}")
+        
+        // Enroll Request
+        case { contains it, [clusterInt:0x500, commandInt:0x01, isClusterSpecific:true] }:
+            String ep_0500 = "0x02"
+            Utils.sendZigbeeCommands([
+                "he raw 0x${device.deviceNetworkId} 0x01 ${ep_0500} 0x0500 {01 23 00 00 00}",  // Zone Enroll Response (0x00): status=Success, zoneId=0x00
+                "he raw 0x${device.deviceNetworkId} 0x01 ${ep_0500} 0x0500 {01 23 01}",        // Initiate Normal Operation Mode (0x01): no_payload
+            ])
+            return Utils.processedZclMessage("Enroll Request", "description=${description}")
+        
+        // Read Attributes: ZoneState
+        case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0000] }:
+            String status = msg.value == "01" ? "enrolled" : "not enrolled"
+            Utils.sendEvent name:"ias", value:status, descriptionText:"Device IAS status is ${status}", type:"digital"
+            return Utils.processedZclMessage("Read Attributes Response", "ZoneState=${msg.value == "01" ? "enrolled" : "not_enrolled"}")
+        
+        // Read Attributes: ZoneType
+        case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0001] }:
+            return Utils.processedZclMessage("Read Attributes Response", "ZoneType=${msg.value}")
+        
+        // Other events that we expect but are not usefull for capability.IAS behavior
+        case { contains it, [clusterInt:0x0500, commandInt:0x04, isClusterSpecific:false] }:
+            return Utils.processedZclMessage("Write Attribute Response", "attribute=IAS_CIE_Address, ZoneType=${msg.data}")
         
         // Events for capability.Battery
         
         // Report/Read Attributes Reponse: BatteryPercentage
         case { contains it, [clusterInt:0x0001, commandInt:0x0A, attrInt:0x0021] }:
-        case { contains it, [clusterInt:0x0001, commandInt:0x01, attrInt:0x0021] }:
+        case { contains it, [clusterInt:0x0001, commandInt:0x01] }:
+        
+            // Hubitat fails to parse some Read Attributes Responses
+            if (msg.value == null && msg.data != null && msg.data[0] == "21" && msg.data[1] == "00") {
+                msg.value = msg.data[2]
+            }
         
             // The value 0xff indicates an invalid or unknown reading
             if (msg.value == "FF") return Log.warn("Ignored invalid remaining battery percentage value: 0x${msg.value}")
@@ -323,21 +379,23 @@ def parse(String description) {
             Log.warn "Rejoined the Zigbee mesh; refreshing device state in 3 seconds ..."
             return runIn(3, "tryToRefresh")
 
-        // Read Attributes Response (Basic cluster)
+        // Report/Read Attributes Response (Basic cluster)
         case { contains it, [clusterInt:0x0000, commandInt:0x01] }:
-            Utils.processedZclMessage("Read Attributes Response", "cluster=0x${msg.cluster}, attribute=0x${msg.attrId}, value=${msg.value}")
+        case { contains it, [clusterInt:0x0000, commandInt:0x0A] }:
             Utils.zigbeeDataValue(msg.attrInt, msg.value)
             msg.additionalAttrs?.each { Utils.zigbeeDataValue(it.attrInt, it.value) }
-            return
+            return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "cluster=0x${msg.cluster}, attribute=0x${msg.attrId}, value=${msg.value}")
 
         // Mgmt_Leave_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8034, commandInt:0x00] }:
             return Log.warn("Device is leaving the Zigbee mesh. See you later, Aligator!")
 
         // Ignore the following Zigbee messages
-        case { contains it, [commandInt:0x0A] }:                                       // ZCL: Attribute report we don't care about (configured by other driver)
+        case { contains it, [commandInt:0x0A, isClusterSpecific:false] }:              // ZCL: Attribute report we don't care about (configured by other driver)
+        case { contains it, [commandInt:0x0B, isClusterSpecific:false] }:              // ZCL: Default Response
         case { contains it, [clusterInt:0x0003, commandInt:0x01] }:                    // ZCL: Identify Query Command
         case { contains it, [endpointInt:0x00, clusterInt:0x8001, commandInt:0x00] }:  // ZDP: IEEE_addr_rsp
+        case { contains it, [endpointInt:0x00, clusterInt:0x8004, commandInt:0x00] }:  // ZDP: Simple_Desc_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8005, commandInt:0x00] }:  // ZDP: Active_EP_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x0006, commandInt:0x00] }:  // ZDP: MatchDescriptorRequest
         case { contains it, [endpointInt:0x00, clusterInt:0x8021, commandInt:0x00] }:  // ZDP: Mgmt_Bind_rsp
@@ -356,7 +414,7 @@ def parse(String description) {
 // Logging helpers (something like this should be part of the SDK and not implemented by each driver)
 // ===================================================================================================================
 
-@Field def Map Log = [
+@Field Map Log = [
     debug: { if (logLevel == "1") log.debug "${device.displayName} ${it.uncapitalize()}" },
     info:  { if (logLevel <= "2") log.info  "${device.displayName} ${it.uncapitalize()}" },
     warn:  { if (logLevel <= "3") log.warn  "${device.displayName} ${it.uncapitalize()}" },
@@ -386,6 +444,7 @@ def parse(String description) {
     },
 
     dataValue: { String key, String value ->
+        if (value == null || value == "") return
         Log.debug "Update data value: ${key}=${value}"
         updateDataValue key, value
     },
@@ -417,5 +476,5 @@ private boolean contains(Map msg, Map spec) {
 
 // Call refresh() if available
 private tryToRefresh() {
-    try { refresh(false) } catch(e) {}
+    try { refresh(false) } catch(ex) {}
 }

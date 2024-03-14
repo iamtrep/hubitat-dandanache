@@ -6,14 +6,14 @@ capability "Sensor"
 {{!--------------------------------------------------------------------------}}
 {{# @attributes }}
 
-// Attributes for capability.MotionSensor
+// Attributes for E1745.MotionSensor
 attribute "requestedBrightness", "number"            // Syncs with the brightness option on device (◐/⭘)
 attribute "illumination", "enum", ["dim", "bright"]  // Works only in night mode 🌙
 {{/ @attributes }}
 {{!--------------------------------------------------------------------------}}
 {{# @inputs }}
 
-// Inputs for capability.MotionSensor
+// Inputs for E1745.MotionSensor
 input(
     name: "clearMotionPeriod",
     type: "enum",
@@ -34,7 +34,7 @@ input(
     defaultValue: "180",
     required: true
 )
-// Inputs for capability.MotionSensor
+// Inputs for E1745.MotionSensor
 input(
     name: "onlyTriggerInDimLight",
     type: "bool",
@@ -47,7 +47,7 @@ input(
 {{!--------------------------------------------------------------------------}}
 {{# @implementation }}
 
-// Implementation for capability.MotionSensor
+// Implementation for E1745.MotionSensor
 def clearMotion() {
     return Utils.sendEvent(name:"motion", value:"inactive", type:"digital", descriptionText:"Is inactive")
 }
@@ -55,7 +55,7 @@ def clearMotion() {
 {{!--------------------------------------------------------------------------}}
 {{# @updated }}
 
-// Preferences for capability.MotionSensor
+// Preferences for E1745.MotionSensor
 if (clearMotionPeriod == null) {
     clearMotionPeriod = "180"
     device.updateSetting("clearMotionPeriod", [value:clearMotionPeriod, type:"enum"])
@@ -71,7 +71,7 @@ Log.info "🛠️ onlyTriggerInDimLight = ${onlyTriggerInDimLight}"
 {{!--------------------------------------------------------------------------}}
 {{# @events }}
 
-// Events for capability.MotionSensor
+// Events for E1745.MotionSensor
 
 // OnWithTimedOff := { 08:OnOffControl, 16:OnTime, 16:OffWaitTime }
 // OnOffControl := { 01:AcceptOnlyWhenOn, 07:Reserved }

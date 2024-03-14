@@ -1,16 +1,19 @@
 /**
- * IKEA Tradfri Motion Sensor (E1745)
+ * IKEA Badring Water Leakage Sensor (E2202)
  *
  * @see https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/
- * @see https://zigbee.blakadder.com/Ikea_E1745.html
+ * @see https://zigbee.blakadder.com/Ikea_E2202.html
  * @see https://ww8.ikea.com/ikeahomesmart/releasenotes/releasenotes.html
  * @see https://static.homesmart.ikea.com/releaseNotes/
  */
 import groovy.time.TimeCategory
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = "IKEA Tradfri Motion Sensor (E1745)"
+@Field static final String DRIVER_NAME = "IKEA Badring Water Leakage Sensor (E2202)"
 @Field static final String DRIVER_VERSION = "3.9.0"
+
+// Fields for capability.IAS
+import hubitat.zigbee.clusters.iaszone.ZoneStatus
 
 // Fields for capability.HealthCheck
 @Field static final Map<String, String> HEALTH_CHECK = [
@@ -19,21 +22,20 @@ import groovy.transform.Field
 ]
 
 metadata {
-    definition(name:DRIVER_NAME, namespace:"dandanache", author:"Dan Danache", importUrl:"https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E1745.groovy") {
+    definition(name:DRIVER_NAME, namespace:"dandanache", author:"Dan Danache", importUrl:"https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E2202.groovy") {
         capability "Configuration"
-        capability "MotionSensor"
+        capability "WaterSensor"
         capability "Sensor"
         capability "Battery"
         capability "HealthCheck"
         capability "PowerSource"
         capability "Refresh"
 
-        // For firmware: 24.4.5 (117C-11C8-24040005)
-        fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0001,0003,0020,1000,FC57,FC7C", outClusters:"0003,0004,0006,0008,0019,1000", model:"TRADFRI motion sensor", manufacturer:"IKEA of Sweden"
+        // For firmware: 1.0.7 (117C-24D4-01000007)
+        fingerprint profileId:"0104", endpointId:"01", inClusters:"0000,0001,0003,0020,0500,0B05,FC7C,FC81", outClusters:"0003,0004,0019", model:"BADRING Water Leakage Sensor", manufacturer:"IKEA of Sweden"
         
-        // Attributes for E1745.MotionSensor
-        attribute "requestedBrightness", "number"            // Syncs with the brightness option on device (◐/⭘)
-        attribute "illumination", "enum", ["dim", "bright"]  // Works only in night mode 🌙
+        // Attributes for capability.IAS
+        attribute "ias", "enum", ["enrolled", "not enrolled"]
         
         // Attributes for capability.HealthCheck
         attribute "healthStatus", "enum", ["offline", "online", "unknown"]
@@ -55,37 +57,6 @@ metadata {
                 "4" : "Error - log errors"
             ],
             defaultValue: "1",
-            required: true
-        )
-        
-        // Inputs for E1745.MotionSensor
-        input(
-            name: "clearMotionPeriod",
-            type: "enum",
-            title: "Clear motion after",
-            description: "<small>Set status inactive if no motion is detected in this period.</small>",
-            options: [
-                "60"  : "1 minute",
-                "120" : "2 minutes",
-                "180" : "3 minutes",
-                "240" : "4 minutes",
-                "300" : "5 minutes",
-                "360" : "6 minutes",
-                "420" : "7 minutes",
-                "480" : "8 minutes",
-                "540" : "9 minutes",
-                "600" : "10 minutes"
-            ],
-            defaultValue: "180",
-            required: true
-        )
-        // Inputs for E1745.MotionSensor
-        input(
-            name: "onlyTriggerInDimLight",
-            type: "bool",
-            title: "Only detect motion in the dark",
-            description: "<small>Select the night mode 🌙 option on device for this to work.</small>",
-            defaultValue: false,
             required: true
         )
     }
@@ -114,19 +85,6 @@ def updated(auto = false) {
     }
     if (logLevel == "1") runIn 1800, "logsOff"
     Log.info "🛠️ logLevel = ${["1":"Debug", "2":"Info", "3":"Warning", "4":"Error"].get(logLevel)}"
-    
-    // Preferences for E1745.MotionSensor
-    if (clearMotionPeriod == null) {
-        clearMotionPeriod = "180"
-        device.updateSetting("clearMotionPeriod", [value:clearMotionPeriod, type:"enum"])
-    }
-    Log.info "🛠️ clearMotionPeriod = ${clearMotionPeriod} seconds"
-    
-    if (onlyTriggerInDimLight == null) {
-        onlyTriggerInDimLight = false
-        device.updateSetting("onlyTriggerInDimLight", [value:onlyTriggerInDimLight, type:"bool"])
-    }
-    Log.info "🛠️ onlyTriggerInDimLight = ${onlyTriggerInDimLight}"
     
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, "healthCheck"
@@ -177,11 +135,18 @@ def configure(auto = false) {
     state.lastRx = 0
     state.lastCx = DRIVER_VERSION
 
-    // Configure IKEA Tradfri Motion Sensor (E1745) specific Zigbee reporting
+    // Configure IKEA Badring Water Leakage Sensor (E2202) specific Zigbee reporting
     // -- No reporting needed
 
-    // Add IKEA Tradfri Motion Sensor (E1745) specific Zigbee binds
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
+    // Add IKEA Badring Water Leakage Sensor (E2202) specific Zigbee binds
+    // -- No binds needed
+    
+    // Configuration for capability.IAS
+    String ep_0500 = "0x01"
+    cmds += "he wattr 0x${device.deviceNetworkId} ${ep_0500} 0x0500 0x0010 0xF0 {${"${location.hub.zigbeeEui}".split("(?<=\\G.{2})").reverse().join("")}}"
+    cmds += "he raw 0x${device.deviceNetworkId} 0x01 ${ep_0500} 0x0500 {01 23 00 00 00}" // Zone Enroll Response (0x00): status=Success, zoneId=0x00
+    cmds += "zdo bind 0x${device.deviceNetworkId} ${ep_0500} 0x01 0x0500 {${device.zigbeeId}} {}" // IAS Zone cluster
+    cmds += "he cr 0x${device.deviceNetworkId} ${ep_0500} 0x0500 0x0002 0x19 0x0000 0x4650 {00} {}" // Report ZoneStatus (map16) at least every 5 hours (Δ = 0)
     
     // Configuration for capability.Battery
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0001 {${device.zigbeeId}} {}" // Power Configuration cluster
@@ -205,11 +170,6 @@ def configure(auto = false) {
 private autoConfigure() {
     Log.warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
-}
-
-// Implementation for E1745.MotionSensor
-def clearMotion() {
-    return Utils.sendEvent(name:"motion", value:"inactive", type:"digital", descriptionText:"Is inactive")
 }
 
 // Implementation for capability.HealthCheck
@@ -249,6 +209,9 @@ def refresh(buttonPress = true) {
 
     List<String> cmds = []
     cmds += zigbee.readAttribute(0x0001, 0x0021, [:]) // BatteryPercentage
+    cmds += zigbee.readAttribute(0x0500, 0x0000, [:]) // IAS ZoneState
+    cmds += zigbee.readAttribute(0x0500, 0x0001, [:]) // IAS ZoneType
+    cmds += zigbee.readAttribute(0x0500, 0x0002, [:]) // IAS ZoneStatus
     Utils.sendZigbeeCommands cmds
 }
 
@@ -300,35 +263,63 @@ def parse(String description) {
     switch (msg) {
 
         // ---------------------------------------------------------------------------------------------------------------
-        // Handle IKEA Tradfri Motion Sensor (E1745) specific Zigbee messages
+        // Handle IKEA Badring Water Leakage Sensor (E2202) specific Zigbee messages
         // ---------------------------------------------------------------------------------------------------------------
+
+        // Report/Read Attributes Reponse: ZoneStatus
+        case { contains it, [clusterInt:0x0500, commandInt:0x0A, attrInt:0x0002] }:
+        case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0002] }:
+            String water = msg.value[-1] == "1" ? "wet" : "dry"
+            Utils.sendEvent name:"water", value:water, descriptionText:"Is ${water}", type:type
+            return Utils.processedZclMessage("${msg.commandInt == 0x0A ? "Report" : "Read"} Attributes Response", "ZoneStatus=${msg.value}")
+        
+        // Ignore Configure Reporting Response for attribute ZoneStatus
+        case { contains it, [clusterInt:0x0500, commandInt:0x07] }:
+            return Utils.processedZclMessage("Configure Reporting Response", "attribute=ZoneStatus, data=${msg.data}")
 
         // ---------------------------------------------------------------------------------------------------------------
         // Handle capabilities Zigbee messages
         // ---------------------------------------------------------------------------------------------------------------
         
-        // Events for E1745.MotionSensor
+        // Events for capability.IAS
         
-        // OnWithTimedOff := { 08:OnOffControl, 16:OnTime, 16:OffWaitTime }
-        // OnOffControl := { 01:AcceptOnlyWhenOn, 07:Reserved }
-        // Example: [01, 08, 07, 00, 00] -> acceptOnlyWhenOn=true, onTime=180, offWaitTime=0
-        case { contains it, [clusterInt:0x0006, commandInt:0x42] }:
-            String illumination = msg.data[0] == "01" ? "bright" : "dim"
-            Utils.sendEvent(name:"illumination", value:illumination, type:"physical", descriptionText:"Illumination is ${illumination}")
+        // Zone Status Change Notification
+        case { contains it, [clusterInt:0x500, commandInt:0x00, isClusterSpecific:true] }:
+            ZoneStatus zs = zigbee.parseZoneStatus(description)
+            boolean alarm1             = zs.alarm1Set
+            boolean alarm2             = zs.alarm2Set
+            boolean tamper             = zs.tamperSet
+            boolean lowBattery         = zs.batterySet
+            boolean supervisionReports = zs.supervisionReportsSet
+            boolean restoreReports     = zs.restoreReportsSet
+            boolean trouble            = zs.troubleSet
+            boolean mainsFault         = zs.acSet
+            boolean testMode           = zs.testSet
+            boolean batteryDefect      = zs.batteryDefectSet
+            return Utils.processedZclMessage("Zone Status Change Notification", "alarm1=${alarm1} alarm2=${alarm2} tamper=${tamper} lowBattery=${lowBattery} supervisionReports=${supervisionReports} restoreReports=${restoreReports} trouble=${trouble} mainsFault=${mainsFault} testMode=${testMode} batteryDefect=${batteryDefect}")
         
-            if (illumination == "bright" && onlyTriggerInDimLight) {
-                return Log.debug("Ignored detected motion because the \"Only detect motion in the dark\" option is active and the sensor detected plenty of light")
-            }
+        // Enroll Request
+        case { contains it, [clusterInt:0x500, commandInt:0x01, isClusterSpecific:true] }:
+            String ep_0500 = "0x01"
+            Utils.sendZigbeeCommands([
+                "he raw 0x${device.deviceNetworkId} 0x01 ${ep_0500} 0x0500 {01 23 00 00 00}",  // Zone Enroll Response (0x00): status=Success, zoneId=0x00
+                "he raw 0x${device.deviceNetworkId} 0x01 ${ep_0500} 0x0500 {01 23 01}",        // Initiate Normal Operation Mode (0x01): no_payload
+            ])
+            return Utils.processedZclMessage("Enroll Request", "description=${description}")
         
-            runIn Integer.parseInt(clearMotionPeriod), "clearMotion", [ overwrite:true ]
-            return Utils.sendEvent(name:"motion", value:"active", type:"physical", descriptionText:"Is active")
+        // Read Attributes: ZoneState
+        case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0000] }:
+            String status = msg.value == "01" ? "enrolled" : "not enrolled"
+            Utils.sendEvent name:"ias", value:status, descriptionText:"Device IAS status is ${status}", type:"digital"
+            return Utils.processedZclMessage("Read Attributes Response", "ZoneState=${msg.value == "01" ? "enrolled" : "not_enrolled"}")
         
-        // MoveToLevelWithOnOff := { 08:Level, 16:TransitionTime }
-        // Example: [4C, 01, 00] -> level=30%, transitionTime=1/10seconds
-        // Example: :[FE, 01, 00 -> level=100%, transitionTime=1/10seconds
-        case { contains it, [clusterInt:0x0008, commandInt:0x04] }:
-            Integer requestedBrightness = Math.round(Integer.parseInt(msg.data[0], 16) * 100 / 254)
-            return Utils.sendEvent(name:"requestedBrightness", value:requestedBrightness, unit:"%", type:"physical", descriptionText:"Requested brightness set too ${requestedBrightness}%")
+        // Read Attributes: ZoneType
+        case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0001] }:
+            return Utils.processedZclMessage("Read Attributes Response", "ZoneType=${msg.value}")
+        
+        // Other events that we expect but are not usefull for capability.IAS behavior
+        case { contains it, [clusterInt:0x0500, commandInt:0x04, isClusterSpecific:false] }:
+            return Utils.processedZclMessage("Write Attribute Response", "attribute=IAS_CIE_Address, ZoneType=${msg.data}")
         
         // Events for capability.Battery
         
