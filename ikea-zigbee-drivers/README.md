@@ -50,6 +50,32 @@ Below you can find the details of each device, including the features, parameter
 
 ### Askvader On/Off Switch (E1836)
 
+<img src="img/Ikea_E1836.webp" style="width: 200px; float: left; margin-right: 1rem">
+
+Product Code: `504.638.80`\
+Manual install file: `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/E1836.groovy`\
+Tested firmwares: `1.0.002`\
+Since version: `3.1.0`
+<br style="clear:left">
+
+#### Features
+* Commands: On, Off, Toggle, On with Timed Off
+* Configure what happens after a power outage (Power On, Power Off, Restore previous state)
+* Health status: online / offline
+* Refresh switch state on demand
+
+#### Device Pairing
+1. Locate the small reset hole (located between the On/Off button and the LED light) and have a pin or pencil ready to fit the hole.
+1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
+1. Plug the device back into an outlet.
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. Insert the pin into the reset hole and press it for at least 5 seconds; the LED light will start blinking upon release.
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. You're all set! Enjoy using your Askvader On/Off Switch.
+
+
+### Askvader On/Off Switch (E1836)
+
 | Parameter | Details |
 |-----------|-------------|
 | Product Image | <img src="img/Ikea_E1836.webp" style="width: 200px"> |
