@@ -45,7 +45,7 @@ If you don’t want to use HPM, you can also install the drivers manually by imp
 More info about installing custom drivers is available in the [Official Documentation](https://docs2.hubitat.com/en/how-to/install-custom-drivers).
 
 ## Device Features and Pairing
-Below you can find the details of each device, including the features, parameters, and pairing instructions. Click on the device name to jump to the corresponding section.
+Below you can find the details of each device, including the features and pairing instructions.
 
 
 ### Askvader On/Off Switch (E1836)
@@ -64,7 +64,7 @@ Below you can find the details of each device, including the features, parameter
 * Health status: online / offline
 * Refresh switch state on demand
 
-#### Device Pairing
+#### Pairing Instructions
 1. Locate the small reset hole (located between the On/Off button and the LED light) and have a pin or pencil ready to fit the hole.
 1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
 1. Plug the device back into an outlet.
@@ -89,7 +89,7 @@ Below you can find the details of each device, including the features, parameter
 * Battery indicator: %
 * Health status: online / offline
 
-#### Device Pairing
+#### Pairing Instructions
 1. Open the battery compartiment and you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
 1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
@@ -122,7 +122,7 @@ Below you can find the details of each device, including the features, parameter
 #### Known Issues
 * Smaller (10W) drivers do not honor the Power On Behavior.
 
-#### Device Pairing
+#### Pairing Instructions
 1. Have a light attached to the LED Driver device.
 1. Find the small reset hole on the device and make sure you have at hand a pin that can fit the reset hole (e.g.: a paper clip or SIM card eject pin).
 1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
@@ -148,7 +148,7 @@ Below you can find the details of each device, including the features, parameter
 * Battery indicator: %
 * Health status: online / offline
 
-#### Device Pairing
+#### Pairing Instructions
 1. Remove device from its position using a small screwdriver and, on the back, you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
 1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
@@ -175,7 +175,7 @@ Below you can find the details of each device, including the features, parameter
 * Battery indicator: %
 * Health status: online / offline
 
-#### Device Pairing
+#### Pairing Instructions
 1. Open the battery compartiment and you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
 1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
@@ -203,7 +203,7 @@ Below you can find the details of each device, including the features, parameter
 * Battery indicator: %
 * Health status: online / offline
 
-#### Device Pairing
+#### Pairing Instructions
 1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
 1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
@@ -232,7 +232,7 @@ Below you can find the details of each device, including the features, parameter
 * Health status: online / offline
 * Refresh device state on demand
 
-#### Device Pairing
+#### Pairing Instructions
 1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
 1. Plug the device back into an outlet.
 1. Open the round top lid and you should see the pair button (🔗) next to the filter reset button.
@@ -264,7 +264,7 @@ Below you can find the details of each device, including the features, parameter
 * The Hold / Release events don't work correctly on the Next and Prev buttons.
 * Old firmware versions (below 2.4.5) send multiple events per button push. You can update the device to the latest version using Hubitat.
 
-#### Device Pairing
+#### Pairing Instructions
 1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
 1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
@@ -292,7 +292,7 @@ Below you can find the details of each device, including the features, parameter
 * Battery indicator: %
 * Health status: online / offline
 
-#### Device Pairing
+#### Pairing Instructions
 1. Open the battery compartiment and you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
 1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
@@ -318,7 +318,7 @@ Below you can find the details of each device, including the features, parameter
 * Health status: online / offline
 * Refresh switch state on demand
 
-#### Device Pairing
+#### Pairing Instructions
 1. Find the small reset hole on the side of the device and make sure you have at hand a pin that can fit the reset hole
    (e.g.: a paper clip or SIM card eject pin).
 1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
@@ -352,7 +352,7 @@ Below you can find the details of each device, including the features, parameter
   Hubitat hub. You can update the device to the latest version using Hubitat.
 * Illumination is reported only when motion is detected.
 
-#### Device Pairing
+#### Pairing Instructions
 1. Open the back compartiment and you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
 1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
@@ -379,7 +379,7 @@ Below you can find the details of each device, including the features, parameter
 * Battery indicator: %
 * Health status: online / offline
 
-#### Device Pairing
+#### Pairing Instructions
 1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
 1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
@@ -405,7 +405,7 @@ Below you can find the details of each device, including the features, parameter
 * Battery indicator: %
 * Health status: online / offline
 
-#### Device Pairing
+#### Pairing Instructions
 1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
 1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
@@ -437,7 +437,7 @@ Below you can find the details of each device, including the features, parameter
 #### Known Issues
 * Old firmware versions suppport binding to groups only and this functionality is not supported by the Hubitat hub. You can update the device to the latest version using Hubitat.
 
-#### Device Pairing
+#### Pairing Instructions
 1. Open the battery compartiment and you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
 1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
@@ -465,7 +465,7 @@ Below you can find the details of each device, including the features, parameter
 * Battery indicator: %
 * Health status: online / offline
 
-#### Device Pairing
+#### Pairing Instructions
 1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
 1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**; the red LED light can be seen from the back / battery side.
@@ -494,7 +494,7 @@ Below you can find the details of each device, including the features, parameter
 #### Known Issues
 * Max reported illuminance is 1364 lux; more than enough for indoor usage
 
-#### Device Pairing
+#### Pairing Instructions
 1. Remove device from its position using a small screwdriver and, on the back, you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
 1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
@@ -521,7 +521,7 @@ Below you can find the details of each device, including the features, parameter
 * Temperature and Relative Humidity
 * Health status: online / offline
 
-#### Device Pairing
+#### Pairing Instructions
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
 1. Click the pair button (🔗), located on the top of the device, 4 times in 5 seconds.
 1. Return to the pairing page, provide a name for your device, and assign it to a room.
