@@ -12,9 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactor the build system & change file naming scheme to support other manufacturers
 
 ### Added
+- Add driver for IKEA Tretakt Smart Plug (E2204)
 - Add Zigbee Bindings control for devices that support this feature
 - Add Zigbee Groups membership control for mains-powered devices
-- Add driver for IKEA Tretakt Smart Plug (E2204)
 - Add driver for Aqara Dual Relay Module T2 (DCM-K01)
 - Add driver for Legrand Connected Outlet (741811)
 - Add driver for Philips Hue Wall Switch Module (RDM001)
@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add driver for Swann One Key Fob (SWO-KEF1PA)
 
 ### Fixed
-- Ignore "Mgmt_Rtg_rsp" and "Parent_annce_rsp" messages that are generated when the Hub restarts - `@a.mcdear`, `@hubitrep`
+- Ignore "Mgmt_Rtg_rsp" and "Parent_annce_rsp" messages that are generated when the Hub restarts - reported by `@a.mcdear`, `@hubitrep`
 
 ## [3.9.0] - 2024-03-14
 
@@ -70,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.4.3] - 2023-12-05
 
 ### Fixed
-- ICPSHC24: Brightness level pre-staging is now disabled by default - reported by @denwood
+- ICPSHC24: Brightness level pre-staging is now disabled by default - reported by `@denwood`
 
 ## [3.4.2] - 2023-11-25
 
@@ -78,8 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All: Change battery percentage reporting interval from 11 hours to 5 hours
 
 ### Fixed
-- All: Set default values for null values in `updated()` - reported by @leo_charles
-- All: Ignore attribute reports we don't care about (configured by other driver) - reported by @ymerj
+- All: Set default values for null values in "updated()" - reported by `@leo_charles`
+- All: Ignore attribute reports we don't care about (configured by other driver) - reported by `@ymerj`
 
 ## [3.4.1] - 2023-11-11
 
@@ -89,13 +89,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.4.0] - 2023-11-09
 
 ### Added
-- All: Add `Refresh` command for all battery-powered devices to interrogate, on demand, the battery percentage
+- All: Add "Refresh" command for all battery-powered devices to interrogate, on demand, the battery percentage
 - All: Add feature to auto-configure device if user did not click the "Configure" button after switching to this driver
 
 ### Fixed
-- All: Fix `GroovyRuntimeException on line 104` method `healthCheck` - reported by @PunchCardPgmr
-- All: Fix `NullPointerException on line 197` method `pingExecute` - reported by @rhodesda
-- All: Fix `NumberFormatException on line 274` method `parse` - reported by @SorenDK
+- All: Fix `GroovyRuntimeException on line 104` method `healthCheck` - reported by `@PunchCardPgmr`
+- All: Fix `NullPointerException on line 197` method `pingExecute` - reported by `@rhodesda`
+- All: Fix `NumberFormatException on line 274` method `parse` - reported by `@SorenDK`
 
 ### Changed
 - All: Cleanup some unused code
@@ -103,8 +103,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.3.0] - 2023-10-23
 
 ### Added
-- Add driver for Tradfri Open/Close Remote (E1766) - contribution from @zcorneli.iit
-- All: Add `Update Firmware` command to all devices
+- Add driver for Tradfri Open/Close Remote (E1766) - contribution from `@zcorneli.iit`
+- All: Add "Update Firmware" command to all devices
 
 ## [3.2.0] - 2023-10-20
 
@@ -112,7 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - E1745: Add option to specify the period of time for the motion to become "inactive" (from 1 to 10 minutes,
   default 3 minutes)
 - E1745: Add option to only detect motion in the dark
-- E1745: Add `requestedBrightness` and `illumination` attributes
+- E1745: Add "requestedBrightness" and "illumination" attributes
  
 ### Changed
 - Instruct mains-powered devices to skip sending the (useless) DefaultResponse Zigbee message after executing
@@ -141,8 +141,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All: Determine power source automatically
 
 ### Fixed
-- E1603: Ignore IEEE Address Response cluster:0x8001 (@tom7)
-- E1603: Add Switch capability for RM usage (@a.mcdear)
+- E1603: Ignore IEEE Address Response cluster:0x8001 - reported by `@tom7`
+- E1603: Add Switch capability for RM usage - reported by `@a.mcdear`
 
 ## [2.3.0] - 2023-09-16
 ### Added
@@ -154,7 +154,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.1.0] - 2023-09-15
 ### Added
-- E2002: Add support for firmware `2.4.5`
+- E2002: Add support for firmware "2.4.5"
 
 ## [2.0.1] - 2023-09-14
 ### Fixed
