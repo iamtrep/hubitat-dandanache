@@ -204,7 +204,7 @@ Devices eligible for group membership:
 * Askvader On/Off Switch (E1836)
 * LED Driver (ICPSHC24)
 * Tradfri Control Outlet (E1603, E1706)
-* Steps to Add Devices to a Group:
+* Tretakt Smart Plug (E2204)
 
 Steps for joining a group:
 
