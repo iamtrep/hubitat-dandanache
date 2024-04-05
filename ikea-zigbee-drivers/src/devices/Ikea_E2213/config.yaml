@@ -1,0 +1,34 @@
+device:
+  model: IKEA Somrig Shortcut Button (E2213)
+  importUrl: https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2213.groovy
+  image: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E2213.webp
+  links:
+  - name: device details
+    url: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#somrig-shortcut-button-e2213
+  - name: community page
+    url: https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853
+
+  fingerprints:
+  - firmwares: 1.0.20 (117C-3B08-01000020)
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0004,0020,1000,FC7C,FC80', outClusters:'0003,0004,0006,0008,0019,1000,FC80', model:'SOMRIG shortcut button', manufacturer:'IKEA of Sweden'
+
+  capabilities:
+    - file: src/devices/Ikea_E2213/E2213.groovy
+    - file: src/capabilities/Battery.groovy
+      params:
+        half: true
+    - file: src/capabilities/DoubleTapableButton.groovy
+    - file: src/capabilities/HealthCheck.groovy
+      params:
+        schedule: 0 0 0/1 ? * * *
+        checkInterval: 3600  # every hour
+        thereshold: 43200    # report device as offline if no message was received in the last 12 hours (device should report battery percentage every 5 hours)
+    - file: src/capabilities/HoldableButton.groovy
+    - file: src/capabilities/PowerSource.groovy
+    - file: src/capabilities/PushableButton.groovy
+      params:
+        buttons:
+        - { id: 'DOT_1', name: '•',  number: 1 }
+        - { id: 'DOT_2', name: '••', number: 2 }
+    - file: src/capabilities/ReleasableButton.groovy
+    - file: src/capabilities/FirmwareUpdate.groovy

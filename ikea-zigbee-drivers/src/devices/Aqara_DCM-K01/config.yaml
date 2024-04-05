@@ -1,0 +1,32 @@
+device:
+  model: Aqara Dual Relay Module T2 (DCM-K01)
+  importUrl: https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Aqara_DCM-K01.groovy
+  image: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Aqara_DCM-K01.webp
+  links:
+  - name: device details
+    url: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#aqara-dual-relay-module-t2-dcm-k01
+  - name: community page
+    url: https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853
+
+  fingerprints:
+  - firmwares: Unknown
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0B04,0702,0005,0004,0003,0012,0000,0006,FCC0', outClusters:'0019,000A', model:'lumi.switch.acn047', manufacturer:'Aqara'
+
+  capabilities:
+    - file: src/devices/Aqara_DCM-K01/DCM-K01.groovy
+    - file: src/capabilities/PowerMeter.groovy
+    - file: src/capabilities/EnergyMeter.groovy
+    - file: src/capabilities/MultiRelay.groovy
+      params:
+        endpoints: ['0x01', '0x02']
+    - file: src/capabilities/PushableButton.groovy
+      params:
+        buttons:
+        - { id: 'S1', name: 'S1', number: 1 }
+        - { id: 'S2', name: 'S2', number: 2 }
+    - file: src/capabilities/HealthCheck.groovy
+      params:
+        schedule: 0 0 0/1 ? * * *
+        checkInterval: 3600  # every hour
+        thereshold: 3600     # report device as offline if no message was received in the last 60 minutes (device should report On/Off status every 10 minutes)
+    - file: src/capabilities/FirmwareUpdate.groovy

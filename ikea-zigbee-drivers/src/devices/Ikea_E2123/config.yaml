@@ -1,0 +1,45 @@
+device:
+  model: IKEA Symfonisk Sound Remote Gen2 (E2123)
+  importUrl: https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2123.groovy
+  image: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E2123.webp
+  links:
+  - name: device details
+    url: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#symfonisk-sound-remote-gen2-e2123
+  - name: community page
+    url: https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853
+
+  fingerprints:
+  - firmwares: 1.0.012
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0020,1000,FC57', outClusters:'0003,0004,0006,0008,0019,1000,FC7F', model:'SYMFONISK sound remote gen2', manufacturer:'IKEA of Sweden'
+  - firmwares: 1.0.35 (117C-110E-01000035)
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0020,1000,FC7C', outClusters:'0003,0004,0006,0008,0019,1000', model:'SYMFONISK sound remote gen2', manufacturer:'IKEA of Sweden'
+
+  capabilities:
+    - file: src/devices/Ikea_E2123/E2123.groovy
+    - file: src/capabilities/Battery.groovy
+      params:
+        half: true
+    - file: src/capabilities/DoubleTapableButton.groovy
+    - file: src/capabilities/HealthCheck.groovy
+      params:
+        schedule: 0 0 0/1 ? * * *
+        checkInterval: 3600  # every hour
+        thereshold: 43200    # report device as offline if no message was received in the last 12 hours (device should report battery percentage every 5 hours)
+    - file: src/capabilities/HoldableButton.groovy
+    - file: src/capabilities/PowerSource.groovy
+    - file: src/capabilities/PushableButton.groovy
+      params:
+        buttons:
+        - { id: 'PLAY',  name: 'Play',  number: 1 }
+        - { id: 'PLUS',  name: 'Plus',  number: 2 }
+        - { id: 'MINUS', name: 'Minus', number: 3 }
+        - { id: 'NEXT',  name: 'Next',  number: 4 }
+        - { id: 'PREV',  name: 'Prev',  number: 5 }
+        - { id: 'DOT_1', name: '•',     number: 6 }
+        - { id: 'DOT_2', name: '••',    number: 7 }
+    - file: src/capabilities/ReleasableButton.groovy
+    - file: src/capabilities/ZigbeeBindings.groovy
+      params:
+        clusters: ['0x0006']
+        groups: true
+    - file: src/capabilities/FirmwareUpdate.groovy

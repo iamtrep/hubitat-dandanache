@@ -1,0 +1,35 @@
+device:
+  model: IKEA Parasoll Door/Window Sensor (E2013)
+  importUrl: https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2013.groovy
+  image: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E2013.webp
+  links:
+  - name: device details
+    url: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#parasoll-doorwindow-sensor-e2013
+  - name: community page
+    url: https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853
+
+  fingerprints:
+  - firmwares: 1.0.19 (117C-3277-01000019)
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0020,0B05,1000,FC7C,FC81', outClusters:'0003,0004,0006,0019,1000', model:'PARASOLL Door/Window Sensor', manufacturer:'IKEA of Sweden'
+
+  capabilities:
+    - name: Sensor
+    - name: ContactSensor
+    - file: src/devices/Ikea_E2013/E2013.groovy
+    - file: src/capabilities/IAS.groovy
+      params:
+        endpoint: '0x02'
+    - file: src/capabilities/Battery.groovy
+      params:
+        half: true
+    - file: src/capabilities/HealthCheck.groovy
+      params:
+        schedule: 0 0 0/1 ? * * *
+        checkInterval: 3600  # every hour
+        thereshold: 43200    # report device as offline if no message was received in the last 12 hours (device should report battery percentage every 5 hours)
+    - file: src/capabilities/PowerSource.groovy
+    - file: src/capabilities/ZigbeeBindings.groovy
+      params:
+        clusters: ['0x0006']
+        groups: true
+    - file: src/capabilities/FirmwareUpdate.groovy

@@ -1,0 +1,37 @@
+device:
+  model: IKEA Rodret Dimmer (E2201)
+  importUrl: https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2201.groovy
+  image: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E2201.webp
+  links:
+  - name: device details
+    url: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#rodret-dimmer-e2201
+  - name: community page
+    url: https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853
+
+  fingerprints:
+  - firmwares: 1.0.47 (117C-11CD-01000047)
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0020,1000,FC7C', outClusters:'0003,0004,0006,0008,0019,1000', model:'RODRET Dimmer', manufacturer:'IKEA of Sweden'
+
+  capabilities:
+    - file: src/devices/Ikea_E2201/E2201.groovy
+    - file: src/capabilities/Battery.groovy
+      params:
+        half: true
+    - file: src/capabilities/HealthCheck.groovy
+      params:
+        schedule: 0 0 0/1 ? * * *
+        checkInterval: 3600  # every hour
+        thereshold: 43200    # report device as offline if no message was received in the last 12 hours (device should report battery percentage every 5 hours)
+    - file: src/capabilities/HoldableButton.groovy
+    - file: src/capabilities/PowerSource.groovy
+    - file: src/capabilities/PushableButton.groovy
+      params:
+        buttons:
+        - { id: 'ON',  name: 'On',  number: 1 }
+        - { id: 'OFF', name: 'Off', number: 2 }
+    - file: src/capabilities/ReleasableButton.groovy
+    - file: src/capabilities/ZigbeeBindings.groovy
+      params:
+        clusters: ['0x0006', '0x0008']
+        groups: true
+    - file: src/capabilities/FirmwareUpdate.groovy

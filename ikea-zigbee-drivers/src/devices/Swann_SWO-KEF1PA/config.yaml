@@ -1,0 +1,33 @@
+device:
+  model: Swann One Key Fob (SWO-KEF1PA)
+  importUrl: https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Swann_SWO-KEF1PA.groovy
+  image: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Swann_SWO-KEF1PA.webp
+  links:
+  - name: device details
+    url: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#swann-one-key-fob-swo-kef1pa
+  - name: community page
+    url: https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853
+
+  fingerprints:
+  - firmwares: TBD
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0001,0500,0000', outClusters:'0003,0501', model:'SWO-KEF1PA', manufacturer:'SwannONe'
+
+  capabilities:
+    - file: src/devices/Swann_SWO-KEF1PA/SWO-KEF1PA.groovy
+    - file: src/capabilities/IAS.groovy
+    - file: src/capabilities/Battery.groovy
+      params:
+        half: true
+    - file: src/capabilities/HealthCheck.groovy
+      params:
+        schedule: 0 0 0/1 ? * * *
+        checkInterval: 3600  # every hour
+        thereshold: 43200    # report device as offline if no message was received in the last 12 hours (device should report battery percentage every 5 hours)
+    - file: src/capabilities/PushableButton.groovy
+      params:
+        buttons:
+        - { id: 'PANIC', name: 'Panic', number: 1 }
+        - { id: 'HOME',  name: 'Home',  number: 2 }
+        - { id: 'AWAY',  name: 'Away',  number: 3 }
+        - { id: 'NIGHT', name: 'Night', number: 4 }
+    - file: src/capabilities/FirmwareUpdate.groovy
