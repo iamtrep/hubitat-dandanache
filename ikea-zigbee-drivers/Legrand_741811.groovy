@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'Legrand Connected Outlet (741811)'
-@Field static final String DRIVER_VERSION = '4.0.0'
+@Field static final String DRIVER_VERSION = '4.1.0'
 
 // Fields for capability.HealthCheck
 import groovy.time.TimeCategory
@@ -51,7 +51,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Legrand_741811.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                Legrand Connected Outlet (741811) <small>v4.0.0</small><br>
+                Legrand Connected Outlet (741811) <small>v4.1.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#legrand-connected-outlet-741811" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -85,6 +85,20 @@ metadata {
                 'RESTORE_PREVIOUS_STATE': 'Restore previous state'
             ],
             defaultValue: 'RESTORE_PREVIOUS_STATE',
+            required: true
+        )
+        
+        // Inputs for devices.Legrand_741811
+        input(
+            name: 'ledMode', type: 'enum',
+            title: 'LED mode',
+            description: '<small>Select how the LED indicator behaves.</small>',
+            options: [
+                    'ALWAYS_ON': 'Always On - LED remains lit at all times, making it easy to find in the dark',
+                   'ALWAYS_OFF': 'Always Off - LED remains off, ensuring total darkness',
+                'OUTLET_STATUS': 'Outlet status - LED indicates the power state of the outlet'
+            ],
+            defaultValue: 'OUTLET_STATUS',
             required: true
         )
         
@@ -131,6 +145,26 @@ List<String> updated(boolean auto = false) {
     }
     log_info "🛠️ powerOnBehavior = ${powerOnBehavior}"
     cmds += zigbee.writeAttribute(0x0006, 0x4003, 0x30, powerOnBehavior == 'TURN_POWER_OFF' ? 0x00 : (powerOnBehavior == 'TURN_POWER_ON' ? 0x01 : 0xFF))
+    
+    // Preferences for devices.Legrand_741811
+    if (ledMode == null) {
+        ledMode = 'OUTLET_STATUS'
+        device.updateSetting 'ledMode', [value:ledMode, type:'enum']
+    }
+    log_info "🛠️ ledMode = ${ledMode}"
+    switch (ledMode) {
+        case 'ALWAYS_ON':
+            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x01, [mfgCode: '0x1021']) // Write LED Mode attribute
+            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x01, [mfgCode: '0x1021']) // Write LED Mode attributes
+            break
+        case 'ALWAYS_OFF':
+            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x00, [mfgCode: '0x1021']) // Write LED Mode attribute
+            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x00, [mfgCode: '0x1021']) // Write LED Mode attributes
+            break
+        default:
+            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x01, [mfgCode: '0x1021']) // Write LED Mode attribute
+            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x00, [mfgCode: '0x1021']) // Write LED Mode attributes
+    }
     
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, 'healthCheck'
@@ -214,7 +248,9 @@ void configure(boolean auto = false) {
     cmds += zigbee.readAttribute(0x0000, 0x0007)  // PowerSource
 
     // Query Basic cluster attributes
-    cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x0005, 0x000A, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, ModelIdentifier, ProductCode, SWBuildID
+    cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
+    cmds += zigbee.readAttribute(0x0000, [0x0005]) // ModelIdentifier
+    cmds += zigbee.readAttribute(0x0000, [0x000A]) // ProductCode
     utils_sendZigbeeCommands cmds
 
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
@@ -364,7 +400,7 @@ void parse(String description) {
                 case 0x00: newValue = 'TURN_POWER_OFF'; break
                 case 0x01: newValue = 'TURN_POWER_ON'; break
                 case 0xFF: newValue = 'RESTORE_PREVIOUS_STATE'; break
-                default: log_warn "Received attribute value: powerOnBehavior=${msg.value}"; return
+                default: log_warn "Received unexpected attribute value: PowerOnBehavior=${msg.value}"; return
             }
             powerOnBehavior = newValue
             device.updateSetting 'powerOnBehavior', [value:newValue, type:'enum']
@@ -373,10 +409,17 @@ void parse(String description) {
         
         // Other events that we expect but are not usefull for capability.Switch behavior
         case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=switch, data=${msg.data}"
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
             return
         case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attribute Response
         case { contains it, [clusterInt:0x0006, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Command
+            return
+        
+        // Events for devices.Legrand_741811
+        // ===================================================================================================================
+        
+        // Write Attributes Response
+        case { contains it, [endpointInt:0x01, clusterInt:0xFC01, commandInt:0x04, isClusterSpecific:false, isManufacturerSpecific:true, manufacturerId:'1021'] }:
             return
         
         // Events for capability.PowerMeter

@@ -65,12 +65,12 @@ input(
     title: 'Child lock',
     description: '<small>Lock physical controls, safeguarding against accidental operation.</small>',
     defaultValue: false
-)
+)   
 input(
-    name: 'panelIndicator', type: 'bool',
-    title: 'LED status',
-    description: '<small>Keep the LED indicators on the device constantly lit.</small>',
-    defaultValue: true
+    name: 'darkMode', type: 'bool',
+    title: 'Dark mode',
+    description: '<small>Turn off LED indicators on the device, ensuring total darkness.</small>',
+    defaultValue: false
 )
 {{/ @inputs }}
 {{!--------------------------------------------------------------------------}}
@@ -194,12 +194,12 @@ if (childLock == null) {
 log_info "🛠️ childLock = ${childLock}"
 cmds += zigbee.writeAttribute(0xFC7D, 0x0005, 0x10, childLock ? 0x01 : 0x00, [mfgCode:'0x117C'])
 
-if (panelIndicator == null) {
-    panelIndicator = true
-    device.updateSetting 'panelIndicator', [value:panelIndicator, type:'bool']
+if (darkMode == null) {
+    darkMode = false
+    device.updateSetting 'darkMode', [value:darkMode, type:'bool']
 }
-log_info "🛠️ panelIndicator = ${panelIndicator}"
-cmds += zigbee.writeAttribute(0xFC7D, 0x0003, 0x10, panelIndicator ? 0x00 : 0x01, [mfgCode:'0x117C'])
+log_info "🛠️ darkMode = ${darkMode}"
+cmds += zigbee.writeAttribute(0xFC7D, 0x0003, 0x10, darkMode ? 0x01 : 0x00, [mfgCode:'0x117C'])
 {{/ @updated }}
 {{!--------------------------------------------------------------------------}}
 {{# @configure }}
@@ -211,7 +211,7 @@ cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0xFC7D {${device.zigbeeI
 cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0000 0x23 0x0000 0x0258 {0A} {117C}"  // Report FilterRunTime (uint32) at least every 10 minutes
 cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0001 0x20 0x0000 0x0000 {01} {117C}"  // Report ReplaceFilter (uint8)
 cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0002 0x23 0x0000 0x0000 {01} {117C}"  // Report FilterLifeTime (uint32)
-//cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0003 0x10 0x0000 0x0000 {01} {117C}"  // Report DisablePanelLights (bool)
+//cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0003 0x10 0x0000 0x0000 {01} {117C}"  // Report DarkMode (bool)
 //cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0004 0x21 0x0000 0x0258 {01} {117C}"  // Report PM25Measurement (uint16)
 cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0005 0x10 0x0000 0x0000 {01} {117C}"  // Report ChildLock (bool)
 cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0006 0x20 0x0000 0x0000 {01} {117C}"  // Report FanMode (uint8)
@@ -225,7 +225,7 @@ cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0007 0x20 0x0000 0x0000
 cmds += zigbee.readAttribute(0xFC7D, 0x0000, [mfgCode: '0x117C']) // FilterRunTime
 cmds += zigbee.readAttribute(0xFC7D, 0x0001, [mfgCode: '0x117C']) // ReplaceFilter
 cmds += zigbee.readAttribute(0xFC7D, 0x0002, [mfgCode: '0x117C']) // FilterLifeTime
-cmds += zigbee.readAttribute(0xFC7D, 0x0003, [mfgCode: '0x117C']) // DisablePanelLights
+cmds += zigbee.readAttribute(0xFC7D, 0x0003, [mfgCode: '0x117C']) // DarkMode
 cmds += zigbee.readAttribute(0xFC7D, 0x0004, [mfgCode: '0x117C']) // PM25Measurement
 cmds += zigbee.readAttribute(0xFC7D, 0x0005, [mfgCode: '0x117C']) // ChildLock
 cmds += zigbee.readAttribute(0xFC7D, 0x0006, [mfgCode: '0x117C']) // FanMode
@@ -327,11 +327,11 @@ case { contains it, [clusterInt:0xFC7D, commandInt:0x01, attrInt:0x0002] }:
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "FilterLifeTime=${msg.value} (${lifeTimeDays} days)"
     return
 
-// Read Attributes: DisablePanelLights
+// Read Attributes: DarkMode
 case { contains it, [clusterInt:0xFC7D, commandInt:0x01, attrInt:0x0003] }:
-    panelIndicator = msg.value == '00'
-    device.updateSetting 'panelIndicator', [value:panelIndicator, type:'bool']
-    utils_processedZclMessage 'Read Attributes Response', "DisablePanelLights=${msg.value}"
+    darkMode = msg.value == '01'
+    device.updateSetting 'darkMode', [value:darkMode, type:'bool']
+    utils_processedZclMessage 'Read Attributes Response', "DarkMode=${msg.value}"
     return
 
 // Report/Read Attributes: ChildLock

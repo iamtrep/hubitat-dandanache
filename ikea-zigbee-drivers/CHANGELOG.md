@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2024-04-06
+
+### Added
+- Ikea E2204: Add option to disable LED indicators on the device, ensuring total darkness
+- Legrand 741811: Add option to configure LED indicators: always On, always Off, follow device power state
+
 ## [4.0.0] - 2024-04-05
 
 ### Changed

@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'Swann One Key Fob (SWO-KEF1PA)'
-@Field static final String DRIVER_VERSION = '4.0.0'
+@Field static final String DRIVER_VERSION = '4.1.0'
 
 // Fields for capability.IAS
 import hubitat.zigbee.clusters.iaszone.ZoneStatus
@@ -54,7 +54,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Swann_SWO-KEF1PA.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                Swann One Key Fob (SWO-KEF1PA) <small>v4.0.0</small><br>
+                Swann One Key Fob (SWO-KEF1PA) <small>v4.1.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#swann-one-key-fob-swo-kef1pa" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -175,7 +175,9 @@ void configure(boolean auto = false) {
     sendEvent name:'numberOfButtons', value:numberOfButtons, descriptionText:"Number of buttons is ${numberOfButtons}"
 
     // Query Basic cluster attributes
-    cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x0005, 0x000A, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, ModelIdentifier, ProductCode, SWBuildID
+    cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
+    cmds += zigbee.readAttribute(0x0000, [0x0005]) // ModelIdentifier
+    cmds += zigbee.readAttribute(0x0000, [0x000A]) // ProductCode
     utils_sendZigbeeCommands cmds
 
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'

@@ -144,7 +144,9 @@ void configure(boolean auto = false) {
     {{/ device.capabilities }}
 
     // Query Basic cluster attributes
-    cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x0005, 0x000A, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, ModelIdentifier, ProductCode, SWBuildID
+    cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
+    cmds += zigbee.readAttribute(0x0000, [0x0005]) // ModelIdentifier
+    cmds += zigbee.readAttribute(0x0000, [0x000A]) // ProductCode
     utils_sendZigbeeCommands cmds
 
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'

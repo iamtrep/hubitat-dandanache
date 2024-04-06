@@ -250,6 +250,7 @@ Below you can find the details of each device, including the features and pairin
 * Filter usage (%) and Filter status (normal / replace) information
 * Configuration: Sensor report frequency, Filter life time, LED status
 * Child lock: enable / disable physical controls on the device
+* Dark mode: turn off LED indicator on the device, ensuring total darkness
 * Health status: online / offline
 * Refresh device state on demand
 
@@ -520,6 +521,7 @@ Below you can find the details of each device, including the features and pairin
 * Commands: On, Off, Toggle, On with Timed Off
 * Configure what happens after a power outage (Power On, Power Off, Restore previous state)
 * Child lock: enable / disable physical button on the device
+* Dark mode: turn off LED indicator on the device, ensuring total darkness
 * Health status: online / offline
 * Refresh switch state on demand
 * Can be member of Zigbee groups
@@ -541,7 +543,7 @@ Below you can find the details of each device, including the features and pairin
 | Product Image | <img src="img/Ikea_E2134.webp" style="width: 200px"> |
 | Product Code | `405.043.48` |
 | Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2134.groovy` |
-| Tested firmwares | ` 1.0.57` |
+| Tested firmwares | `1.0.57` |
 | Since version | `3.6.0` |
 
 #### Features
@@ -624,11 +626,13 @@ Below you can find the details of each device, including the features and pairin
 |-----------|-------------|
 | Product Image | <img src="img/Legrand_741811.webp" style="width: 200px"> |
 | Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Legrand_741811.groovy` |
+| Tested firmwares | `003e` |
 | Since version | `4.0.0` |
 
 #### Features
 * Commands: On, Off, Toggle, On with Timed Off
 * Configure what happens after a power outage (Power On, Power Off, Restore previous state)
+* LED mode: always On, always Off, follow device power state
 * Report power (W)
 * Health status: online / offline
 * Refresh device state on demand

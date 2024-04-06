@@ -17,6 +17,7 @@ device:
       params:
         powerOnBehavior: true
         onWithTimedOff: true
+    - file: src/devices/Legrand_741811/741811.groovy
     - file: src/capabilities/PowerMeter.groovy
     - file: src/capabilities/HealthCheck.groovy
       params:

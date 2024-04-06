@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'IKEA Tradfri Control Outlet (E1603)'
-@Field static final String DRIVER_VERSION = '4.0.0'
+@Field static final String DRIVER_VERSION = '4.1.0'
 
 // Fields for capability.HealthCheck
 import groovy.time.TimeCategory
@@ -54,7 +54,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E1603.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                IKEA Tradfri Control Outlet (E1603) <small>v4.0.0</small><br>
+                IKEA Tradfri Control Outlet (E1603) <small>v4.1.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#tradfri-control-outlet-e1603-e1706" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -213,7 +213,9 @@ void configure(boolean auto = false) {
     cmds += zigbee.readAttribute(0x0000, 0x0007)  // PowerSource
 
     // Query Basic cluster attributes
-    cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x0005, 0x000A, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, ModelIdentifier, ProductCode, SWBuildID
+    cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
+    cmds += zigbee.readAttribute(0x0000, [0x0005]) // ModelIdentifier
+    cmds += zigbee.readAttribute(0x0000, [0x000A]) // ProductCode
     utils_sendZigbeeCommands cmds
 
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
@@ -358,7 +360,7 @@ void parse(String description) {
                 case 0x00: newValue = 'TURN_POWER_OFF'; break
                 case 0x01: newValue = 'TURN_POWER_ON'; break
                 case 0xFF: newValue = 'RESTORE_PREVIOUS_STATE'; break
-                default: log_warn "Received attribute value: powerOnBehavior=${msg.value}"; return
+                default: log_warn "Received unexpected attribute value: PowerOnBehavior=${msg.value}"; return
             }
             powerOnBehavior = newValue
             device.updateSetting 'powerOnBehavior', [value:newValue, type:'enum']
@@ -367,7 +369,7 @@ void parse(String description) {
         
         // Other events that we expect but are not usefull for capability.Switch behavior
         case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=switch, data=${msg.data}"
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
             return
         case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attribute Response
         case { contains it, [clusterInt:0x0006, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Command

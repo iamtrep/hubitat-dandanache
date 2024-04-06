@@ -118,7 +118,7 @@ case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x4003] }:
         case 0x00: newValue = 'TURN_POWER_OFF'; break
         case 0x01: newValue = 'TURN_POWER_ON'; break
         case 0xFF: newValue = 'RESTORE_PREVIOUS_STATE'; break
-        default: log_warn "Received attribute value: powerOnBehavior=${msg.value}"; return
+        default: log_warn "Received unexpected attribute value: PowerOnBehavior=${msg.value}"; return
     }
     powerOnBehavior = newValue
     device.updateSetting 'powerOnBehavior', [value:newValue, type:'enum']
@@ -128,7 +128,7 @@ case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x4003] }:
 
 // Other events that we expect but are not usefull for capability.Switch behavior
 case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
-    utils_processedZclMessage 'Configure Reporting Response', "attribute=switch, data=${msg.data}"
+    utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
     return
 case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attribute Response
 case { contains it, [clusterInt:0x0006, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Command

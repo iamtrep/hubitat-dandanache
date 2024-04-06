@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'IKEA Starkvind Air Purifier (E2006)'
-@Field static final String DRIVER_VERSION = '4.0.0'
+@Field static final String DRIVER_VERSION = '4.1.0'
 
 // Fields for devices.Ikea_E2006
 @Field static final List<String> SUPPORTED_FAN_SPEEDS = [
@@ -63,7 +63,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E2006.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                IKEA Starkvind Air Purifier (E2006) <small>v4.0.0</small><br>
+                IKEA Starkvind Air Purifier (E2006) <small>v4.1.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#starkvind-air-purifier-e2006" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -118,12 +118,12 @@ metadata {
             title: 'Child lock',
             description: '<small>Lock physical controls, safeguarding against accidental operation.</small>',
             defaultValue: false
-        )
+        )   
         input(
-            name: 'panelIndicator', type: 'bool',
-            title: 'LED status',
-            description: '<small>Keep the LED indicators on the device constantly lit.</small>',
-            defaultValue: true
+            name: 'darkMode', type: 'bool',
+            title: 'Dark mode',
+            description: '<small>Turn off LED indicators on the device, ensuring total darkness.</small>',
+            defaultValue: false
         )
     }
 }
@@ -175,12 +175,12 @@ List<String> updated(boolean auto = false) {
     log_info "🛠️ childLock = ${childLock}"
     cmds += zigbee.writeAttribute(0xFC7D, 0x0005, 0x10, childLock ? 0x01 : 0x00, [mfgCode:'0x117C'])
     
-    if (panelIndicator == null) {
-        panelIndicator = true
-        device.updateSetting 'panelIndicator', [value:panelIndicator, type:'bool']
+    if (darkMode == null) {
+        darkMode = false
+        device.updateSetting 'darkMode', [value:darkMode, type:'bool']
     }
-    log_info "🛠️ panelIndicator = ${panelIndicator}"
-    cmds += zigbee.writeAttribute(0xFC7D, 0x0003, 0x10, panelIndicator ? 0x00 : 0x01, [mfgCode:'0x117C'])
+    log_info "🛠️ darkMode = ${darkMode}"
+    cmds += zigbee.writeAttribute(0xFC7D, 0x0003, 0x10, darkMode ? 0x01 : 0x00, [mfgCode:'0x117C'])
     
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, 'healthCheck'
@@ -239,7 +239,7 @@ void configure(boolean auto = false) {
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0000 0x23 0x0000 0x0258 {0A} {117C}"  // Report FilterRunTime (uint32) at least every 10 minutes
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0001 0x20 0x0000 0x0000 {01} {117C}"  // Report ReplaceFilter (uint8)
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0002 0x23 0x0000 0x0000 {01} {117C}"  // Report FilterLifeTime (uint32)
-    //cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0003 0x10 0x0000 0x0000 {01} {117C}"  // Report DisablePanelLights (bool)
+    //cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0003 0x10 0x0000 0x0000 {01} {117C}"  // Report DarkMode (bool)
     //cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0004 0x21 0x0000 0x0258 {01} {117C}"  // Report PM25Measurement (uint16)
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0005 0x10 0x0000 0x0000 {01} {117C}"  // Report ChildLock (bool)
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0006 0x20 0x0000 0x0000 {01} {117C}"  // Report FanMode (uint8)
@@ -255,7 +255,9 @@ void configure(boolean auto = false) {
     cmds += zigbee.readAttribute(0x0000, 0x0007)  // PowerSource
 
     // Query Basic cluster attributes
-    cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x0005, 0x000A, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, ModelIdentifier, ProductCode, SWBuildID
+    cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
+    cmds += zigbee.readAttribute(0x0000, [0x0005]) // ModelIdentifier
+    cmds += zigbee.readAttribute(0x0000, [0x000A]) // ProductCode
     utils_sendZigbeeCommands cmds
 
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
@@ -279,7 +281,7 @@ void refresh(boolean auto = false) {
     cmds += zigbee.readAttribute(0xFC7D, 0x0000, [mfgCode: '0x117C']) // FilterRunTime
     cmds += zigbee.readAttribute(0xFC7D, 0x0001, [mfgCode: '0x117C']) // ReplaceFilter
     cmds += zigbee.readAttribute(0xFC7D, 0x0002, [mfgCode: '0x117C']) // FilterLifeTime
-    cmds += zigbee.readAttribute(0xFC7D, 0x0003, [mfgCode: '0x117C']) // DisablePanelLights
+    cmds += zigbee.readAttribute(0xFC7D, 0x0003, [mfgCode: '0x117C']) // DarkMode
     cmds += zigbee.readAttribute(0xFC7D, 0x0004, [mfgCode: '0x117C']) // PM25Measurement
     cmds += zigbee.readAttribute(0xFC7D, 0x0005, [mfgCode: '0x117C']) // ChildLock
     cmds += zigbee.readAttribute(0xFC7D, 0x0006, [mfgCode: '0x117C']) // FanMode
@@ -546,11 +548,11 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "FilterLifeTime=${msg.value} (${lifeTimeDays} days)"
             return
         
-        // Read Attributes: DisablePanelLights
+        // Read Attributes: DarkMode
         case { contains it, [clusterInt:0xFC7D, commandInt:0x01, attrInt:0x0003] }:
-            panelIndicator = msg.value == '00'
-            device.updateSetting 'panelIndicator', [value:panelIndicator, type:'bool']
-            utils_processedZclMessage 'Read Attributes Response', "DisablePanelLights=${msg.value}"
+            darkMode = msg.value == '01'
+            device.updateSetting 'darkMode', [value:darkMode, type:'bool']
+            utils_processedZclMessage 'Read Attributes Response', "DarkMode=${msg.value}"
             return
         
         // Report/Read Attributes: ChildLock
