@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'Swann One Key Fob (SWO-KEF1PA)'
-@Field static final String DRIVER_VERSION = '4.1.0'
+@Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for capability.IAS
 import hubitat.zigbee.clusters.iaszone.ZoneStatus
@@ -36,8 +36,7 @@ metadata {
         capability 'HealthCheck'
         capability 'PushableButton'
 
-        // For firmware: TBD
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0001,0500,0000', outClusters:'0003,0501', model:'SWO-KEF1PA', manufacturer:'SwannONe'
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0001,0500,0000', outClusters:'0003,0501', model:'SWO-KEF1PA', manufacturer:'SwannONe'  // For firmware: TBD
         
         // Attributes for capability.IAS
         attribute 'ias', 'enum', ['enrolled', 'not enrolled']
@@ -54,7 +53,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Swann_SWO-KEF1PA.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                Swann One Key Fob (SWO-KEF1PA) <small>v4.1.0</small><br>
+                Swann One Key Fob (SWO-KEF1PA) <small>v5.0.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#swann-one-key-fob-swo-kef1pa" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -524,6 +523,9 @@ private void utils_processedZdpMessage(String type, String details) {
 }
 private String utils_payload(String value) {
     return value.replace('0x', '').split('(?<=\\G.{2})').reverse().join('')
+}
+private String utils_payload(Integer value, Integer size = 4) {
+    return utils_payload(Integer.toHexString(value).padLeft(size, '0'))
 }
 
 // switch/case syntactic sugar

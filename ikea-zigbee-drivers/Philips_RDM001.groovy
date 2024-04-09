@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'Philips Hue Wall Switch Module (RDM001)'
-@Field static final String DRIVER_VERSION = '4.1.0'
+@Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for devices.Philips_RDM001
 @Field static final Map<Integer, String> RDM001_SWITCH_STYLE = [
@@ -47,8 +47,7 @@ metadata {
         capability 'PushableButton'
         capability 'ReleasableButton'
 
-        // For firmware: 1.0.5 (100B-011C-0000041A)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,FC00', outClusters:'0003,0004,0006,0008,0019', model:'RDM001', manufacturer:'Signify Netherlands B.V.'
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,FC00', outClusters:'0003,0004,0006,0008,0019', model:'RDM001', manufacturer:'Signify Netherlands B.V.'  // For firmware: 1.0.5 (100B-011C-0000041A)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -62,7 +61,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Philips_RDM001.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                Philips Hue Wall Switch Module (RDM001) <small>v4.1.0</small><br>
+                Philips Hue Wall Switch Module (RDM001) <small>v5.0.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#philips-hue-wall-switch-module-rmd001" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -721,6 +720,9 @@ private void utils_processedZdpMessage(String type, String details) {
 }
 private String utils_payload(String value) {
     return value.replace('0x', '').split('(?<=\\G.{2})').reverse().join('')
+}
+private String utils_payload(Integer value, Integer size = 4) {
+    return utils_payload(Integer.toHexString(value).padLeft(size, '0'))
 }
 
 // switch/case syntactic sugar

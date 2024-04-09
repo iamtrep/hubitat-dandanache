@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'IKEA Tradfri Remote Control (E1810)'
-@Field static final String DRIVER_VERSION = '4.1.0'
+@Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for capability.HealthCheck
 import groovy.time.TimeCategory
@@ -37,8 +37,7 @@ metadata {
         capability 'PushableButton'
         capability 'ReleasableButton'
 
-        // For firmware: 24.4.5 (117C-11C1-24040005)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0020,1000,FC57,FC7C', outClusters:'0003,0004,0005,0006,0008,0019,1000', model:'TRADFRI remote control', manufacturer:'IKEA of Sweden'
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0020,1000,FC57,FC7C', outClusters:'0003,0004,0005,0006,0008,0019,1000', model:'TRADFRI remote control', manufacturer:'IKEA of Sweden'  // For firmware: 24.4.5 (117C-11C1-24040005)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -52,7 +51,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E1810.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                IKEA Tradfri Remote Control (E1810) <small>v4.1.0</small><br>
+                IKEA Tradfri Remote Control (E1810) <small>v5.0.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#tradfri-remote-control-e1810" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -644,6 +643,9 @@ private void utils_processedZdpMessage(String type, String details) {
 }
 private String utils_payload(String value) {
     return value.replace('0x', '').split('(?<=\\G.{2})').reverse().join('')
+}
+private String utils_payload(Integer value, Integer size = 4) {
+    return utils_payload(Integer.toHexString(value).padLeft(size, '0'))
 }
 
 // switch/case syntactic sugar

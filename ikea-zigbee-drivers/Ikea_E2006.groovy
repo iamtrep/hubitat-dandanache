@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'IKEA Starkvind Air Purifier (E2006)'
-@Field static final String DRIVER_VERSION = '4.1.0'
+@Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for devices.Ikea_E2006
 @Field static final List<String> SUPPORTED_FAN_SPEEDS = [
@@ -35,11 +35,8 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        // For firmware: 1.0.033 (117C-110C-00010033)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0202,FC57,FC7D', outClusters:'0019,0400,042A', model:'STARKVIND Air purifier table', manufacturer:'IKEA of Sweden'
-
-        // For firmware: 1.1.001 (117C-110C-00011001)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0202,FC57,FC7C,FC7D', outClusters:'0019,0400,042A', model:'STARKVIND Air purifier table', manufacturer:'IKEA of Sweden'
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0202,FC57,FC7D', outClusters:'0019,0400,042A', model:'STARKVIND Air purifier table', manufacturer:'IKEA of Sweden'  // For firmware: 1.0.033 (117C-110C-00010033)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0202,FC57,FC7C,FC7D', outClusters:'0019,0400,042A', model:'STARKVIND Air purifier table', manufacturer:'IKEA of Sweden'  // For firmware: 1.1.001 (117C-110C-00011001)
         
         // Attributes for devices.Ikea_E2006
         attribute 'airQuality', 'enum', ['good', 'moderate', 'unhealthy for sensitive groups', 'unhealthy', 'hazardous']
@@ -63,7 +60,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E2006.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                IKEA Starkvind Air Purifier (E2006) <small>v4.1.0</small><br>
+                IKEA Starkvind Air Purifier (E2006) <small>v5.0.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#starkvind-air-purifier-e2006" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -711,6 +708,9 @@ private void utils_processedZdpMessage(String type, String details) {
 }
 private String utils_payload(String value) {
     return value.replace('0x', '').split('(?<=\\G.{2})').reverse().join('')
+}
+private String utils_payload(Integer value, Integer size = 4) {
+    return utils_payload(Integer.toHexString(value).padLeft(size, '0'))
 }
 
 // switch/case syntactic sugar

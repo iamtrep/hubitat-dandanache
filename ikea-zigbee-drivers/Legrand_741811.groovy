@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'Legrand Connected Outlet (741811)'
-@Field static final String DRIVER_VERSION = '4.1.0'
+@Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for capability.HealthCheck
 import groovy.time.TimeCategory
@@ -32,8 +32,7 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        // For firmware: 003e (1021-0011-003E4203)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,FC01,0B04,0006', outClusters:'0006,0000,FC01,0005,0019', model:' Connected outlet', manufacturer:' Legrand'
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,FC01,0B04,0006', outClusters:'0006,0000,FC01,0005,0019', model:' Connected outlet', manufacturer:' Legrand'  // For firmware: 003e (1021-0011-003E4203)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -41,7 +40,7 @@ metadata {
     
     // Commands for capability.Switch
     command 'toggle'
-    command 'onWithTimedOff', [[name:'On time*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
+    command 'onWithTimedOff', [[name:'On duration*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
     
     // Commands for capability.FirmwareUpdate
     command 'updateFirmware'
@@ -51,7 +50,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Legrand_741811.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                Legrand Connected Outlet (741811) <small>v4.1.0</small><br>
+                Legrand Connected Outlet (741811) <small>v5.0.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#legrand-connected-outlet-741811" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -302,8 +301,8 @@ void toggle() {
 void onWithTimedOff(BigDecimal onTime = 1) {
     Integer delay = onTime < 1 ? 1 : (onTime > 6500 ? 6500 : onTime)
     log_debug 'Sending OnWithTimedOff command'
-
-    String payload = "00 ${zigbee.swapOctets(zigbee.convertToHexString(delay * 10, 4))} 0000"
+    Integer dur = delay * 10
+    String payload = "00 ${utils_payload dur, 4} 0000"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114342 ${payload}}"])
 }
 
@@ -635,6 +634,9 @@ private void utils_processedZdpMessage(String type, String details) {
 }
 private String utils_payload(String value) {
     return value.replace('0x', '').split('(?<=\\G.{2})').reverse().join('')
+}
+private String utils_payload(Integer value, Integer size = 4) {
+    return utils_payload(Integer.toHexString(value).padLeft(size, '0'))
 }
 
 // switch/case syntactic sugar

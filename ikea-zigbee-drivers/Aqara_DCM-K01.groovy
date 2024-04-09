@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'Aqara Dual Relay Module T2 (DCM-K01)'
-@Field static final String DRIVER_VERSION = '4.1.0'
+@Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for capability.MultiRelay
 import com.hubitat.app.ChildDeviceWrapper
@@ -38,8 +38,7 @@ metadata {
         capability 'PushableButton'
         capability 'HealthCheck'
 
-        // For firmware: Unknown
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0B04,0702,0005,0004,0003,0012,0000,0006,FCC0', outClusters:'0019,000A', model:'lumi.switch.acn047', manufacturer:'Aqara'
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0B04,0702,0005,0004,0003,0012,0000,0006,FCC0', outClusters:'0019,000A', model:'lumi.switch.acn047', manufacturer:'Aqara'  // For firmware: Unknown
         
         // Attributes for devices.Aqara_DCM-K01
         attribute 'powerOutageCount', 'number'
@@ -56,7 +55,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Aqara_DCM-K01.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                Aqara Dual Relay Module T2 (DCM-K01) <small>v4.1.0</small><br>
+                Aqara Dual Relay Module T2 (DCM-K01) <small>v5.0.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#aqara-dual-relay-module-t2-dcm-k01" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -780,6 +779,9 @@ private void utils_processedZdpMessage(String type, String details) {
 }
 private String utils_payload(String value) {
     return value.replace('0x', '').split('(?<=\\G.{2})').reverse().join('')
+}
+private String utils_payload(Integer value, Integer size = 4) {
+    return utils_payload(Integer.toHexString(value).padLeft(size, '0'))
 }
 
 // switch/case syntactic sugar

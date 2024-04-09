@@ -29,7 +29,7 @@ input(
 // Commands for capability.Switch
 command 'toggle'
 {{# params.onWithTimedOff }}
-command 'onWithTimedOff', [[name:'On time*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
+command 'onWithTimedOff', [[name:'On duration*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
 {{/ params.onWithTimedOff }}
 {{/ @commands }}
 {{!--------------------------------------------------------------------------}}
@@ -54,8 +54,8 @@ void toggle() {
 void onWithTimedOff(BigDecimal onTime = 1) {
     Integer delay = onTime < 1 ? 1 : (onTime > 6500 ? 6500 : onTime)
     log_debug 'Sending OnWithTimedOff command'
-
-    String payload = "00 ${zigbee.swapOctets(zigbee.convertToHexString(delay * 10, 4))} 0000"
+    Integer dur = delay * 10
+    String payload = "00 ${utils_payload dur, 4} 0000"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114342 ${payload}}"])
 }
 {{/ params.onWithTimedOff }}

@@ -3,27 +3,34 @@ This document provides instructions on how to install and use custom drivers for
 
 These drivers enable advanced features and functionalities for the following devices:
 
-* [Askvader On/Off Switch (E1836)](#askvader-onoff-switch-e1836)
-* [Badring Water Leakage Sensor (E2202)](#badring-water-leakage-sensor-e2202)
-* [LED Driver (ICPSHC24)](#led-driver-icpshc24)
-* [Parasoll Door/Window Sensor (E2013)](#parasoll-doorwindow-sensor-e2013)
+Remotes:
 * [Rodret Dimmer (E2201)](#rodret-dimmer-e2201)
 * [Somrig Shortcut Button (E2213)](#somrig-shortcut-button-e2213)
-* [Starkvind Air Purifier (E2006)](#starkvind-air-purifier-e2006)
 * [Styrbar Remote Control N2 (E2002)](#styrbar-remote-control-n2-e2002)
 * [Symfonisk Sound Remote Gen2 (E2123)](#symfonisk-sound-remote-gen2-e2123)
-* [Tradfri Control Outlet (E1603, E1706)](#tradfri-control-outlet-e1603-e1706)
-* [Tradfri Motion Sensor (E1745)](#tradfri-motion-sensor-e1745)
 * [Tradfri On/Off Switch (E1743)](#tradfri-onoff-switch-e1743)
 * [Tradfri Open/Close Remote (E1766)](#tradfri-openclose-remote-e1766)
 * [Tradfri Remote Control (E1810)](#tradfri-remote-control-e1810)
 * [Tradfri Shortcut Button (E1812)](#tradfri-shortcut-button-e1812)
-* [Tretakt Smart Plug (E2204)](#tretakt-smart-plug-e2204)
+
+Sensors:
+* [Badring Water Leakage Sensor (E2202)](#badring-water-leakage-sensor-e2202)
+* [Parasoll Door/Window Sensor (E2013)](#parasoll-doorwindow-sensor-e2013)
+* [Tradfri Motion Sensor (E1745)](#tradfri-motion-sensor-e1745)
 * [Vallhorn Motion Sensor (E2134)](#vallhorn-motion-sensor-e2134)
 * [Vindstyrka Air Quality Sensor (E2112)](#vindstyrka-air-quality-sensor-e2112)
 
-Advanced features:
-* [Zigbee Bindings](Zigbee_Bindings.md)
+Outlets:
+* [Askvader On/Off Switch (E1836)](#askvader-onoff-switch-e1836)
+* [Tradfri Control Outlet (E1603, E1706)](#tradfri-control-outlet-e1603-e1706)
+* [Tretakt Smart Plug (E2204)](#tretakt-smart-plug-e2204)
+
+Lights:
+* [Dimmable Light](#dimmable-light)
+* [White Spectrum Light](#white-spectrum-light)
+
+Other:
+* [Starkvind Air Purifier (E2006)](#starkvind-air-purifier-e2006)
 
 Devices from other vendors (not in HPM):
 * [Aqara Dual Relay Module T2 (DCM-K01)](#aqara-dual-relay-module-t2-dcm-k01)
@@ -31,6 +38,10 @@ Devices from other vendors (not in HPM):
 * [Philips Hue Wall Switch Module (RDM001)](#philips-hue-wall-switch-module-rdm001)
 * [Philips Hue Dimmer Switch (RWL022)](#philips-hue-dimmer-switch-rwl022)
 * [Swann One Key Fob (SWO-KEF1PA)](#swann-one-key-fob-swo-kef1pa)
+
+Advanced features:
+* [Zigbee Bindings](Zigbee_Bindings.md)
+
 
 ## Installation
 There are two ways to install the drivers: using Hubitat Package Manager (HPM) or manually importing the driver code.
@@ -111,42 +122,6 @@ Below you can find the details of each device, including the features and pairin
 1. Return to the pairing page, provide a name for your device, and assign it to a room.
 1. Close the device battery compartiment.
 1. You're all set! Enjoy using your Badring Water Leakage Sensor.
-
-### LED Driver (ICPSHC24)
-
-| Parameter | Details |
-|-----------|-------------|
-| Product Image | <img src="img/Ikea_ICPSHC24.webp" style="width: 200px"> |
-| Product Code | `603.426.56`｜`503.561.87`｜`104.747.72` |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_ICPSHC24.groovy` |
-| Tested firmwares | 10EU-IL-1: `1.2.245` (10W) |
-|| 30EU-IL-2: `1.0.002` (30W) |
-|| 30-IL44-1: `1.0.021` (Silverglans, 30W) |
-| Since version | `3.1.0` |
-
-#### Features
-* Commands: On, Off, Toggle, On with Timed Off
-* Configure what happens after a power outage (Power On, Power Off, Restore previous state)
-* Brightness control: Set brightness level, Start/Stop level change, Level up/down
-* Configure brightness level when turned on (Always the same value, Restore last level)
-* Can set the brightness level when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level.
-* Health status: online / offline
-* Refresh switch state on demand
-* Can be member of Zigbee groups
-
-#### Known Issues
-* Smaller (10W) drivers do not honor the Power On Behavior.
-
-#### Pairing Instructions
-1. Have a light attached to the LED Driver device.
-1. Find the small reset hole on the device and make sure you have at hand a pin that can fit the reset hole (e.g.: a paper clip or SIM card eject pin).
-1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
-1. Plug the device back into an outlet.
-1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
-1. Insert the pin into the reset hole and press it for at least 5 seconds; the attached light will blink then stay on.
-1. Return to the pairing page, provide a name for your device, and assign it to a room.
-1. You're all set! Enjoy using your LED Driver.
-
 
 ### Parasoll Door/Window Sensor (E2013)
 
@@ -587,6 +562,61 @@ Below you can find the details of each device, including the features and pairin
 1. Click the pair button (🔗), located on the top of the device, 4 times in 5 seconds.
 1. Return to the pairing page, provide a name for your device, and assign it to a room.
 1. You're all set! Enjoy using your Vindstyrka Air Quality Sensor.
+
+
+### Dimmable Light
+
+| Parameter | Details |
+|-----------|-------------|
+| Icon | <img src="img/Ikea_DIM-Light.webp" style="width: 200px"> |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_DIM-Light.groovy` |
+| Since version | `5.0.0` |
+
+#### Features
+* Commands: On, Off, Toggle, On with Timed Off
+* Brightness control: Set brightness level, Start/Stop brightness level change, Step brightness level up/down
+* Configure what happens after a power outage (Power On, Power Off, Restore previous state)
+* Configure brightness level when turned on (Always the same fixed value, Restore last level)
+* Pre-staging: Set brightness level when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level.
+* Health status: online / offline
+* Refresh switch state on demand
+* Can be member of Zigbee groups
+
+#### Tested devices
+* 10EU-IL-1: Tradfri LED Driver 10W
+* 30EU-IL-2: Tradfri LED Driver 30W
+* 30-IL44-1: Silverglans LED Driver 30W
+
+### White Spectrum Light
+
+| Parameter | Details |
+|-----------|-------------|
+| Icon | <img src="img/Ikea_WS-Light.webp" style="width: 200px"> |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_WS-Light.groovy` |
+| Since version | `5.0.0` |
+
+#### Features
+* Commands: On, Off, Toggle, On with Timed Off
+* Brightness control: Set brightness level, Start/Stop brightness level change, Step brightness level up/down
+* Color temperature (CT) control: Set color temperature, Start/Stop color temperature change, Step color temperature up/down
+* Configure what happens after a power outage (Power On, Power Off, Restore previous state)
+* Configure brightness level when turned on (Always the same fixed value, Restore last level)
+* Pre-staging: Set brightness level when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level.
+* Pre-staging: Set color temperature when the lights are off (and they stay off). When the lights are turned on, they will start with the specified color temperature.
+* Health status: online / offline
+* Refresh switch state on demand
+* Can be member of Zigbee groups
+
+#### Tested devices
+* LED2101G4: Tradfri Bulb E14 WS Globe 470lm
+* LED1949C5: Tradfri Bulb E14 WS Candle Opal 470lm
+
+#### Pairing Instructions
+1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. Put the light in pairing mode.
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. You're all set! Enjoy using your White Spectrum Light.
 
 
 ### Aqara Dual Relay Module T2 (DCM-K01)

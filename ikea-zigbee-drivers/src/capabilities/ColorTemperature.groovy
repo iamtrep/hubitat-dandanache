@@ -1,0 +1,155 @@
+{{!--------------------------------------------------------------------------}}
+{{# @definition }}
+capability 'ColorTemperature'
+capability 'ColorMode'
+{{/ @definition }}
+{{!--------------------------------------------------------------------------}}
+{{# @inputs }}
+
+// Inputs for capability.ColorTemperature
+input(
+    name: 'colorTemperatureStep', type: 'enum',
+    title: 'Color Temperature up/down shift',
+    description: '<small>Color Temperature +/- adjust for the shiftColorTemperature() command.</small>',
+    options: ['1':'1%', '2':'2%', '5':'5%', '10':'10%', '20':'20%', '25':'25%', '33':'33%', '50':'50%'],
+    defaultValue: '25',
+    required: true
+)
+input(
+    name: 'colorTemperatureChangeRate', type: 'enum',
+    title: 'Color Temperature change rate',
+    description: '<small>Color Temperature +/- adjust for the startColorTemperatureChange() command.</small>',
+    options: [
+         '10': '10% / sec - from hot to cold in 10 seconds',
+         '20': '20% / sec - from hot to cold in 5 seconds',
+         '33': '33% / sec - from hot to cold in 3 seconds',
+         '50': '50% / secs - from hot to cold in 2 seconds',
+        '100': '100% / sec - from hot to cold in 1 seconds',
+    ],
+    defaultValue: '20',
+    required: true
+)
+{{/ @inputs }}
+{{!--------------------------------------------------------------------------}}
+{{# @commands }}
+
+// Commands for capability.ColorTemperature
+command 'startColorTemperatureChange', [[name:'Direction*', type:'ENUM', constraints: ['up', 'down']]]
+command 'stopColorTemperatureChange'
+command 'shiftColorTemperature', [[name:'Direction*', type:'ENUM', constraints: ['up', 'down']]]
+{{/ @commands }}
+{{!--------------------------------------------------------------------------}}
+{{# @implementation }}
+
+// Implementation for capability.ColorTemperature
+void setColorTemperature(BigDecimal colorTemperature, BigDecimal level = -1, BigDecimal duration = 0) {
+    Integer mireds = Math.round(1000000 / colorTemperature)
+    mireds = mireds < state.minMireds ? state.minMireds : (mireds > state.maxMireds ? state.maxMireds : mireds)
+    Integer newColorTemperature = Math.round(1000000 / mireds)
+    log_debug "Setting color temperature to ${newColorTemperature}k (${mireds} mireds) during ${duration} seconds"
+    Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10   // Max transition time = 30 min
+    String payload = "${utils_payload mireds, 4} ${utils_payload dur, 4}"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {11430A ${payload}}"])
+    if (level > 0 && duration == 0) setLevel level, duration
+}
+void startColorTemperatureChange(String direction) {
+    log_debug "Starting color temperature change ${direction}wards with a rate of ${colorTemperatureChangeRate}% / second"
+    Integer mode = direction == 'up' ? 0x03 : 0x01
+    Integer changeRate = (state.maxMireds - state.minMireds) * Integer.parseInt(colorTemperatureChangeRate) / 100
+    String payload = "${utils_payload mode, 2} ${utils_payload changeRate, 4} ${utils_payload state.minMireds, 4} ${utils_payload state.maxMireds, 4} 00 00"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {11434B ${payload}}"])
+}
+void stopColorTemperatureChange() {
+    log_debug 'Stopping color temperature change'
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114347 00 00}"])
+}
+void shiftColorTemperature(String direction) {
+    log_debug "Shifting color temperature ${direction} by ${colorTemperatureStep}%"
+    Integer mode = direction == 'up' ? 0x03 : 0x01
+    Integer stepSize = (state.maxMireds - state.minMireds) * Integer.parseInt(colorTemperatureStep) / 100
+    String payload = "${utils_payload mode, 2} ${utils_payload stepSize, 4} 0000 ${utils_payload state.minMireds, 4} ${utils_payload state.maxMireds, 4} 00 00"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {11434C ${payload}}"])
+}
+{{/ @implementation }}
+{{!--------------------------------------------------------------------------}}
+{{# @updated }}
+
+// Preferences for capability.ColorTemperature
+if (colorTemperatureStep == null) {
+    colorTemperatureStep = '20'
+    device.updateSetting 'colorTemperatureStep', [value:colorTemperatureStep, type:'enum']
+}
+log_info "🛠️ colorTemperatureStep = ${colorTemperatureStep}%"
+
+if (colorTemperatureChangeRate == null) {
+    colorTemperatureChangeRate = '20'
+    device.updateSetting 'colorTemperatureChangeRate', [value:colorTemperatureChangeRate, type:'enum']
+}
+log_info "🛠️ colorTemperatureChangeRate = ${colorTemperatureChangeRate}% / second"
+
+// Regardless of prestaging, enable update of color temperature without the need for the device to be turned On
+cmds += zigbee.writeAttribute(0x0300, 0x000F, 0x18, 0x01)
+{{/ @updated }}
+{{!--------------------------------------------------------------------------}}
+{{# @configure }}
+
+// Configuration for capability.ColorTemperature
+cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0300 {${device.zigbeeId}} {}" // Color Control Cluster cluster
+cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0007 0x21 0x0000 0x0258 {01} {}" // Report ColorTemperatureMireds (uint16) at least every 10 minutes (Δ = 1)
+state.minMireds = 200  // Will be updated in refresh()
+state.maxMireds = 600  // Will be updated in refresh()
+{{/ @configure }}
+{{!--------------------------------------------------------------------------}}
+{{# @refresh }}
+
+// Refresh for capability.ColorTemperature
+cmds += zigbee.readAttribute(0x0300, 0x0008) // ColorMode
+cmds += zigbee.readAttribute(0x0300, 0x0007) // ColorTemperatureMireds
+cmds += zigbee.readAttribute(0x0300, 0x400B) // ColorTemperaturePhysicalMinMireds
+cmds += zigbee.readAttribute(0x0300, 0x400C) // ColorTemperaturePhysicalMaxMireds
+{{/ @refresh }}
+{{!--------------------------------------------------------------------------}}
+{{# @events }}
+
+// Events for capability.ColorTemperature
+// ===================================================================================================================
+
+// Report/Read Attributes Reponse: ColorTemperatureMireds
+case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0007] }:
+case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x0007] }:
+    Integer mireds = Integer.parseInt "${msg.value}", 16
+    Integer colorTemperature = Math.round(1000000 / mireds)
+    String colorName = convertTemperatureToGenericColorName colorTemperature
+    utils_sendEvent name:'colorTemperature', value:colorTemperature, descriptionText:"Color temperature is ${colorTemperature}K", type:'digital'
+    utils_sendEvent name:'colorName', value:colorName, descriptionText:"Color name is ${colorName}", type:'digital'
+    utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "ColorTemperatureMireds=${msg.value}(${mireds} mireds, ${colorTemperature}K, ${colorName})"
+    return
+
+// Report/Read Attributes Reponse: ColorMode
+case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0008] }:
+case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x0008] }:
+    String colorMode = msg.value == '02' ? 'CT' : 'RGB'
+    utils_sendEvent name:'colorMode', value:colorMode, descriptionText:"Color mode is ${colorMode}", type:'digital'
+    utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "ColorMode=${msg.value}"
+    return
+
+// Read Attributes Reponse: ColorTemperaturePhysicalMinMireds
+case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x400B] }:
+    state.minMireds = Integer.parseInt "${msg.value}", 16
+    utils_processedZclMessage 'Read Attributes Response', "ColorTemperaturePhysicalMinMireds=${msg.value} (${state.minMireds} mireds, ${Math.round(1000000 / state.maxMireds)}K)"
+    return
+
+// Read Attributes Reponse: ColorTemperaturePhysicalMaxMireds
+case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x400C] }:
+    state.maxMireds = Integer.parseInt "${msg.value}", 16
+    utils_processedZclMessage 'Read Attributes Response', "ColorTemperaturePhysicalMaxMireds=${msg.value} (${state.maxMireds} mireds, ${Math.round(1000000 / state.maxMireds)}K)"
+    return
+
+// Other events that we expect but are not usefull for capability.ColorTemperature behavior
+case { contains it, [clusterInt:0x0300, commandInt:0x07] }:
+    utils_processedZclMessage 'Configure Reporting Response', "attribute=ColorTemperatureMireds, data=${msg.data}"
+    return
+case { contains it, [clusterInt:0x0300, commandInt:0x04] }:  // Write Attribute Response (0x04)
+    return
+{{/ @events }}
+{{!--------------------------------------------------------------------------}}

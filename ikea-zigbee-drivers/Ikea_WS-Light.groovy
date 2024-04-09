@@ -1,12 +1,12 @@
 /**
- * IKEA Askvader On/Off Switch (E1836)
+ * IKEA White Spectrum Light
  *
  * @see https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/
  */
 import groovy.transform.CompileStatic
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = 'IKEA Askvader On/Off Switch (E1836)'
+@Field static final String DRIVER_NAME = 'IKEA White Spectrum Light'
 @Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for capability.HealthCheck
@@ -23,16 +23,19 @@ import groovy.time.TimeCategory
 ]
 
 metadata {
-    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E1836.groovy') {
+    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_WS-Light.groovy') {
         capability 'Configuration'
         capability 'Refresh'
-        capability 'RelaySwitch'
         capability 'Actuator'
         capability 'Switch'
+        capability 'ColorTemperature'
+        capability 'ColorMode'
+        capability 'ChangeLevel'
+        capability 'SwitchLevel'
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'ASKVADER on/off switch', manufacturer:'IKEA of Sweden'  // For firmware: 1.0.002 (117C-110D-00010002)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'TRADFRI bulb E14 WS globe 470lm', manufacturer:'IKEA of Sweden'  // Type LED2101G4: 1.1.003 (117C-2204-00011003)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -42,6 +45,14 @@ metadata {
     command 'toggle'
     command 'onWithTimedOff', [[name:'On duration*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
     
+    // Commands for capability.ColorTemperature
+    command 'startColorTemperatureChange', [[name:'Direction*', type:'ENUM', constraints: ['up', 'down']]]
+    command 'stopColorTemperatureChange'
+    command 'shiftColorTemperature', [[name:'Direction*', type:'ENUM', constraints: ['up', 'down']]]
+    
+    // Commands for capability.Brightness
+    command 'shiftLevel', [[name:'Direction*', type:'ENUM', constraints: ['up', 'down']]]
+    
     // Commands for capability.FirmwareUpdate
     command 'updateFirmware'
 
@@ -49,10 +60,10 @@ metadata {
         input(
             name: 'helpInfo', type: 'hidden',
             title: '''
-            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E1836.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                IKEA Askvader On/Off Switch (E1836) <small>v5.0.0</small><br>
+            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_WS-Light.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
+                IKEA White Spectrum Light <small>v5.0.0</small><br>
                 <small><div>
-                • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#askvader-onoff-switch-e1836" target="_blank">device details</a><br>
+                • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#ws-light" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
                 </div></small>
             </div>
@@ -84,6 +95,101 @@ metadata {
                 'RESTORE_PREVIOUS_STATE': 'Restore previous state'
             ],
             defaultValue: 'RESTORE_PREVIOUS_STATE',
+            required: true
+        )
+        
+        // Inputs for capability.ColorTemperature
+        input(
+            name: 'colorTemperatureStep', type: 'enum',
+            title: 'Color Temperature up/down shift',
+            description: '<small>Color Temperature +/- adjust for the shiftColorTemperature() command.</small>',
+            options: ['1':'1%', '2':'2%', '5':'5%', '10':'10%', '20':'20%', '25':'25%', '33':'33%', '50':'50%'],
+            defaultValue: '25',
+            required: true
+        )
+        input(
+            name: 'colorTemperatureChangeRate', type: 'enum',
+            title: 'Color Temperature change rate',
+            description: '<small>Color Temperature +/- adjust for the startColorTemperatureChange() command.</small>',
+            options: [
+                 '10': '10% / sec - from hot to cold in 10 seconds',
+                 '20': '20% / sec - from hot to cold in 5 seconds',
+                 '33': '33% / sec - from hot to cold in 3 seconds',
+                 '50': '50% / secs - from hot to cold in 2 seconds',
+                '100': '100% / sec - from hot to cold in 1 seconds',
+            ],
+            defaultValue: '20',
+            required: true
+        )
+        
+        // Inputs for capability.Brightness
+        input(
+            name: 'levelStep', type: 'enum',
+            title: 'Brightness up/down shift',
+            description: '<small>Brightness +/- adjust for the shiftLevel() command.</small>',
+            options: ['1':'1%', '2':'2%', '5':'5%', '10':'10%', '20':'20%', '25':'25%', '33':'33%', '50':'50%'],
+            defaultValue: '25',
+            required: true
+        )
+        input(
+            name: 'levelChangeRate', type: 'enum',
+            title: 'Brightness change rate',
+            description: '<small>Brightness +/- adjust for the startLevelChange() command.</small>',
+            options: [
+                 '10': '10% / sec - from 0% to 100% in 10 seconds',
+                 '20': '20% / sec - from 0% to 100% in 5 seconds',
+                 '33': '33% / sec - from 0% to 100% in 3 seconds',
+                 '50': '50% / secs - from 0% to 100% in 2 seconds',
+                '100': '100% / sec - from 0% to 100% in 1 seconds',
+            ],
+            defaultValue: '20',
+            required: true
+        )
+        input(
+            name: 'transitionTime', type: 'enum',
+            title: 'Brightness transition time',
+            description: '<small>Time taken to move to/from the target brightness when device is turned On/Off.</small>',
+            options: [
+                 '0': 'Instant',
+                 '5': '0.5 seconds',
+                '10': '1 second',
+                '15': '1.5 seconds',
+                '20': '2 seconds',
+                '30': '3 seconds',
+                '40': '4 seconds',
+                '50': '5 seconds',
+               '100': '10 seconds'
+            ],
+            defaultValue: '5',
+            required: true
+        )
+        input(
+            name: 'turnOnBehavior', type: 'enum',
+            title: 'Turn On behavior',
+            description: '<small>Select what happens when the device is turned On.</small>',
+            options: [
+                'RESTORE_PREVIOUS_LEVEL': 'Restore previous brightness',
+                'FIXED_VALUE': 'Always start with the same fixed brightness'
+            ],
+            defaultValue: 'RESTORE_PREVIOUS_LEVEL',
+            required: true
+        )
+        if (turnOnBehavior == 'FIXED_VALUE') {
+            input(
+                name: 'onLevelValue',
+                type: 'number',
+                title: 'Fixed brightness value',
+                description: '<small>Range 1..100</small>',
+                defaultValue: 50,
+                range: '1..100',
+                required: true
+            )
+        }
+        input(
+            name: 'prestaging', type: 'bool',
+            title: 'Pre-staging',
+            description: '<small>Set brightness level without turning On the device (for later use).</small>',
+            defaultValue: false,
             required: true
         )
         
@@ -130,6 +236,67 @@ List<String> updated(boolean auto = false) {
     }
     log_info "🛠️ powerOnBehavior = ${powerOnBehavior}"
     cmds += zigbee.writeAttribute(0x0006, 0x4003, 0x30, powerOnBehavior == 'TURN_POWER_OFF' ? 0x00 : (powerOnBehavior == 'TURN_POWER_ON' ? 0x01 : 0xFF))
+    
+    // Preferences for capability.ColorTemperature
+    if (colorTemperatureStep == null) {
+        colorTemperatureStep = '20'
+        device.updateSetting 'colorTemperatureStep', [value:colorTemperatureStep, type:'enum']
+    }
+    log_info "🛠️ colorTemperatureStep = ${colorTemperatureStep}%"
+    
+    if (colorTemperatureChangeRate == null) {
+        colorTemperatureChangeRate = '20'
+        device.updateSetting 'colorTemperatureChangeRate', [value:colorTemperatureChangeRate, type:'enum']
+    }
+    log_info "🛠️ colorTemperatureChangeRate = ${colorTemperatureChangeRate}% / second"
+    
+    // Regardless of prestaging, enable update of color temperature without the need for the device to be turned On
+    cmds += zigbee.writeAttribute(0x0300, 0x000F, 0x18, 0x01)
+    
+    // Preferences for capability.Brightness
+    if (levelStep == null) {
+        levelStep = '20'
+        device.updateSetting 'levelStep', [value:levelStep, type:'enum']
+    }
+    log_info "🛠️ levelStep = ${levelStep}%"
+    
+    if (levelChangeRate == null) {
+        levelChangeRate = '20'
+        device.updateSetting 'levelChangeRate', [value:levelChangeRate, type:'enum']
+    }
+    log_info "🛠️ levelChangeRate = ${levelChangeRate}% / second"
+    
+    if (turnOnBehavior == null) {
+        turnOnBehavior = 'RESTORE_PREVIOUS_LEVEL'
+        device.updateSetting 'turnOnBehavior', [value:turnOnBehavior, type:'enum']
+    }
+    log_info "🛠️ turnOnBehavior = ${turnOnBehavior}"
+    if (turnOnBehavior == 'FIXED_VALUE') {
+        Integer onLevelValue = onLevelValue == null ? 50 : onLevelValue.intValue()
+        device.updateSetting 'onLevelValue', [value:onLevelValue, type:'number']
+        log_info "🛠️ onLevelValue = ${onLevelValue}%"
+        Integer lvl = onLevelValue * 2.54
+        utils_sendZigbeeCommands zigbee.writeAttribute(0x0008, 0x0011, 0x20, lvl)
+    } else {
+        log_debug 'Disabling OnLevel (0xFF)'
+        cmds += zigbee.writeAttribute(0x0008, 0x0011, 0x20, 0xFF)
+    }
+    
+    if (transitionTime == null) {
+        transitionTime = '5'
+        device.updateSetting 'transitionTime', [value:transitionTime, type:'enum']
+    }
+    log_info "🛠️ transitionTime = ${Integer.parseInt(transitionTime) / 10} second(s)"
+    cmds += zigbee.writeAttribute(0x0008, 0x0010, 0x21, Integer.parseInt(transitionTime))
+    
+    if (prestaging == null) {
+        prestaging = false
+        device.updateSetting 'prestaging', [value:prestaging, type:'bool']
+    }
+    log_info "🛠️ prestaging = ${prestaging}"
+    
+    // If prestaging is true, enable update of brightness without the need for the device to be turned On
+    cmds += zigbee.writeAttribute(0x0008, 0x000F, 0x18, prestaging ? 0x01 : 0x00)
     
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, 'healthCheck'
@@ -200,6 +367,16 @@ void configure(boolean auto = false) {
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
     cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes
     
+    // Configuration for capability.ColorTemperature
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0300 {${device.zigbeeId}} {}" // Color Control Cluster cluster
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0007 0x21 0x0000 0x0258 {01} {}" // Report ColorTemperatureMireds (uint16) at least every 10 minutes (Δ = 1)
+    state.minMireds = 200  // Will be updated in refresh()
+    state.maxMireds = 600  // Will be updated in refresh()
+    
+    // Configuration for capability.Brightness
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0008 {${device.zigbeeId}} {}" // Level Control cluster
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0008 0x0000 0x20 0x0000 0x0258 {01} {}" // Report CurrentLevel (uint8) at least every 10 minutes (Δ = 1)
+    
     // Configuration for capability.HealthCheck
     sendEvent name:'healthStatus', value:'online', descriptionText:'Health status initialized to online'
     sendEvent name:'checkInterval', value:3600, unit:'second', descriptionText:'Health check interval is 3600 seconds'
@@ -235,6 +412,15 @@ void refresh(boolean auto = false) {
     cmds += zigbee.readAttribute(0x0006, 0x0000) // OnOff
     cmds += zigbee.readAttribute(0x0006, 0x4003) // PowerOnBehavior
     
+    // Refresh for capability.ColorTemperature
+    cmds += zigbee.readAttribute(0x0300, 0x0008) // ColorMode
+    cmds += zigbee.readAttribute(0x0300, 0x0007) // ColorTemperatureMireds
+    cmds += zigbee.readAttribute(0x0300, 0x400B) // ColorTemperaturePhysicalMinMireds
+    cmds += zigbee.readAttribute(0x0300, 0x400C) // ColorTemperaturePhysicalMaxMireds
+    
+    // Refresh for capability.Brightness
+    cmds += zigbee.readAttribute(0x0008, 0x0000) // CurrentLevel
+    
     // Refresh for capability.ZigbeeGroups
     cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}"  // Get groups membership
     utils_sendZigbeeCommands cmds
@@ -261,6 +447,65 @@ void onWithTimedOff(BigDecimal onTime = 1) {
     Integer dur = delay * 10
     String payload = "00 ${utils_payload dur, 4} 0000"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114342 ${payload}}"])
+}
+
+// Implementation for capability.ColorTemperature
+void setColorTemperature(BigDecimal colorTemperature, BigDecimal level = -1, BigDecimal duration = 0) {
+    Integer mireds = Math.round(1000000 / colorTemperature)
+    mireds = mireds < state.minMireds ? state.minMireds : (mireds > state.maxMireds ? state.maxMireds : mireds)
+    Integer newColorTemperature = Math.round(1000000 / mireds)
+    log_debug "Setting color temperature to ${newColorTemperature}k (${mireds} mireds) during ${duration} seconds"
+    Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10   // Max transition time = 30 min
+    String payload = "${utils_payload mireds, 4} ${utils_payload dur, 4}"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {11430A ${payload}}"])
+    if (level > 0 && duration == 0) setLevel level, duration
+}
+void startColorTemperatureChange(String direction) {
+    log_debug "Starting color temperature change ${direction}wards with a rate of ${colorTemperatureChangeRate}% / second"
+    Integer mode = direction == 'up' ? 0x03 : 0x01
+    Integer changeRate = (state.maxMireds - state.minMireds) * Integer.parseInt(colorTemperatureChangeRate) / 100
+    String payload = "${utils_payload mode, 2} ${utils_payload changeRate, 4} ${utils_payload state.minMireds, 4} ${utils_payload state.maxMireds, 4} 00 00"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {11434B ${payload}}"])
+}
+void stopColorTemperatureChange() {
+    log_debug 'Stopping color temperature change'
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114347 00 00}"])
+}
+void shiftColorTemperature(String direction) {
+    log_debug "Shifting color temperature ${direction} by ${colorTemperatureStep}%"
+    Integer mode = direction == 'up' ? 0x03 : 0x01
+    Integer stepSize = (state.maxMireds - state.minMireds) * Integer.parseInt(colorTemperatureStep) / 100
+    String payload = "${utils_payload mode, 2} ${utils_payload stepSize, 4} 0000 ${utils_payload state.minMireds, 4} ${utils_payload state.maxMireds, 4} 00 00"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {11434C ${payload}}"])
+}
+
+// Implementation for capability.Brightness
+void setLevel(BigDecimal level, BigDecimal duration = 0) {
+    Integer newLevel = level > 100 ? 100 : (level < 0 ? 0 : level)
+    log_debug "Setting brightness level to ${newLevel}% during ${duration} seconds"
+    Integer lvl = newLevel * 2.54
+    Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10  // Max transition time = 30 min
+    String command = prestaging == false ? '04' : '00'
+    String payload = "${utils_payload lvl, 2} ${utils_payload dur, 4}"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {1143${command} ${payload}}"])
+}
+void startLevelChange(String direction) {
+    log_debug "Starting brightness level change ${direction}wards with a rate of ${levelChangeRate}% / second"
+    Integer mode = direction == 'up' ? 0x00 : 0x01
+    Integer rate = Integer.parseInt(levelChangeRate) * 2.54
+    String payload = "${utils_payload mode, 2} ${utils_payload rate, 2}"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114301 ${payload}}"])
+}
+void stopLevelChange() {
+    log_debug 'Stopping brightness level change'
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114303}"])
+}
+void shiftLevel(String direction) {
+    log_debug "Shifting brightness level ${direction} by ${levelStep}%"
+    Integer mode = direction == 'up' ? 0x00 : 0x01
+    Integer stepSize = Integer.parseInt(levelStep) * 2.54
+    String payload = "${utils_payload mode, 2} ${utils_payload stepSize, 2} 0000"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114302 ${payload}}"])
 }
 
 // Implementation for capability.HealthCheck
@@ -369,6 +614,65 @@ void parse(String description) {
             return
         case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attribute Response
         case { contains it, [clusterInt:0x0006, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Command
+            return
+        
+        // Events for capability.ColorTemperature
+        // ===================================================================================================================
+        
+        // Report/Read Attributes Reponse: ColorTemperatureMireds
+        case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0007] }:
+        case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x0007] }:
+            Integer mireds = Integer.parseInt "${msg.value}", 16
+            Integer colorTemperature = Math.round(1000000 / mireds)
+            String colorName = convertTemperatureToGenericColorName colorTemperature
+            utils_sendEvent name:'colorTemperature', value:colorTemperature, descriptionText:"Color temperature is ${colorTemperature}K", type:'digital'
+            utils_sendEvent name:'colorName', value:colorName, descriptionText:"Color name is ${colorName}", type:'digital'
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "ColorTemperatureMireds=${msg.value}(${mireds} mireds, ${colorTemperature}K, ${colorName})"
+            return
+        
+        // Report/Read Attributes Reponse: ColorMode
+        case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0008] }:
+        case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x0008] }:
+            String colorMode = msg.value == '02' ? 'CT' : 'RGB'
+            utils_sendEvent name:'colorMode', value:colorMode, descriptionText:"Color mode is ${colorMode}", type:'digital'
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "ColorMode=${msg.value}"
+            return
+        
+        // Read Attributes Reponse: ColorTemperaturePhysicalMinMireds
+        case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x400B] }:
+            state.minMireds = Integer.parseInt "${msg.value}", 16
+            utils_processedZclMessage 'Read Attributes Response', "ColorTemperaturePhysicalMinMireds=${msg.value} (${state.minMireds} mireds, ${Math.round(1000000 / state.maxMireds)}K)"
+            return
+        
+        // Read Attributes Reponse: ColorTemperaturePhysicalMaxMireds
+        case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x400C] }:
+            state.maxMireds = Integer.parseInt "${msg.value}", 16
+            utils_processedZclMessage 'Read Attributes Response', "ColorTemperaturePhysicalMaxMireds=${msg.value} (${state.maxMireds} mireds, ${Math.round(1000000 / state.maxMireds)}K)"
+            return
+        
+        // Other events that we expect but are not usefull for capability.ColorTemperature behavior
+        case { contains it, [clusterInt:0x0300, commandInt:0x07] }:
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=ColorTemperatureMireds, data=${msg.data}"
+            return
+        case { contains it, [clusterInt:0x0300, commandInt:0x04] }:  // Write Attribute Response (0x04)
+            return
+        
+        // Events for capability.Brightness
+        // ===================================================================================================================
+        
+        // Report/Read Attributes Reponse: CurrentLevel
+        case { contains it, [clusterInt:0x0008, commandInt:0x0A, attrInt:0x0000] }:
+        case { contains it, [clusterInt:0x0008, commandInt:0x01, attrInt:0x0000] }:
+            Integer level = msg.value == '00' ? 0 : Math.ceil(Integer.parseInt(msg.value, 16) * 100 / 254)
+            utils_sendEvent name:'level', value:level, descriptionText:"Brightness is ${level}%", type:'digital'
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "CurrentLevel=${msg.value} (${level}%)"
+            return
+        
+        // Other events that we expect but are not usefull for capability.Brightness behavior
+        case { contains it, [clusterInt:0x0008, commandInt:0x07] }:
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=CurrentLevel, data=${msg.data}"
+            return
+        case { contains it, [clusterInt:0x0008, commandInt:0x04] }:  // Write Attribute Response (0x04)
             return
         
         // Events for capability.HealthCheck

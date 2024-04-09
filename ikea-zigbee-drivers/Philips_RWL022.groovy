@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'Philips Hue Dimmer Switch (RWL022)'
-@Field static final String DRIVER_VERSION = '4.1.0'
+@Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for capability.HealthCheck
 import groovy.time.TimeCategory
@@ -41,8 +41,7 @@ metadata {
         capability 'PushableButton'
         capability 'ReleasableButton'
 
-        // For firmware: 2.45.2_hF4400CA (100B-0119-02002D02)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,FC00,1000', outClusters:'0019,0000,0003,0004,0006,0008,0005,1000', model:'RWL022', manufacturer:'Signify Netherlands B.V.'
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,FC00,1000', outClusters:'0019,0000,0003,0004,0006,0008,0005,1000', model:'RWL022', manufacturer:'Signify Netherlands B.V.'  // For firmware: 2.45.2_hF4400CA (100B-0119-02002D02)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -56,7 +55,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Philips_RWL022.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                Philips Hue Dimmer Switch (RWL022) <small>v4.1.0</small><br>
+                Philips Hue Dimmer Switch (RWL022) <small>v5.0.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#philips-hue-dimmer-switch-rwl022" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -663,6 +662,9 @@ private void utils_processedZdpMessage(String type, String details) {
 }
 private String utils_payload(String value) {
     return value.replace('0x', '').split('(?<=\\G.{2})').reverse().join('')
+}
+private String utils_payload(Integer value, Integer size = 4) {
+    return utils_payload(Integer.toHexString(value).padLeft(size, '0'))
 }
 
 // switch/case syntactic sugar

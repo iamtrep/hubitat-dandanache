@@ -24,10 +24,9 @@ metadata {
         {{> file@definition }}
         {{/ file }}
         {{/ device.capabilities }}
-        {{# device.fingerprints }}
 
-        // For firmware: {{ firmwares }}
-        {{{ value }}}
+        {{# device.fingerprints }}
+        {{{ value }}}  // {{# type }}Type {{ type }}{{/ type }}{{^ type }}For firmware{{/ type }}: {{ firmwares }}
         {{/ device.fingerprints }}
         {{# device.capabilities }}
         {{> file@attributes }}
@@ -323,6 +322,9 @@ private void utils_processedZdpMessage(String type, String details) {
 }
 private String utils_payload(String value) {
     return value.replace('0x', '').split('(?<=\\G.{2})').reverse().join('')
+}
+private String utils_payload(Integer value, Integer size = 4) {
+    return utils_payload(Integer.toHexString(value).padLeft(size, '0'))
 }
 
 // switch/case syntactic sugar
