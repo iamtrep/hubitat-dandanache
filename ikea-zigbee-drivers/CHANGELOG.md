@@ -6,8 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [5.0.0] - 2024-04-??
-- Add driver for Dimmable Lights, including LED drivers
-- Add driver for White Spectrum Lights (CT)
+
+### Added
+- Add driver for Dimmable Lights devices, including LED drivers
+- Add driver for White Spectrum Lights devices (CT)
+- Add driver for Color White Spectrum Lights devices (RGB+CT)
+
+### Changed
+- Remove ICPSHC24 driver; LED drivers must use the new Dimmable Lights driver
 
 ## [4.1.0] - 2024-04-06
 

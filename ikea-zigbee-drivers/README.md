@@ -28,6 +28,7 @@ Outlets:
 Lights:
 * [Dimmable Light](#dimmable-light)
 * [White Spectrum Light](#white-spectrum-light)
+* [Color White Spectrum Light](#color-white-spectrum-light)
 
 Other:
 * [Starkvind Air Purifier (E2006)](#starkvind-air-purifier-e2006)
@@ -579,7 +580,7 @@ Below you can find the details of each device, including the features and pairin
 * Configure brightness level when turned on (Always the same fixed value, Restore last level)
 * Pre-staging: Set brightness level when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level.
 * Health status: online / offline
-* Refresh switch state on demand
+* Refresh light state on demand
 * Can be member of Zigbee groups
 
 #### Tested devices
@@ -604,12 +605,51 @@ Below you can find the details of each device, including the features and pairin
 * Pre-staging: Set brightness level when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level.
 * Pre-staging: Set color temperature when the lights are off (and they stay off). When the lights are turned on, they will start with the specified color temperature.
 * Health status: online / offline
-* Refresh switch state on demand
+* Refresh light state on demand
 * Can be member of Zigbee groups
+
+#### Known Issues
+* Color temperature and brightness level can be set together if the "Transition time" is 0 (or left blank in the UI); if a transition time is specified, only the color temperature is applied.
 
 #### Tested devices
 * LED2101G4: Tradfri Bulb E14 WS Globe 470lm
 * LED1949C5: Tradfri Bulb E14 WS Candle Opal 470lm
+
+#### Pairing Instructions
+1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. Put the light in pairing mode.
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. You're all set! Enjoy using your White Spectrum Light.
+
+
+### Color White Spectrum Light
+
+| Parameter | Details |
+|-----------|-------------|
+| Icon | <img src="img/Ikea_CWS-Light.webp" style="width: 200px"> |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_CWS-Light.groovy` |
+| Since version | `5.0.0` |
+
+#### Features
+* Commands: On, Off, Toggle, On with Timed Off
+* Brightness control: Set brightness level, Start/Stop brightness level change, Step brightness level up/down
+* Color temperature (CT) control: Set color temperature, Start/Stop color temperature change, Step color temperature up/down
+* Color (RGB) control: Set color hue and/or saturation, display color name and colo mode
+* Configure what happens after a power outage (Power On, Power Off, Restore previous state)
+* Configure brightness level when turned on (Always the same fixed value, Restore last level)
+* Pre-staging: Set brightness level when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level.
+* Pre-staging: Set color temperature when the lights are off (and they stay off). When the lights are turned on, they will start with the specified color temperature.
+* Pre-staging: Set color when the lights are off (and they stay off). When the lights are turned on, they will start with the specified color.
+* Health status: online / offline
+* Refresh light state on demand
+* Can be member of Zigbee groups
+
+#### Known Issues
+* Color temperature and brightness level can be set together if the "Transition time" is 0 (or left blank in the UI); if a transition time is specified, only the color temperature is applied.
+
+#### Tested devices
+* L2112: Ormanas LED Strip
 
 #### Pairing Instructions
 1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.

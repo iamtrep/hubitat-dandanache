@@ -185,7 +185,7 @@ cmds += zigbee.readAttribute(0x0008, 0x0000) // CurrentLevel
 // Report/Read Attributes Reponse: CurrentLevel
 case { contains it, [clusterInt:0x0008, commandInt:0x0A, attrInt:0x0000] }:
 case { contains it, [clusterInt:0x0008, commandInt:0x01, attrInt:0x0000] }:
-    Integer level = msg.value == '00' ? 0 : Math.ceil(Integer.parseInt(msg.value, 16) * 100 / 254)
+    Integer level = msg.value == '00' ? 0 : Math.ceil(Integer.parseInt(msg.value, 16) / 2.54)
     utils_sendEvent name:'level', value:level, descriptionText:"Brightness is ${level}%", type:'digital'
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "CurrentLevel=${msg.value} (${level}%)"
     return

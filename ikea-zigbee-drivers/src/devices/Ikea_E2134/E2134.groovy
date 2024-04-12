@@ -2,12 +2,19 @@
 {{# @configure }}
 
 // Configuration for devices.Ikea_E2134
-cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0400 {${device.zigbeeId}} {}" // Illuminance Measurement cluster
-cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0400 0x0000 0x18 0x0000 0x4650 {01} {}" // Report Illuminance/MeasuredValue (uint16) at least every 5 hours (Δ = 0)
+cmds += "zdo bind 0x${device.deviceNetworkId} 0x03 0x01 0x0400 {${device.zigbeeId}} {}" // Illuminance Measurement cluster
+cmds += "he cr 0x${device.deviceNetworkId} 0x03 0x0400 0x0000 0x18 0x0000 0x4650 {01} {}" // Report Illuminance/MeasuredValue (uint16) at least every 5 hours (Δ = 0)
 
-cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0406 {${device.zigbeeId}} {}" // Occupancy Sensing cluster
-cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0406 0x0000 0x21 0x0000 0x4650 {01} {}" // Report Illuminance/MeasuredValue (uint16) at least every 5 hours (Δ = 0)
+cmds += "zdo bind 0x${device.deviceNetworkId} 0x02 0x01 0x0406 {${device.zigbeeId}} {}" // Occupancy Sensing cluster
+cmds += "he cr 0x${device.deviceNetworkId} 0x02 0x0406 0x0000 0x21 0x0000 0x4650 {01} {}" // Report Occupancy/MeasuredValue (uint16) at least every 5 hours (Δ = 0)
 {{/ @configure }}
+{{!--------------------------------------------------------------------------}}
+{{# @refresh }}
+
+// Refresh for devices.Ikea_E2134
+cmds += zigbee.readAttribute(0x0406, 0x0000, [destEndpoint:0x02]) // Occupancy/MeasuredValue
+cmds += zigbee.readAttribute(0x0400, 0x0000, [destEndpoint:0x03]) // Illuminance/MeasuredValue
+{{/ @refresh }}
 {{!--------------------------------------------------------------------------}}
 {{# @events }}
 
