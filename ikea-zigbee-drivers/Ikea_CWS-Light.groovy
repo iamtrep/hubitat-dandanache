@@ -37,6 +37,7 @@ metadata {
         capability 'PowerSource'
 
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'ORMANAS LED Strip', manufacturer:'IKEA of Sweden' // L2112: 1.1.10 (117C-2804-01010010)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E14 CWS globe 806lm', manufacturer:'IKEA of Sweden' // LED2111G6: 1.0.38 (117C-2805-01000038)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']

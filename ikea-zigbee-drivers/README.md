@@ -650,6 +650,7 @@ Below you can find the details of each device, including the features and pairin
 
 #### Tested devices
 * L2112: Ormanas LED Strip
+* LED2111G6: Tradfri Bulb E14 CWS Globe 806lm
 
 #### Pairing Instructions
 1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
