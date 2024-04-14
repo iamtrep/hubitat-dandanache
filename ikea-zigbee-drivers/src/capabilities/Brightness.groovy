@@ -91,7 +91,7 @@ void setLevel(BigDecimal level, BigDecimal duration = 0) {
     Integer newLevel = level > 100 ? 100 : (level < 0 ? 0 : level)
     log_debug "Setting brightness level to ${newLevel}% during ${duration} seconds"
     Integer lvl = newLevel * 2.54
-    Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10  // Max transition time = 30 min
+    Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10 // Max transition time = 30 min
     String command = prestaging == false ? '04' : '00'
     String payload = "${utils_payload lvl, 2} ${utils_payload dur, 4}"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {1143${command} ${payload}}"])
@@ -194,7 +194,7 @@ case { contains it, [clusterInt:0x0008, commandInt:0x01, attrInt:0x0000] }:
 case { contains it, [clusterInt:0x0008, commandInt:0x07] }:
     utils_processedZclMessage 'Configure Reporting Response', "attribute=CurrentLevel, data=${msg.data}"
     return
-case { contains it, [clusterInt:0x0008, commandInt:0x04] }:  // Write Attribute Response (0x04)
+case { contains it, [clusterInt:0x0008, commandInt:0x04] }: // Write Attribute Response (0x04)
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

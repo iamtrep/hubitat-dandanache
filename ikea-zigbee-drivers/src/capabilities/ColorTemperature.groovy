@@ -47,7 +47,7 @@ void setColorTemperature(BigDecimal colorTemperature, BigDecimal level = -1, Big
     mireds = mireds < state.minMireds ? state.minMireds : (mireds > state.maxMireds ? state.maxMireds : mireds)
     Integer newColorTemperature = Math.round(1000000 / mireds)
     log_debug "Setting color temperature to ${newColorTemperature}k (${mireds} mireds) during ${duration} seconds"
-    Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10   // Max transition time = 30 min
+    Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10 // Max transition time = 30 min
     String payload = "${utils_payload mireds, 4} ${utils_payload dur, 4}"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {11430A ${payload}}"])
     if (level > 0 && duration == 0) setLevel level, duration
@@ -85,7 +85,6 @@ private void processMultipleColorTemperatureAttributes(Map msg, String type) {
                 mireds = Integer.parseInt it.value, 16
                 temperature = Math.round(1000000 / mireds)
                 break
-
             case 0x0008:
             case 0x4001:
                 colorMode = it.value == '02' ? 'CT' : 'RGB'
@@ -172,7 +171,7 @@ case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x400B] }:
 case { contains it, [clusterInt:0x0300, commandInt:0x07] }:
     utils_processedZclMessage 'Configure Reporting Response', "attribute=ColorTemperatureMireds, data=${msg.data}"
     return
-case { contains it, [clusterInt:0x0300, commandInt:0x04] }:  // Write Attribute Response (0x04)
+case { contains it, [clusterInt:0x0300, commandInt:0x04] }: // Write Attribute Response (0x04)
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

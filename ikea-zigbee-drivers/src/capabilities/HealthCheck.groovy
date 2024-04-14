@@ -52,7 +52,6 @@ void ping() {
     log_debug 'Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
     runIn 5, 'pingExecute'
 }
-
 void pingExecute() {
     if (state.lastRx == 0) {
         log_info 'Did not sent any messages since it was last configured'

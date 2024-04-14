@@ -26,7 +26,7 @@ metadata {
         {{/ device.capabilities }}
 
         {{# device.fingerprints }}
-        {{{ value }}}  // {{# type }}Type {{ type }}{{/ type }}{{^ type }}For firmware{{/ type }}: {{ firmwares }}
+        {{{ value }}} // {{# type }}{{ type }}{{/ type }}{{^ type }}For firmware{{/ type }}: {{ firmwares }}
         {{/ device.fingerprints }}
         {{# device.capabilities }}
         {{> file@attributes }}
@@ -54,12 +54,7 @@ metadata {
             name: 'logLevel', type: 'enum',
             title: 'Log verbosity',
             description: '<small>Select what type of messages appear in the "Logs" section.</small>',
-            options: [
-                '1': 'Debug - log everything',
-                '2': 'Info - log important events',
-                '3': 'Warning - log events that require attention',
-                '4': 'Error - log errors'
-            ],
+            options: ['1':'Debug - log everything', '2':'Info - log important events', '3':'Warning - log events that require attention', '4':'Error - log errors'],
             defaultValue: '1',
             required: true
         )

@@ -9,9 +9,13 @@ device:
     url: https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853
 
   fingerprints:
-  - type: LED2101G4, LED1949C5
+  - type: LED2101G4
     firmwares: 1.1.003 (117C-2204-00011003)
     value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'TRADFRI bulb E14 WS globe 470lm', manufacturer:'IKEA of Sweden'
+
+  - type: LED1949C5
+    firmwares: 1.1.003 (117C-2204-00011003)
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'TRADFRIbulbE14WScandleopal470lm', manufacturer:'IKEA of Sweden'
 
   capabilities:
     - file: src/capabilities/Switch.groovy

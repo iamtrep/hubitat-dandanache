@@ -3,16 +3,6 @@
 capability 'ColorControl'
 {{/ @definition }}
 {{!--------------------------------------------------------------------------}}
-{{# @inputs }}
-
-// Inputs for capability.ColorControl
-{{/ @inputs }}
-{{!--------------------------------------------------------------------------}}
-{{# @commands }}
-
-// Commands for capability.ColorControl
-{{/ @commands }}
-{{!--------------------------------------------------------------------------}}
 {{# @implementation }}
 
 // Implementation for capability.ColorControl
@@ -24,7 +14,7 @@ void setColor(Map colormap) {
     newHue = Math.round(newHue * 2.54)
     newSaturation = Math.round(newSaturation * 2.54)
     String payload = "${utils_payload newHue, 2} ${utils_payload newSaturation, 2} 0000 00 00"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114306 ${payload}}"])  // Move to Hue and Saturation
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114306 ${payload}}"]) // Move to Hue and Saturation
     setLevel newLevel
 }
 void setHue(BigDecimal hue) {
@@ -32,14 +22,14 @@ void setHue(BigDecimal hue) {
     log_debug "Setting color hue to ${newHue}%"
     newHue = Math.round(newHue * 2.54)
     String payload = "${utils_payload newHue, 2} 00 0000 00 00"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114300 ${payload}}"])  // Move to Hue
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114300 ${payload}}"]) // Move to Hue
 }
 void setSaturation(BigDecimal saturation) {
     Integer newSaturation = saturation > 100 ? 100 : (saturation < 0 ? 0 : saturation)
     log_debug "Setting color saturation to ${newSaturation}%"
     newSaturation = Math.round(newSaturation * 2.54)
     String payload = "${utils_payload newSaturation, 2} 0000 00 00"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114303 ${payload}}"])  // Move to Saturation
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114303 ${payload}}"]) // Move to Saturation
 }
 private void processMultipleColorAttributes(Map msg, String type) {
     Map<Integer, String> attributes = [:]
@@ -55,12 +45,10 @@ private void processMultipleColorAttributes(Map msg, String type) {
                 hue = Math.round(Integer.parseInt(it.value, 16) / 2.54)
                 hue = hue > 100 ? 100 : (hue < 0 ? 0 : hue)
                 break
-
             case 0x0001:
                 saturation = Math.round(Integer.parseInt(it.value, 16) / 2.54)
                 saturation = saturation > 100 ? 100 : (saturation < 0 ? 0 : saturation)
                 break
-
             case 0x0008:
             case 0x4001:
                 colorMode = it.value == '02' ? 'CT' : 'RGB'
@@ -79,7 +67,6 @@ private void processMultipleColorAttributes(Map msg, String type) {
         String colorName = convertHueToGenericColorName colorHue, colorSaturation
         utils_sendEvent name:'colorName', value:colorName, descriptionText:"Color name is ${colorName}", type:type
     }
-
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "CurrentHue=${hue}%, CurrentSaturation=${saturation}%, ColorMode=${colorMode}"
 }
 {{/ @implementation }}
@@ -125,6 +112,5 @@ case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x4001] }:
 case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x4001] }:
     processMultipleColorAttributes msg, type
     return
-
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

@@ -33,10 +33,10 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0B05,1000', outClusters:'0005,0019,0020,1000', model:'TRADFRI Driver 10W', manufacturer:'IKEA of Sweden'  // Type 10EU-IL-1 (Tradfri LED Driver 10W): 1.2.245 (117C-4101-12245572)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0005,0019,0020,1000', model:'TRADFRI Driver 10W', manufacturer:'IKEA of Sweden'  // Type 10EU-IL-1 (Tradfri LED Driver 10W): 2.3.086 (117C-4101-23086631)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'TRADFRI Driver 30W', manufacturer:'IKEA of Sweden'  // Type 30EU-IL-2 (Tradfri LED Driver 30W): 1.0.002 (117C-4109-00010002)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'SILVERGLANS IP44 LED driver', manufacturer:'IKEA of Sweden'  // Type 30-IL44-1 (Silverglans LED Driver 30W): 1.0.021 (117C-4104-00010021)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0B05,1000', outClusters:'0005,0019,0020,1000', model:'TRADFRI Driver 10W', manufacturer:'IKEA of Sweden' // 10EU-IL-1 (Tradfri LED Driver 10W): 1.2.245 (117C-4101-12245572)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0005,0019,0020,1000', model:'TRADFRI Driver 10W', manufacturer:'IKEA of Sweden' // 10EU-IL-1 (Tradfri LED Driver 10W): 2.3.086 (117C-4101-23086631)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'TRADFRI Driver 30W', manufacturer:'IKEA of Sweden' // 30EU-IL-2 (Tradfri LED Driver 30W): 1.0.002 (117C-4109-00010002)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'SILVERGLANS IP44 LED driver', manufacturer:'IKEA of Sweden' // 30-IL44-1 (Silverglans LED Driver 30W): 1.0.021 (117C-4104-00010021)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -69,12 +69,7 @@ metadata {
             name: 'logLevel', type: 'enum',
             title: 'Log verbosity',
             description: '<small>Select what type of messages appear in the "Logs" section.</small>',
-            options: [
-                '1': 'Debug - log everything',
-                '2': 'Info - log important events',
-                '3': 'Warning - log events that require attention',
-                '4': 'Error - log errors'
-            ],
+            options: ['1':'Debug - log everything', '2':'Info - log important events', '3':'Warning - log events that require attention', '4':'Error - log errors'],
             defaultValue: '1',
             required: true
         )
@@ -85,11 +80,7 @@ metadata {
             type: 'enum',
             title: 'Power On behaviour',
             description: '<small>Select what happens after a power outage.</small>',
-            options: [
-                'TURN_POWER_ON': 'Turn power On',
-                'TURN_POWER_OFF': 'Turn power Off',
-                'RESTORE_PREVIOUS_STATE': 'Restore previous state'
-            ],
+            options: ['TURN_POWER_ON':'Turn power On', 'TURN_POWER_OFF':'Turn power Off', 'RESTORE_PREVIOUS_STATE':'Restore previous state'],
             defaultValue: 'RESTORE_PREVIOUS_STATE',
             required: true
         )
@@ -261,15 +252,14 @@ List<String> updated(boolean auto = false) {
     if (joinGroup != null && joinGroup != '----') {
         if (joinGroup == '0000') {
             log_info '🛠️ Leaving all Zigbee groups'
-            cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 04}"  // Leave all groups
+            cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 04}" // Leave all groups
         } else {
             String groupName = GROUPS.getOrDefault(joinGroup, 'Unknown')
             log_info "🛠️ Joining group: ${joinGroup} (${groupName})"
             cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 00 ${utils_payload joinGroup} ${Integer.toHexString(groupName.length()).padLeft(2, '0')}${groupName.bytes.encodeHex()}}"  // Join group
         }
-    
         device.updateSetting 'joinGroup', [value:'----', type:'enum']
-        cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}"  // Get groups membership
+        cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}" // Get groups membership
     }
 
     if (auto) return cmds
@@ -333,7 +323,7 @@ void configure(boolean auto = false) {
     
     // Configuration for capability.PowerSource
     sendEvent name:'powerSource', value:'unknown', type:'digital', descriptionText:'Power source initialized to unknown'
-    cmds += zigbee.readAttribute(0x0000, 0x0007)  // PowerSource
+    cmds += zigbee.readAttribute(0x0000, 0x0007) // PowerSource
 
     // Query Basic cluster attributes
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
@@ -366,7 +356,7 @@ void refresh(boolean auto = false) {
     cmds += zigbee.readAttribute(0x0008, 0x0000) // CurrentLevel
     
     // Refresh for capability.ZigbeeGroups
-    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}"  // Get groups membership
+    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}" // Get groups membership
     utils_sendZigbeeCommands cmds
 }
 
@@ -398,7 +388,7 @@ void setLevel(BigDecimal level, BigDecimal duration = 0) {
     Integer newLevel = level > 100 ? 100 : (level < 0 ? 0 : level)
     log_debug "Setting brightness level to ${newLevel}% during ${duration} seconds"
     Integer lvl = newLevel * 2.54
-    Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10  // Max transition time = 30 min
+    Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10 // Max transition time = 30 min
     String command = prestaging == false ? '04' : '00'
     String payload = "${utils_payload lvl, 2} ${utils_payload dur, 4}"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {1143${command} ${payload}}"])
@@ -429,7 +419,6 @@ void ping() {
     log_debug 'Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
     runIn 5, 'pingExecute'
 }
-
 void pingExecute() {
     if (state.lastRx == 0) {
         log_info 'Did not sent any messages since it was last configured'
@@ -545,7 +534,7 @@ void parse(String description) {
         case { contains it, [clusterInt:0x0008, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=CurrentLevel, data=${msg.data}"
             return
-        case { contains it, [clusterInt:0x0008, commandInt:0x04] }:  // Write Attribute Response (0x04)
+        case { contains it, [clusterInt:0x0008, commandInt:0x04] }: // Write Attribute Response (0x04)
             return
         
         // Events for capability.HealthCheck
@@ -564,18 +553,12 @@ void parse(String description) {
         
             // PowerSource := { 0x00:Unknown, 0x01:MainsSinglePhase, 0x02:MainsThreePhase, 0x03:Battery, 0x04:DC, 0x05:EmergencyMainsConstantlyPowered, 0x06:EmergencyMainsAndTransferSwitch }
             switch (msg.value) {
-                case '01':
-                case '02':
-                case '05':
-                case '06':
-                    powerSource = 'mains'
-                    break
+                case ['01', '02', '05', '06']:
+                    powerSource = 'mains'; break
                 case '03':
-                    powerSource = 'battery'
-                    break
+                    powerSource = 'battery'; break
                 case '04':
                     powerSource = 'dc'
-                    break
             }
             utils_sendEvent name:'powerSource', value:powerSource, type:'digital', descriptionText:"Power source is ${powerSource}"
             utils_processedZclMessage 'Read Attributes Response', "PowerSource=${msg.value}"
@@ -590,11 +573,11 @@ void parse(String description) {
             Set<String> groupNames = []
             for (int pos = 0; pos < count; pos++) {
                 String groupId = "${msg.data[pos * 2 + 3]}${msg.data[pos * 2 + 2]}"
-                String groupName = GROUPS.getOrDefault(groupId, "Unknown (${groupId})")
+                String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
                 log_debug "Found group membership: ${groupName}"
                 groupNames.add groupName
             }
-            state.joinGrp = groupNames.findAll { !it.startsWith('Unknown') }
+            state.joinGrp = groupNames
             if (state.joinGrp.size() == 0) state.remove 'joinGrp'
             log_info "Current group membership: ${groupNames ?: 'None'}"
             return
@@ -603,7 +586,7 @@ void parse(String description) {
         case { contains it, [clusterInt:0x0004, commandInt:0x00, direction:'01'] }:
             String status = msg.data[0] == '00' ? 'SUCCESS' : (msg.data[0] == '8A' ? 'ALREADY_MEMBER' : 'FAILED')
             String groupId = "${msg.data[2]}${msg.data[1]}"
-            String groupName = GROUPS.getOrDefault(groupId, "Unknown (${groupId})")
+            String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
             utils_processedZclMessage 'Add Group Response', "Status=${status}, groupId=${groupId}, groupName=${groupName}"
             return
         
@@ -611,7 +594,7 @@ void parse(String description) {
         case { contains it, [clusterInt:0x0004, commandInt:0x03, direction:'01'] }:
             String status = msg.data[0] == '00' ? 'SUCCESS' : (msg.data[0] == '8B' ? 'NOT_A_MEMBER' : 'FAILED')
             String groupId = "${msg.data[2]}${msg.data[1]}"
-            String groupName = GROUPS.getOrDefault(groupId, "Unknown (${groupId})")
+            String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
             utils_processedZclMessage 'Left Group Response', "Status=${status}, groupId=${groupId}, groupName=${groupName}"
             return
 

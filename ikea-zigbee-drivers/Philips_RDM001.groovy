@@ -47,7 +47,7 @@ metadata {
         capability 'PushableButton'
         capability 'ReleasableButton'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,FC00', outClusters:'0003,0004,0006,0008,0019', model:'RDM001', manufacturer:'Signify Netherlands B.V.'  // For firmware: 1.0.5 (100B-011C-0000041A)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,FC00', outClusters:'0003,0004,0006,0008,0019', model:'RDM001', manufacturer:'Signify Netherlands B.V.' // For firmware: 1.0.5 (100B-011C-0000041A)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -73,12 +73,7 @@ metadata {
             name: 'logLevel', type: 'enum',
             title: 'Log verbosity',
             description: '<small>Select what type of messages appear in the "Logs" section.</small>',
-            options: [
-                '1': 'Debug - log everything',
-                '2': 'Info - log important events',
-                '3': 'Warning - log events that require attention',
-                '4': 'Error - log errors'
-            ],
+            options: ['1':'Debug - log everything', '2':'Info - log important events', '3':'Warning - log events that require attention', '4':'Error - log errors'],
             defaultValue: '1',
             required: true
         )
@@ -248,7 +243,7 @@ void configure(boolean auto = false) {
     
     // Configuration for capability.PowerSource
     sendEvent name:'powerSource', value:'unknown', type:'digital', descriptionText:'Power source initialized to unknown'
-    cmds += zigbee.readAttribute(0x0000, 0x0007)  // PowerSource
+    cmds += zigbee.readAttribute(0x0000, 0x0007) // PowerSource
     
     // Configuration for capability.PushableButton
     Integer numberOfButtons = BUTTONS.count { true }
@@ -281,7 +276,7 @@ void refresh(boolean auto = false) {
     cmds += zigbee.readAttribute(0x0001, 0x0021) // BatteryPercentage
     
     // Refresh for capability.ZigbeeBindings
-    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0033 {57 00} {0x0000}"  // Start querying the Bindings Table
+    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0033 {57 00} {0x0000}" // Start querying the Bindings Table
     utils_sendZigbeeCommands cmds
 }
 
@@ -292,7 +287,6 @@ void ping() {
     log_debug 'Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
     runIn 5, 'pingExecute'
 }
-
 void pingExecute() {
     if (state.lastRx == 0) {
         log_info 'Did not sent any messages since it was last configured'
@@ -500,18 +494,12 @@ void parse(String description) {
         
             // PowerSource := { 0x00:Unknown, 0x01:MainsSinglePhase, 0x02:MainsThreePhase, 0x03:Battery, 0x04:DC, 0x05:EmergencyMainsConstantlyPowered, 0x06:EmergencyMainsAndTransferSwitch }
             switch (msg.value) {
-                case '01':
-                case '02':
-                case '05':
-                case '06':
-                    powerSource = 'mains'
-                    break
+                case ['01', '02', '05', '06']:
+                    powerSource = 'mains'; break
                 case '03':
-                    powerSource = 'battery'
-                    break
+                    powerSource = 'battery'; break
                 case '04':
                     powerSource = 'dc'
-                    break
             }
             utils_sendEvent name:'powerSource', value:powerSource, type:'digital', descriptionText:"Power source is ${powerSource}"
             utils_processedZclMessage 'Read Attributes Response', "PowerSource=${msg.value}"

@@ -88,7 +88,7 @@ if (controlGroup != null && controlGroup != '----') {
 {{# @refresh }}
 
 // Refresh for capability.ZigbeeBindings
-cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0033 {57 00} {0x0000}"  // Start querying the Bindings Table
+cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0033 {57 00} {0x0000}" // Start querying the Bindings Table
 {{/ @refresh }}
 {{!--------------------------------------------------------------------------}}
 {{# @events }}

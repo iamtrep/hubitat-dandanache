@@ -28,7 +28,7 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0402,0405,FC57,FC7C,042A,FC7E', outClusters:'0003,0019,0020,0202', model:'VINDSTYRKA', manufacturer:'IKEA of Sweden'  // For firmware: 1.0.010 (117C-110F-00010010)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0402,0405,FC57,FC7C,042A,FC7E', outClusters:'0003,0019,0020,0202', model:'VINDSTYRKA', manufacturer:'IKEA of Sweden' // For firmware: 1.0.010 (117C-110F-00010010)
         
         // Attributes for E2112.FineParticulateMatter
         attribute 'airQuality', 'enum', ['good', 'moderate', 'unhealthy for sensitive groups', 'unhealthy', 'hazardous']
@@ -61,12 +61,7 @@ metadata {
             name: 'logLevel', type: 'enum',
             title: 'Log verbosity',
             description: '<small>Select what type of messages appear in the "Logs" section.</small>',
-            options: [
-                '1': 'Debug - log everything',
-                '2': 'Info - log important events',
-                '3': 'Warning - log events that require attention',
-                '4': 'Error - log errors'
-            ],
+            options: ['1':'Debug - log everything', '2':'Info - log important events', '3':'Warning - log events that require attention', '4':'Error - log errors'],
             defaultValue: '1',
             required: true
         )
@@ -169,7 +164,7 @@ void configure(boolean auto = false) {
     
     // Configuration for capability.PowerSource
     sendEvent name:'powerSource', value:'unknown', type:'digital', descriptionText:'Power source initialized to unknown'
-    cmds += zigbee.readAttribute(0x0000, 0x0007)  // PowerSource
+    cmds += zigbee.readAttribute(0x0000, 0x0007) // PowerSource
 
     // Query Basic cluster attributes
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
@@ -230,7 +225,6 @@ void ping() {
     log_debug 'Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
     runIn 5, 'pingExecute'
 }
-
 void pingExecute() {
     if (state.lastRx == 0) {
         log_info 'Did not sent any messages since it was last configured'
@@ -408,18 +402,12 @@ void parse(String description) {
         
             // PowerSource := { 0x00:Unknown, 0x01:MainsSinglePhase, 0x02:MainsThreePhase, 0x03:Battery, 0x04:DC, 0x05:EmergencyMainsConstantlyPowered, 0x06:EmergencyMainsAndTransferSwitch }
             switch (msg.value) {
-                case '01':
-                case '02':
-                case '05':
-                case '06':
-                    powerSource = 'mains'
-                    break
+                case ['01', '02', '05', '06']:
+                    powerSource = 'mains'; break
                 case '03':
-                    powerSource = 'battery'
-                    break
+                    powerSource = 'battery'; break
                 case '04':
                     powerSource = 'dc'
-                    break
             }
             utils_sendEvent name:'powerSource', value:powerSource, type:'digital', descriptionText:"Power source is ${powerSource}"
             utils_processedZclMessage 'Read Attributes Response', "PowerSource=${msg.value}"

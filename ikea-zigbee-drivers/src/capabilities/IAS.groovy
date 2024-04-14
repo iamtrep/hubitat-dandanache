@@ -55,8 +55,8 @@ case { contains it, [clusterInt:0x500, commandInt:0x00, isClusterSpecific:true] 
 case { contains it, [clusterInt:0x500, commandInt:0x01, isClusterSpecific:true] }:
     Integer ep0500 = {{# params.endpoint }}{{params.endpoint}}{{/ params.endpoint }}{{^ params.endpoint }}0x01{{/ params.endpoint }}
     utils_sendZigbeeCommands([
-        "he raw 0x${device.deviceNetworkId} 0x01 ${ep0500} 0x0500 {01 23 00 00 00}",  // Zone Enroll Response (0x00): status=Success, zoneId=0x00
-        "he raw 0x${device.deviceNetworkId} 0x01 ${ep0500} 0x0500 {01 23 01}",        // Initiate Normal Operation Mode (0x01): no_payload
+        "he raw 0x${device.deviceNetworkId} 0x01 ${ep0500} 0x0500 {01 23 00 00 00}", // Zone Enroll Response (0x00): status=Success, zoneId=0x00
+        "he raw 0x${device.deviceNetworkId} 0x01 ${ep0500} 0x0500 {01 23 01}", // Initiate Normal Operation Mode (0x01): no_payload
     ])
     utils_processedZclMessage 'Enroll Request', "description=${description}"
     return

@@ -38,7 +38,7 @@ metadata {
         capability 'PushableButton'
         capability 'HealthCheck'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0B04,0702,0005,0004,0003,0012,0000,0006,FCC0', outClusters:'0019,000A', model:'lumi.switch.acn047', manufacturer:'Aqara'  // For firmware: Unknown
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0B04,0702,0005,0004,0003,0012,0000,0006,FCC0', outClusters:'0019,000A', model:'lumi.switch.acn047', manufacturer:'Aqara' // For firmware: Unknown
         
         // Attributes for devices.Aqara_DCM-K01
         attribute 'powerOutageCount', 'number'
@@ -67,12 +67,7 @@ metadata {
             name: 'logLevel', type: 'enum',
             title: 'Log verbosity',
             description: '<small>Select what type of messages appear in the "Logs" section.</small>',
-            options: [
-                '1': 'Debug - log everything',
-                '2': 'Info - log important events',
-                '3': 'Warning - log events that require attention',
-                '4': 'Error - log errors'
-            ],
+            options: ['1':'Debug - log everything', '2':'Info - log important events', '3':'Warning - log events that require attention', '4':'Error - log errors'],
             defaultValue: '1',
             required: true
         )
@@ -394,7 +389,6 @@ void ping() {
     log_debug 'Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
     runIn 5, 'pingExecute'
 }
-
 void pingExecute() {
     if (state.lastRx == 0) {
         log_info 'Did not sent any messages since it was last configured'

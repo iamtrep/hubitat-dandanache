@@ -30,7 +30,7 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0020,0500,0B05,FC7C,FC81', outClusters:'0003,0004,0019', model:'BADRING Water Leakage Sensor', manufacturer:'IKEA of Sweden'  // For firmware: 1.0.7 (117C-24D4-01000007)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0020,0500,0B05,FC7C,FC81', outClusters:'0003,0004,0019', model:'BADRING Water Leakage Sensor', manufacturer:'IKEA of Sweden' // For firmware: 1.0.7 (117C-24D4-01000007)
         
         // Attributes for capability.IAS
         attribute 'ias', 'enum', ['enrolled', 'not enrolled']
@@ -59,12 +59,7 @@ metadata {
             name: 'logLevel', type: 'enum',
             title: 'Log verbosity',
             description: '<small>Select what type of messages appear in the "Logs" section.</small>',
-            options: [
-                '1': 'Debug - log everything',
-                '2': 'Info - log important events',
-                '3': 'Warning - log events that require attention',
-                '4': 'Error - log errors'
-            ],
+            options: ['1':'Debug - log everything', '2':'Info - log important events', '3':'Warning - log events that require attention', '4':'Error - log errors'],
             defaultValue: '1',
             required: true
         )
@@ -162,7 +157,7 @@ void configure(boolean auto = false) {
     
     // Configuration for capability.PowerSource
     sendEvent name:'powerSource', value:'unknown', type:'digital', descriptionText:'Power source initialized to unknown'
-    cmds += zigbee.readAttribute(0x0000, 0x0007)  // PowerSource
+    cmds += zigbee.readAttribute(0x0000, 0x0007) // PowerSource
 
     // Query Basic cluster attributes
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
@@ -205,7 +200,6 @@ void ping() {
     log_debug 'Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
     runIn 5, 'pingExecute'
 }
-
 void pingExecute() {
     if (state.lastRx == 0) {
         log_info 'Did not sent any messages since it was last configured'
@@ -311,8 +305,8 @@ void parse(String description) {
         case { contains it, [clusterInt:0x500, commandInt:0x01, isClusterSpecific:true] }:
             Integer ep0500 = 0x01
             utils_sendZigbeeCommands([
-                "he raw 0x${device.deviceNetworkId} 0x01 ${ep0500} 0x0500 {01 23 00 00 00}",  // Zone Enroll Response (0x00): status=Success, zoneId=0x00
-                "he raw 0x${device.deviceNetworkId} 0x01 ${ep0500} 0x0500 {01 23 01}",        // Initiate Normal Operation Mode (0x01): no_payload
+                "he raw 0x${device.deviceNetworkId} 0x01 ${ep0500} 0x0500 {01 23 00 00 00}", // Zone Enroll Response (0x00): status=Success, zoneId=0x00
+                "he raw 0x${device.deviceNetworkId} 0x01 ${ep0500} 0x0500 {01 23 01}", // Initiate Normal Operation Mode (0x01): no_payload
             ])
             utils_processedZclMessage 'Enroll Request', "description=${description}"
             return
@@ -379,18 +373,12 @@ void parse(String description) {
         
             // PowerSource := { 0x00:Unknown, 0x01:MainsSinglePhase, 0x02:MainsThreePhase, 0x03:Battery, 0x04:DC, 0x05:EmergencyMainsConstantlyPowered, 0x06:EmergencyMainsAndTransferSwitch }
             switch (msg.value) {
-                case '01':
-                case '02':
-                case '05':
-                case '06':
-                    powerSource = 'mains'
-                    break
+                case ['01', '02', '05', '06']:
+                    powerSource = 'mains'; break
                 case '03':
-                    powerSource = 'battery'
-                    break
+                    powerSource = 'battery'; break
                 case '04':
                     powerSource = 'dc'
-                    break
             }
             utils_sendEvent name:'powerSource', value:powerSource, type:'digital', descriptionText:"Power source is ${powerSource}"
             utils_processedZclMessage 'Read Attributes Response', "PowerSource=${msg.value}"

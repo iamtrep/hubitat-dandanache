@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Remove ICPSHC24 driver; LED drivers must use the new Dimmable Lights driver
 
+### Fixed
+- E2134: Fix bindings and reporting to use the correct endpoints - `@alexandruy2k`
+
 ## [4.1.0] - 2024-04-06
 
 ### Added
