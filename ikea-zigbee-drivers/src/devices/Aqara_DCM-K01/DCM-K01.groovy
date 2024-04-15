@@ -252,7 +252,7 @@ case { contains it, [clusterInt:0xFCC0, commandInt:0x0A, attrInt:0x00F7] }:
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Temperature=${temperature}, PowerOutageCount=${powerOutageCount}, SoftwareBuild=${softwareBuild}, Energy=${energy}kWh, Voltage=${voltage}V, Power=${power}W, Amperage=${amperage}A"
     return
 
-// Other events that we expect but are not usefull for devices.Aqara_DCM-K01 behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0xFCC0, commandInt:0x07] }:
     utils_processedZclMessage 'Configure Reporting Response', "attribute=LumiSpecific, data=${msg.data}"
     return
@@ -263,7 +263,7 @@ case { contains it, [clusterInt:0xFCC0, commandInt:0x0A, attrInt:0x0200] }:
     utils_processedZclMessage 'Report Attributes Response', "OperationMode=${msg.value}, Switch=${msg.endpoint}"
     return
 case { contains it, [clusterInt:0xFCC0, commandInt:0x0A, attrInt:0x000A] }:
-    utils_processedZclMessage 'Report Attributes Response', "switchType=${msg.value}"
+    utils_processedZclMessage 'Report Attributes Response', "SwitchType=${msg.value}"
     return
 case { contains it, [clusterInt:0xFCC0, commandInt:0x0A, attrInt:0x02D0] }:
     utils_processedZclMessage 'Report Attributes Response', "Interlock=${msg.value}"
@@ -272,9 +272,9 @@ case { contains it, [clusterInt:0xFCC0, commandInt:0x0A, attrInt:0x0289] }:
     utils_processedZclMessage 'Report Attributes Response', "RelayMode=${msg.value}"
     return
 case { contains it, [clusterInt:0xFCC0, commandInt:0x0A, attrInt:0x00EB] }:
-    utils_processedZclMessage 'Report Attributes Response', "pulseDuration=${msg.value}"
+    utils_processedZclMessage 'Report Attributes Response', "PulseDuration=${msg.value}"
     return
-case { contains it, [clusterInt:0xFCC0, commandInt:0x04] }:  // Write Attribute Response
+case { contains it, [clusterInt:0xFCC0, commandInt:0x04] }: // Write Attribute Response
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

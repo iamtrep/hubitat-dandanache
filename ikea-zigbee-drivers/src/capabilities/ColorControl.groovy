@@ -15,6 +15,7 @@ void setColor(Map colormap) {
     newSaturation = Math.round(newSaturation * 2.54)
     String payload = "${utils_payload newHue, 2} ${utils_payload newSaturation, 2} 0000 00 00"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114306 ${payload}}"]) // Move to Hue and Saturation
+    /* groovylint-disable-next-line UnnecessarySetter */
     setLevel newLevel
 }
 void setHue(BigDecimal hue) {
@@ -111,6 +112,14 @@ case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x0008] }:
 case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x4001] }:
 case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x4001] }:
     processMultipleColorAttributes msg, type
+    return
+
+// Other events that we expect but are not usefull
+case { contains it, [clusterInt:0x0300, commandInt:0x07] }:
+    utils_processedZclMessage 'Configure Reporting Response', "data=${msg.data}"
+    return
+case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0003] }: // Report Attribute Current X
+case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0004] }: // Report Attribute Current Y
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

@@ -393,6 +393,7 @@ void configure(boolean auto = false) {
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -459,6 +460,7 @@ void setColor(Map colormap) {
     newSaturation = Math.round(newSaturation * 2.54)
     String payload = "${utils_payload newHue, 2} ${utils_payload newSaturation, 2} 0000 00 00"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114306 ${payload}}"]) // Move to Hue and Saturation
+    /* groovylint-disable-next-line UnnecessarySetter */
     setLevel newLevel
 }
 void setHue(BigDecimal hue) {
@@ -706,7 +708,7 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "PowerOnBehavior=${newValue}"
             return
         
-        // Other events that we expect but are not usefull for capability.Switch behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
             return
@@ -735,6 +737,14 @@ void parse(String description) {
             processMultipleColorAttributes msg, type
             return
         
+        // Other events that we expect but are not usefull
+        case { contains it, [clusterInt:0x0300, commandInt:0x07] }:
+            utils_processedZclMessage 'Configure Reporting Response', "data=${msg.data}"
+            return
+        case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0003] }: // Report Attribute Current X
+        case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0004] }: // Report Attribute Current Y
+            return
+        
         // Events for capability.ColorTemperature
         // ===================================================================================================================
         
@@ -759,7 +769,7 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "ColorTemperaturePhysicalMinMireds=${msg.value} (${state.minMireds} mireds, ${Math.round(1000000 / state.minMireds)}K), ColorTemperaturePhysicalMaxMireds=${msg.value} (${state.maxMireds} mireds, ${Math.round(1000000 / state.maxMireds)}K)"
             return
         
-        // Other events that we expect but are not usefull for capability.ColorTemperature behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0300, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=ColorTemperatureMireds, data=${msg.data}"
             return
@@ -777,7 +787,7 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "CurrentLevel=${msg.value} (${level}%)"
             return
         
-        // Other events that we expect but are not usefull for capability.Brightness behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0008, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=CurrentLevel, data=${msg.data}"
             return

@@ -30,7 +30,7 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0020,0500,0B05,FC7C,FC81', outClusters:'0003,0004,0019', model:'BADRING Water Leakage Sensor', manufacturer:'IKEA of Sweden' // For firmware: 1.0.7 (117C-24D4-01000007)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0020,0500,0B05,FC7C,FC81', outClusters:'0003,0004,0019', model:'BADRING Water Leakage Sensor', manufacturer:'IKEA of Sweden' // Firmware: 1.0.7 (117C-24D4-01000007)
         
         // Attributes for capability.IAS
         attribute 'ias', 'enum', ['enrolled', 'not enrolled']
@@ -168,6 +168,7 @@ void configure(boolean auto = false) {
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -323,7 +324,7 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "ZoneType=${msg.value}"
             return
         
-        // Other events that we expect but are not usefull for capability.IAS behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0500, commandInt:0x04, isClusterSpecific:false] }:
             utils_processedZclMessage 'Write Attribute Response', "attribute=IAS_CIE_Address, ZoneType=${msg.data}"
             return
@@ -352,7 +353,7 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "BatteryPercentage=${percentage}%"
             return
         
-        // Other events that we expect but are not usefull for capability.Battery behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0001, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=BatteryPercentage, data=${msg.data}"
             return

@@ -32,7 +32,7 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57,FC7C,FC85', outClusters:'0019', model:'TRETAKT Smart plug', manufacturer:'IKEA of Sweden' // For firmware: 2.4.4 (117C-1100-02040004)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57,FC7C,FC85', outClusters:'0019', model:'TRETAKT Smart plug', manufacturer:'IKEA of Sweden' // Firmware: 2.4.4 (117C-1100-02040004)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -236,6 +236,7 @@ void configure(boolean auto = false) {
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -385,7 +386,7 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "PowerOnBehavior=${newValue}"
             return
         
-        // Other events that we expect but are not usefull for capability.Switch behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
             return

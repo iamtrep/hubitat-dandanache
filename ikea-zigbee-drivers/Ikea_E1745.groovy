@@ -32,7 +32,7 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0020,1000,FC57,FC7C', outClusters:'0003,0004,0006,0008,0019,1000', model:'TRADFRI motion sensor', manufacturer:'IKEA of Sweden' // For firmware: 24.4.5 (117C-11C8-24040005)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0020,1000,FC57,FC7C', outClusters:'0003,0004,0006,0008,0019,1000', model:'TRADFRI motion sensor', manufacturer:'IKEA of Sweden' // Firmware: 24.4.5 (117C-11C8-24040005)
         
         // Attributes for devices.Ikea_E1745
         attribute 'requestedBrightness', 'number'            // Syncs with the brightness option on device (◐/⭘)
@@ -253,6 +253,7 @@ void configure(boolean auto = false) {
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -326,6 +327,7 @@ private Map<String, String> retrieveSwitchDevices() {
                 .sort { it.name }
                 .collectEntries { [(it.zigbeeId): it.name] }
         }
+    /* groovylint-disable-next-line CatchException */
     } catch (Exception ex) {
         return ['ZZZZ': "Exception: ${ex}"]
     }
@@ -420,7 +422,7 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "BatteryPercentage=${percentage}%"
             return
         
-        // Other events that we expect but are not usefull for capability.Battery behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0001, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=BatteryPercentage, data=${msg.data}"
             return

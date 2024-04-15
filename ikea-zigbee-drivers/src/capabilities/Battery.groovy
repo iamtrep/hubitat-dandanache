@@ -44,7 +44,7 @@ case { contains it, [clusterInt:0x0001, commandInt:0x01] }:
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "BatteryPercentage=${percentage}%"
     return
 
-// Other events that we expect but are not usefull for capability.Battery behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0x0001, commandInt:0x07] }:
     utils_processedZclMessage 'Configure Reporting Response', "attribute=BatteryPercentage, data=${msg.data}"
     return

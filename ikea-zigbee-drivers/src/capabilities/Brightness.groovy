@@ -190,7 +190,7 @@ case { contains it, [clusterInt:0x0008, commandInt:0x01, attrInt:0x0000] }:
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "CurrentLevel=${msg.value} (${level}%)"
     return
 
-// Other events that we expect but are not usefull for capability.Brightness behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0x0008, commandInt:0x07] }:
     utils_processedZclMessage 'Configure Reporting Response', "attribute=CurrentLevel, data=${msg.data}"
     return

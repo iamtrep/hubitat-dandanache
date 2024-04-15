@@ -41,7 +41,7 @@ metadata {
         capability 'PushableButton'
         capability 'ReleasableButton'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,FC00,1000', outClusters:'0019,0000,0003,0004,0006,0008,0005,1000', model:'RWL022', manufacturer:'Signify Netherlands B.V.' // For firmware: 2.45.2_hF4400CA (100B-0119-02002D02)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,FC00,1000', outClusters:'0019,0000,0003,0004,0006,0008,0005,1000', model:'RWL022', manufacturer:'Signify Netherlands B.V.' // Firmware: 2.45.2_hF4400CA (100B-0119-02002D02)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -228,6 +228,7 @@ void configure(boolean auto = false) {
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -277,6 +278,7 @@ void pingExecute() {
 }
 
 // Implementation for capability.HoldableButton
+void hold(String buttonNumber) { hold Integer.parseInt(buttonNumber) }
 void hold(BigDecimal buttonNumber) {
     String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
     if (buttonName == null) {
@@ -287,6 +289,7 @@ void hold(BigDecimal buttonNumber) {
 }
 
 // Implementation for capability.PushableButton
+void push(String buttonNumber) { push Integer.parseInt(buttonNumber) }
 void push(BigDecimal buttonNumber) {
     String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
     if (buttonName == null) {
@@ -297,6 +300,7 @@ void push(BigDecimal buttonNumber) {
 }
 
 // Implementation for capability.ReleasableButton
+void release(String buttonNumber) { release Integer.parseInt(buttonNumber) }
 void release(BigDecimal buttonNumber) {
     String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
     if (buttonName == null) {
@@ -316,6 +320,7 @@ private Map<String, String> retrieveSwitchDevices() {
                 .sort { it.name }
                 .collectEntries { [(it.zigbeeId): it.name] }
         }
+    /* groovylint-disable-next-line CatchException */
     } catch (Exception ex) {
         return ['ZZZZ': "Exception: ${ex}"]
     }
@@ -388,7 +393,7 @@ void parse(String description) {
         
         // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0000, commandInt:0x04, isClusterSpecific:false] }:
-            utils_processedZclMessage 'Write Attribute Response', 'attribute=Philips magic attribute'
+            utils_processedZclMessage 'Write Attribute Response', 'attribute=Philips Magic Attribute'
             return
         
         // Events for capability.Battery
@@ -415,7 +420,7 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "BatteryPercentage=${percentage}%"
             return
         
-        // Other events that we expect but are not usefull for capability.Battery behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0001, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=BatteryPercentage, data=${msg.data}"
             return

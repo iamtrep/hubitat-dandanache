@@ -38,9 +38,9 @@ case { contains it, [clusterInt:0xFC7E, commandInt:0x01, attrInt:0x0000] }:
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "VocIndex=${msg.value}"
     return
 
-// Other events that we expect but are not usefull for E2112.VocIndex behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0xFC7E, commandInt:0x07] }:
-    utils_processedZclMessage 'Configure Reporting Response', "attribute=vocIndex, data=${msg.data}"
+    utils_processedZclMessage 'Configure Reporting Response', "attribute=VocIndex, data=${msg.data}"
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

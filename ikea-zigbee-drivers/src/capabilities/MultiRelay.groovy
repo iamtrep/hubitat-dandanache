@@ -75,9 +75,9 @@ case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x0000] }:
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Module=${moduleNumber}, Switch=${newState}"
     return
 
-// Other events that we expect but are not usefull for capability.MultiRelay behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
-    utils_processedZclMessage 'Configure Reporting Response', "attribute=switch, data=${msg.data}"
+    utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

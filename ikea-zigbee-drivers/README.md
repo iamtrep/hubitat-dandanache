@@ -293,6 +293,9 @@ Below you can find the details of each device, including the features and pairin
 * Directly control Zigbee devices: On/Off
 * Directly control Zigbee groups: On/Off
 
+#### Known Issues
+* Old firmware versions (below 1.0.35) does not send the release event for Button 6 (•) and Button 7 (••)
+
 #### Pairing Instructions
 1. Open the battery compartiment and you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.

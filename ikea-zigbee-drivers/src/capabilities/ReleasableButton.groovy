@@ -6,6 +6,7 @@ capability 'ReleasableButton'
 {{# @implementation }}
 
 // Implementation for capability.ReleasableButton
+void release(String buttonNumber) { release Integer.parseInt(buttonNumber) }
 void release(BigDecimal buttonNumber) {
     String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
     if (buttonName == null) {

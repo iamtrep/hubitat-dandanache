@@ -16,7 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove ICPSHC24 driver; LED drivers must use the new Dimmable Lights driver
 
 ### Fixed
-- E2134: Fix bindings and reporting to use the correct endpoints - `@alexandruy2k`
+- E2134, E2123: Fix bindings to use the correct endpoints - `@alexandruy2k`
+- Fix errors when pressing a dashboard tile assigned to "push" one of the buttons - `@OldChicagoPete`
+- Legrand Connected Outlet: Fix blue light is ON when the device is OFF and OFF when its ON - `@BorrisTheCat`
 
 ## [4.1.0] - 2024-04-06
 

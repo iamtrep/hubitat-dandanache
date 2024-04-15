@@ -28,7 +28,7 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0402,0405,FC57,FC7C,042A,FC7E', outClusters:'0003,0019,0020,0202', model:'VINDSTYRKA', manufacturer:'IKEA of Sweden' // For firmware: 1.0.010 (117C-110F-00010010)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0402,0405,FC57,FC7C,042A,FC7E', outClusters:'0003,0019,0020,0202', model:'VINDSTYRKA', manufacturer:'IKEA of Sweden' // Firmware: 1.0.010 (117C-110F-00010010)
         
         // Attributes for E2112.FineParticulateMatter
         attribute 'airQuality', 'enum', ['good', 'moderate', 'unhealthy for sensitive groups', 'unhealthy', 'hazardous']
@@ -175,6 +175,7 @@ void configure(boolean auto = false) {
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -312,9 +313,9 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "PM25Measurement=${pm25} μg/m³"
             return
         
-        // Other events that we expect but are not usefull for E2112.FineParticulateMatter behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x042A, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=pm25, data=${msg.data}"
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=PM25, data=${msg.data}"
             return
         
         // Events for E2112.VocIndex
@@ -335,9 +336,9 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "VocIndex=${msg.value}"
             return
         
-        // Other events that we expect but are not usefull for E2112.VocIndex behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0xFC7E, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=vocIndex, data=${msg.data}"
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=VocIndex, data=${msg.data}"
             return
         
         // Events for capability.Temperature
@@ -358,9 +359,9 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Temperature=${msg.value}"
             return
         
-        // Other events that we expect but are not usefull for capability.Temperature behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0402, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=temperature, data=${msg.data}"
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=Temperature, data=${msg.data}"
             return
         
         // Events for capability.RelativeHumidity
@@ -381,9 +382,9 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "RelativeHumidity=${msg.value}"
             return
         
-        // Other events that we expect but are not usefull for capability.RelativeHumidity behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0405, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=humidity, data=${msg.data}"
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=RelativeHumidity, data=${msg.data}"
             return
         
         // Events for capability.HealthCheck

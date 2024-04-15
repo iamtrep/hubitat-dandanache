@@ -35,8 +35,8 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0202,FC57,FC7D', outClusters:'0019,0400,042A', model:'STARKVIND Air purifier table', manufacturer:'IKEA of Sweden' // For firmware: 1.0.033 (117C-110C-00010033)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0202,FC57,FC7C,FC7D', outClusters:'0019,0400,042A', model:'STARKVIND Air purifier table', manufacturer:'IKEA of Sweden' // For firmware: 1.1.001 (117C-110C-00011001)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0202,FC57,FC7D', outClusters:'0019,0400,042A', model:'STARKVIND Air purifier table', manufacturer:'IKEA of Sweden' // Firmware: 1.0.033 (117C-110C-00010033)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0202,FC57,FC7C,FC7D', outClusters:'0019,0400,042A', model:'STARKVIND Air purifier table', manufacturer:'IKEA of Sweden' // Firmware: 1.1.001 (117C-110C-00011001)
         
         // Attributes for devices.Ikea_E2006
         attribute 'airQuality', 'enum', ['good', 'moderate', 'unhealthy for sensitive groups', 'unhealthy', 'hazardous']
@@ -255,6 +255,7 @@ void configure(boolean auto = false) {
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -554,9 +555,11 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "ChildLock=${msg.value}"
             return
         
-        // Other events that we expect but are not usefull for devices.E2006 behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0xFC7D, commandInt:0x04] }: // Write Attribute Response (0x04)
-        case { contains it, [clusterInt:0xFC7D, commandInt:0x07] }: // Configure Reporting Response
+            return
+        case { contains it, [clusterInt:0xFC7D, commandInt:0x07] }:
+            utils_processedZclMessage 'Configure Reporting Response', "data=${msg.data}"
             return
         
         // Events for capability.HealthCheck

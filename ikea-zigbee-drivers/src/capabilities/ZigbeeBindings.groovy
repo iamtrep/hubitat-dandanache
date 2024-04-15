@@ -44,6 +44,7 @@ private Map<String, String> retrieveSwitchDevices() {
                 .sort { it.name }
                 .collectEntries { [(it.zigbeeId): it.name] }
         }
+    /* groovylint-disable-next-line CatchException */
     } catch (Exception ex) {
         return ['ZZZZ': "Exception: ${ex}"]
     }

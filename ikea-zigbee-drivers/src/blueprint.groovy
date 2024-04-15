@@ -26,7 +26,7 @@ metadata {
         {{/ device.capabilities }}
 
         {{# device.fingerprints }}
-        {{{ value }}} // {{# type }}{{ type }}{{/ type }}{{^ type }}For firmware{{/ type }}: {{ firmwares }}
+        {{{ value }}} // {{# type }}{{ type }}{{/ type }}{{^ type }}Firmware{{/ type }}: {{ firmwares }}
         {{/ device.fingerprints }}
         {{# device.capabilities }}
         {{> file@attributes }}
@@ -146,6 +146,7 @@ void configure(boolean auto = false) {
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true

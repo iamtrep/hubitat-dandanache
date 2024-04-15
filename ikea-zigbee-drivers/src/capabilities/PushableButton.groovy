@@ -23,6 +23,7 @@ sendEvent name:'numberOfButtons', value:numberOfButtons, descriptionText:"Number
 {{# @implementation }}
 
 // Implementation for capability.PushableButton
+void push(String buttonNumber) { push Integer.parseInt(buttonNumber) }
 void push(BigDecimal buttonNumber) {
     String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
     if (buttonName == null) {

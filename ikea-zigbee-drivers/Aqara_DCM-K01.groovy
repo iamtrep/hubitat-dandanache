@@ -38,7 +38,7 @@ metadata {
         capability 'PushableButton'
         capability 'HealthCheck'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0B04,0702,0005,0004,0003,0012,0000,0006,FCC0', outClusters:'0019,000A', model:'lumi.switch.acn047', manufacturer:'Aqara' // For firmware: Unknown
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0B04,0702,0005,0004,0003,0012,0000,0006,FCC0', outClusters:'0019,000A', model:'lumi.switch.acn047', manufacturer:'Aqara' // Firmware: Unknown
         
         // Attributes for devices.Aqara_DCM-K01
         attribute 'powerOutageCount', 'number'
@@ -316,6 +316,7 @@ void configure(boolean auto = false) {
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -373,6 +374,7 @@ void componentRefresh(ChildDeviceWrapper childDevice) {
 }
 
 // Implementation for capability.PushableButton
+void push(String buttonNumber) { push Integer.parseInt(buttonNumber) }
 void push(BigDecimal buttonNumber) {
     String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
     if (buttonName == null) {
@@ -544,7 +546,7 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Temperature=${temperature}, PowerOutageCount=${powerOutageCount}, SoftwareBuild=${softwareBuild}, Energy=${energy}kWh, Voltage=${voltage}V, Power=${power}W, Amperage=${amperage}A"
             return
         
-        // Other events that we expect but are not usefull for devices.Aqara_DCM-K01 behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0xFCC0, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=LumiSpecific, data=${msg.data}"
             return
@@ -555,7 +557,7 @@ void parse(String description) {
             utils_processedZclMessage 'Report Attributes Response', "OperationMode=${msg.value}, Switch=${msg.endpoint}"
             return
         case { contains it, [clusterInt:0xFCC0, commandInt:0x0A, attrInt:0x000A] }:
-            utils_processedZclMessage 'Report Attributes Response', "switchType=${msg.value}"
+            utils_processedZclMessage 'Report Attributes Response', "SwitchType=${msg.value}"
             return
         case { contains it, [clusterInt:0xFCC0, commandInt:0x0A, attrInt:0x02D0] }:
             utils_processedZclMessage 'Report Attributes Response', "Interlock=${msg.value}"
@@ -564,9 +566,9 @@ void parse(String description) {
             utils_processedZclMessage 'Report Attributes Response', "RelayMode=${msg.value}"
             return
         case { contains it, [clusterInt:0xFCC0, commandInt:0x0A, attrInt:0x00EB] }:
-            utils_processedZclMessage 'Report Attributes Response', "pulseDuration=${msg.value}"
+            utils_processedZclMessage 'Report Attributes Response', "PulseDuration=${msg.value}"
             return
-        case { contains it, [clusterInt:0xFCC0, commandInt:0x04] }:  // Write Attribute Response
+        case { contains it, [clusterInt:0xFCC0, commandInt:0x04] }: // Write Attribute Response
             return
         
         // Events for capability.PowerMeter
@@ -598,11 +600,11 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "PowerDivisor=${msg.value}"
             return
         
-        // Other events that we expect but are not usefull for capability.PowerMeter behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0B04, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=ActivePower, data=${msg.data}"
             return
-        case { contains it, [clusterInt:0x0B04, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Command
+        case { contains it, [clusterInt:0x0B04, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Response
             return
         
         // Events for capability.EnergyMeter
@@ -628,7 +630,7 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "EnergyDivisor=${msg.value}"
             return
         
-        // Other events that we expect but are not usefull for capability.PowerMeter behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0702, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=CurrentSummation, data=${msg.data}"
             return
@@ -651,9 +653,9 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Module=${moduleNumber}, Switch=${newState}"
             return
         
-        // Other events that we expect but are not usefull for capability.MultiRelay behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=switch, data=${msg.data}"
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
             return
         
         // Events for capability.HealthCheck

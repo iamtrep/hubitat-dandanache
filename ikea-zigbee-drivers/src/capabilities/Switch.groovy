@@ -122,7 +122,7 @@ case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x4003] }:
     return
 {{/ params.powerOnBehavior }}
 
-// Other events that we expect but are not usefull for capability.Switch behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
     utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
     return

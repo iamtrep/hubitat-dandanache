@@ -36,7 +36,7 @@ metadata {
         capability 'HealthCheck'
         capability 'PushableButton'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0001,0500,0000', outClusters:'0003,0501', model:'SWO-KEF1PA', manufacturer:'SwannONe' // For firmware: TBD
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0001,0500,0000', outClusters:'0003,0501', model:'SWO-KEF1PA', manufacturer:'SwannONe' // Firmware: TBD
         
         // Attributes for capability.IAS
         attribute 'ias', 'enum', ['enrolled', 'not enrolled']
@@ -177,6 +177,7 @@ void configure(boolean auto = false) {
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -229,6 +230,7 @@ void pingExecute() {
 }
 
 // Implementation for capability.PushableButton
+void push(String buttonNumber) { push Integer.parseInt(buttonNumber) }
 void push(BigDecimal buttonNumber) {
     String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
     if (buttonName == null) {
@@ -366,7 +368,7 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "ZoneType=${msg.value}"
             return
         
-        // Other events that we expect but are not usefull for capability.IAS behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0500, commandInt:0x04, isClusterSpecific:false] }:
             utils_processedZclMessage 'Write Attribute Response', "attribute=IAS_CIE_Address, ZoneType=${msg.data}"
             return
@@ -395,7 +397,7 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "BatteryPercentage=${percentage}%"
             return
         
-        // Other events that we expect but are not usefull for capability.Battery behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0001, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=BatteryPercentage, data=${msg.data}"
             return

@@ -342,9 +342,11 @@ case { contains it, [clusterInt:0xFC7D, commandInt:0x01, attrInt:0x0005] }:
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "ChildLock=${msg.value}"
     return
 
-// Other events that we expect but are not usefull for devices.E2006 behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0xFC7D, commandInt:0x04] }: // Write Attribute Response (0x04)
-case { contains it, [clusterInt:0xFC7D, commandInt:0x07] }: // Configure Reporting Response
+    return
+case { contains it, [clusterInt:0xFC7D, commandInt:0x07] }:
+    utils_processedZclMessage 'Configure Reporting Response', "data=${msg.data}"
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

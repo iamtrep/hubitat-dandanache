@@ -49,11 +49,11 @@ case { contains it, [clusterInt:0x0B04, commandInt:0x01, attrInt:0x0605] }:
     utils_processedZclMessage 'Read Attributes Response', "PowerDivisor=${msg.value}"
     return
 
-// Other events that we expect but are not usefull for capability.PowerMeter behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0x0B04, commandInt:0x07] }:
     utils_processedZclMessage 'Configure Reporting Response', "attribute=ActivePower, data=${msg.data}"
     return
-case { contains it, [clusterInt:0x0B04, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Command
+case { contains it, [clusterInt:0x0B04, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Response
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

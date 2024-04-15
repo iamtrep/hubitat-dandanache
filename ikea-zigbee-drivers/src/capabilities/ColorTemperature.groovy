@@ -167,7 +167,7 @@ case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x400B] }:
     utils_processedZclMessage 'Read Attributes Response', "ColorTemperaturePhysicalMinMireds=${msg.value} (${state.minMireds} mireds, ${Math.round(1000000 / state.minMireds)}K), ColorTemperaturePhysicalMaxMireds=${msg.value} (${state.maxMireds} mireds, ${Math.round(1000000 / state.maxMireds)}K)"
     return
 
-// Other events that we expect but are not usefull for capability.ColorTemperature behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0x0300, commandInt:0x07] }:
     utils_processedZclMessage 'Configure Reporting Response', "attribute=ColorTemperatureMireds, data=${msg.data}"
     return

@@ -32,7 +32,8 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,FC01,0B04,0006', outClusters:'0006,0000,FC01,0005,0019', model:' Connected outlet', manufacturer:' Legrand' // For firmware: 003e (1021-0011-003E4203)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,FC01,0B04,0006', outClusters:'0006,0000,FC01,0005,0019', model:' Connected outlet', manufacturer:' Legrand' // Firmware: 003e (1021-0011-003E4203)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,FC01,0B04,0006,000F', outClusters:'0006,0000,FC01,0005,0019', model:' Mobile outlet', manufacturer:' Legrand' // Firmware: 002f
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -84,8 +85,8 @@ metadata {
             title: 'LED mode',
             description: '<small>Select how the LED indicator behaves.</small>',
             options: [
-                    'ALWAYS_ON': 'Always On - LED remains lit at all times, making it easy to find in the dark',
-                   'ALWAYS_OFF': 'Always Off - LED remains off, ensuring total darkness',
+                'ALWAYS_ON': 'Always On - LED remains lit at all times, making it easy to find in the dark',
+                'ALWAYS_OFF': 'Always Off - LED remains off, ensuring total darkness',
                 'OUTLET_STATUS': 'Outlet status - LED indicates the power state of the outlet'
             ],
             defaultValue: 'OUTLET_STATUS',
@@ -144,16 +145,16 @@ List<String> updated(boolean auto = false) {
     log_info "🛠️ ledMode = ${ledMode}"
     switch (ledMode) {
         case 'ALWAYS_ON':
-            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x01, [mfgCode: '0x1021']) // Write LED Mode attribute
-            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x01, [mfgCode: '0x1021']) // Write LED Mode attributes
+            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x01, [mfgCode: '0x1021'])
+            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x01, [mfgCode: '0x1021'])
             break
         case 'ALWAYS_OFF':
-            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x00, [mfgCode: '0x1021']) // Write LED Mode attribute
-            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x00, [mfgCode: '0x1021']) // Write LED Mode attributes
+            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x00, [mfgCode: '0x1021'])
+            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x00, [mfgCode: '0x1021'])
             break
         default:
-            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x01, [mfgCode: '0x1021']) // Write LED Mode attribute
-            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x00, [mfgCode: '0x1021']) // Write LED Mode attributes
+            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x00, [mfgCode: '0x1021'])
+            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x01, [mfgCode: '0x1021'])
     }
     
     // Preferences for capability.HealthCheck
@@ -245,6 +246,7 @@ void configure(boolean auto = false) {
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -395,7 +397,7 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "PowerOnBehavior=${newValue}"
             return
         
-        // Other events that we expect but are not usefull for capability.Switch behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
             return
@@ -439,11 +441,11 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "PowerDivisor=${msg.value}"
             return
         
-        // Other events that we expect but are not usefull for capability.PowerMeter behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0B04, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=ActivePower, data=${msg.data}"
             return
-        case { contains it, [clusterInt:0x0B04, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Command
+        case { contains it, [clusterInt:0x0B04, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Response
             return
         
         // Events for capability.HealthCheck

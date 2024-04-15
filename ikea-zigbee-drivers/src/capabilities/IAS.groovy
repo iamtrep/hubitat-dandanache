@@ -73,7 +73,7 @@ case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0001] }:
     utils_processedZclMessage 'Read Attributes Response', "ZoneType=${msg.value}"
     return
 
-// Other events that we expect but are not usefull for capability.IAS behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0x0500, commandInt:0x04, isClusterSpecific:false] }:
     utils_processedZclMessage 'Write Attribute Response', "attribute=IAS_CIE_Address, ZoneType=${msg.data}"
     return

@@ -334,6 +334,7 @@ void configure(boolean auto = false) {
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -511,7 +512,7 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "PowerOnBehavior=${newValue}"
             return
         
-        // Other events that we expect but are not usefull for capability.Switch behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
             return
@@ -530,7 +531,7 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "CurrentLevel=${msg.value} (${level}%)"
             return
         
-        // Other events that we expect but are not usefull for capability.Brightness behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0008, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=CurrentLevel, data=${msg.data}"
             return
