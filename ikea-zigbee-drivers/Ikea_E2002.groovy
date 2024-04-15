@@ -113,8 +113,9 @@ List<String> updated(boolean auto = false) {
             log_info '🛠️ Clearing all device bindings'
             state.stopControlling = 'devices'
         } else {
-            log_info "🛠️ Adding binding to device #${controlDevice} for clusters [0x0006 0x0008]"
+            log_info "🛠️ Adding binding to device #${controlDevice} for clusters [0x0005 0x0006 0x0008]"
     
+            cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0021 {49 ${utils_payload "${device.zigbeeId}"} ${utils_payload "${device.endpointId}"} ${utils_payload '0x0005'} 03 ${utils_payload "${controlDevice}"} 01} {0x0000}" // Add device binding for cluster 0x0005
             cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0021 {49 ${utils_payload "${device.zigbeeId}"} ${utils_payload "${device.endpointId}"} ${utils_payload '0x0006'} 03 ${utils_payload "${controlDevice}"} 01} {0x0000}" // Add device binding for cluster 0x0006
             cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0021 {49 ${utils_payload "${device.zigbeeId}"} ${utils_payload "${device.endpointId}"} ${utils_payload '0x0008'} 03 ${utils_payload "${controlDevice}"} 01} {0x0000}" // Add device binding for cluster 0x0008
         }

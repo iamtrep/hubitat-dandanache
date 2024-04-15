@@ -257,7 +257,7 @@ Below you can find the details of each device, including the features and pairin
 * Button Release events for: Button 1 (🔆), Button 2 (🔅)
 * Battery report: %
 * Health status: online / offline
-* Directly control Zigbee devices: On/Off and Brightness
+* Directly control Zigbee devices: On/Off, Brightness and Scenes
 
 #### Known Issues
 * The Hold / Release events don't work correctly on the Next and Prev buttons.
@@ -441,7 +441,7 @@ Below you can find the details of each device, including the features and pairin
 * Button 2 (🔆) and Button 3 (🔅) act as a switch level (0 - 100%)
 * Battery report: %
 * Health status: online / offline
-* Directly control Zigbee devices: On/Off and Brightness
+* Directly control Zigbee devices: On/Off, Brightness and Scenes
 
 
 #### Known Issues

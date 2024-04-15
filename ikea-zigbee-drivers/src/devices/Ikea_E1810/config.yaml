@@ -35,5 +35,5 @@ device:
     - file: src/capabilities/ReleasableButton.groovy
     - file: src/capabilities/ZigbeeBindings.groovy
       params:
-        clusters: ['0x0006', '0x0008']
+        clusters: ['0x0005', '0x0006', '0x0008']
     - file: src/capabilities/FirmwareUpdate.groovy

@@ -1,7 +1,7 @@
 {
     "packageName": "IKEA Zigbee drivers",
     "version": "5.0.0",
-    "releaseNotes": "v5.0.0\n - Add driver for Dimmable Lights, including LED drivers\n - Add driver for White Spectrum Lights (CT)\n - Add driver for Color White Spectrum Lights (RGB+CT)\n - Remove ICPSHC24 driver; LED drivers must use the new Dimmable Lights driver\n - E2134, E2123: Fix bindings and reporting to use the correct endpoints - @alexandruy2k\n - Fix errors when pressing a dashboard tile assigned to \"push\" one of the buttons - @OldChicagoPete\n - Legrand Connected Outlet: Fix blue light is ON when the device is OFF and OFF when its ON - @BorrisTheCat",
+    "releaseNotes": "v5.0.0\n - Add driver for Dimmable Lights, including LED drivers\n - Add driver for White Spectrum Lights (CT)\n - Add driver for Color White Spectrum Lights (RGB+CT)\n - Remove ICPSHC24 driver; LED drivers must use the new Dimmable Lights driver\n - Add Scenes support using Zigbee Bindings for E1810 and E2002\n - E2134, E2123: Fix bindings and reporting to use the correct endpoints - @alexandruy2k\n - Fix errors when pressing a dashboard tile assigned to \"push\" one of the buttons - @OldChicagoPete\n - Legrand Connected Outlet: Fix blue light is ON when the device is OFF and OFF when its ON - @BorrisTheCat",
     "minimumHEVersion": "2.1.9",
     "author": "Dan Danache (@dandanache)",
     "dateReleased": "2024-04-??",
