@@ -3,6 +3,22 @@
 capability 'ColorControl'
 {{/ @definition }}
 {{!--------------------------------------------------------------------------}}
+{{# @fields }}
+
+// Fields for capability.ColorControl
+
+@Field static final Map<String, Integer> COLOR_LOOP_SPEED = [
+    'switft':3, 'quick':5, 'moderate':10, 'leisurely':30, 'sluggish':60, 'snail\'s pace':180, 'glacial':300, 'stationary':600
+]
+{{/ @fields }}
+{{!--------------------------------------------------------------------------}}
+{{# @commands }}
+
+// Commands for capability.ColorControl
+command 'startColorLoop', [[name:'Speed*', type:'ENUM', constraints: COLOR_LOOP_SPEED.keySet()]]
+command 'stopColorLoop'
+{{/ @commands }}
+{{!--------------------------------------------------------------------------}}
 {{# @implementation }}
 
 // Implementation for capability.ColorControl
@@ -32,6 +48,17 @@ void setSaturation(BigDecimal saturation) {
     String payload = "${utils_payload newSaturation, 2} 0000 00 00"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114303 ${payload}}"]) // Move to Saturation
 }
+void startColorLoop(String speed) {
+    Integer seconds = COLOR_LOOP_SPEED[speed]
+    log_debug "Starting color loop with ${seconds} seconds / loop"
+    String payload = "0F 01 01 ${utils_payload seconds, 4} 0000 00 00"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114344 ${payload}}"]) // Color Loop Set
+}
+void stopColorLoop() {
+    log_debug "Stopping color loop"
+    String payload = "0F 00 01 0000 0000 00 00"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114344 ${payload}}"]) // Color Loop Set
+}
 private void processMultipleColorAttributes(Map msg, String type) {
     Map<Integer, String> attributes = [:]
     attributes[msg.attrInt] = msg.value
@@ -55,6 +82,9 @@ private void processMultipleColorAttributes(Map msg, String type) {
                 colorMode = it.value == '02' ? 'CT' : 'RGB'
                 utils_sendEvent name:'colorMode', value:colorMode, descriptionText:"Color mode is ${colorMode}", type:type
                 break
+            case 0x4000:
+                hue = Math.round(Integer.parseInt(it.value, 16) / 655.34)
+                hue = hue > 100 ? 100 : (hue < 0 ? 0 : hue)
         }
     }
 
@@ -81,8 +111,9 @@ cmds += zigbee.writeAttribute(0x0300, 0x000F, 0x18, 0x01)
 {{# @configure }}
 
 // Configuration for capability.ColorControl
-cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0000 0x20 0x0000 0x0258 {01} {}" // Report CurrentHue (uint8) at least every 10 minutes (Δ = 1)
-cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0001 0x20 0x0000 0x0258 {01} {}" // Report CurrentSaturation (uint8) at least every 10 minutes (Δ = 1)
+cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0000 0x20 0x0000 0x0258 {02} {}" // Report CurrentHue (uint8) at least every 10 minutes (Δ = 1%)
+cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0001 0x20 0x0000 0x0258 {02} {}" // Report CurrentSaturation (uint8) at least every 10 minutes (Δ = 1%)
+cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x4000 0x21 0x0002 0xFFFE {CB0C} {}" // Report EnhancedCurrentHue (uint16) at most every 2 seconds (Δ = 5%)
 {{/ @configure }}
 {{!--------------------------------------------------------------------------}}
 {{# @refresh }}
@@ -111,6 +142,9 @@ case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x0008] }:
 // Report/Read Attributes Reponse: EnhancedColorMode
 case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x4001] }:
 case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x4001] }:
+
+// Report Attributes Reponse: EnhancedCurrentHue
+case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x4000] }:
     processMultipleColorAttributes msg, type
     return
 

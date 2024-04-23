@@ -1,5 +1,6 @@
 {{!--------------------------------------------------------------------------}}
 {{# @definition }}
+capability 'Light'
 capability 'ChangeLevel'
 capability 'SwitchLevel'
 {{/ @definition }}

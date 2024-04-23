@@ -9,6 +9,12 @@ import groovy.transform.Field
 @Field static final String DRIVER_NAME = 'IKEA Color White Spectrum Light'
 @Field static final String DRIVER_VERSION = '5.0.0'
 
+// Fields for capability.ColorControl
+
+@Field static final Map<String, Integer> COLOR_LOOP_SPEED = [
+    'switft':3, 'quick':5, 'moderate':10, 'leisurely':30, 'sluggish':60, 'snail\'s pace':180, 'glacial':300, 'stationary':600
+]
+
 // Fields for capability.HealthCheck
 import groovy.time.TimeCategory
 
@@ -31,6 +37,7 @@ metadata {
         capability 'ColorControl'
         capability 'ColorTemperature'
         capability 'ColorMode'
+        capability 'Light'
         capability 'ChangeLevel'
         capability 'SwitchLevel'
         capability 'HealthCheck'
@@ -46,6 +53,10 @@ metadata {
     // Commands for capability.Switch
     command 'toggle'
     command 'onWithTimedOff', [[name:'On duration*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
+    
+    // Commands for capability.ColorControl
+    command 'startColorLoop', [[name:'Speed*', type:'ENUM', constraints: COLOR_LOOP_SPEED.keySet()]]
+    command 'stopColorLoop'
     
     // Commands for capability.ColorTemperature
     command 'startColorTemperatureChange', [[name:'Direction*', type:'ENUM', constraints: ['up', 'down']]]
@@ -346,7 +357,7 @@ void configure(boolean auto = false) {
     }
 
     // Apply preferences first
-    List<String> cmds = []
+    List<String> cmds = ["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000213C00}"]
     cmds += updated true
 
     // Clear data (keep firmwareMT information though)
@@ -363,8 +374,9 @@ void configure(boolean auto = false) {
     cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes
     
     // Configuration for capability.ColorControl
-    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0000 0x20 0x0000 0x0258 {01} {}" // Report CurrentHue (uint8) at least every 10 minutes (Δ = 1)
-    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0001 0x20 0x0000 0x0258 {01} {}" // Report CurrentSaturation (uint8) at least every 10 minutes (Δ = 1)
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0000 0x20 0x0000 0x0258 {02} {}" // Report CurrentHue (uint8) at least every 10 minutes (Δ = 1%)
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0001 0x20 0x0000 0x0258 {02} {}" // Report CurrentSaturation (uint8) at least every 10 minutes (Δ = 1%)
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x4000 0x21 0x0002 0xFFFE {CB0C} {}" // Report EnhancedCurrentHue (uint16) at most every 2 seconds (Δ = 5%)
     
     // Configuration for capability.ColorTemperature
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0300 {${device.zigbeeId}} {}" // Color Control Cluster cluster
@@ -388,6 +400,7 @@ void configure(boolean auto = false) {
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
     cmds += zigbee.readAttribute(0x0000, [0x0005]) // ModelIdentifier
     cmds += zigbee.readAttribute(0x0000, [0x000A]) // ProductCode
+    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000210000}"
     utils_sendZigbeeCommands cmds
 
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
@@ -477,6 +490,17 @@ void setSaturation(BigDecimal saturation) {
     String payload = "${utils_payload newSaturation, 2} 0000 00 00"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114303 ${payload}}"]) // Move to Saturation
 }
+void startColorLoop(String speed) {
+    Integer seconds = COLOR_LOOP_SPEED[speed]
+    log_debug "Starting color loop with ${seconds} seconds / loop"
+    String payload = "0F 01 01 ${utils_payload seconds, 4} 0000 00 00"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114344 ${payload}}"]) // Color Loop Set
+}
+void stopColorLoop() {
+    log_debug "Stopping color loop"
+    String payload = "0F 00 01 0000 0000 00 00"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114344 ${payload}}"]) // Color Loop Set
+}
 private void processMultipleColorAttributes(Map msg, String type) {
     Map<Integer, String> attributes = [:]
     attributes[msg.attrInt] = msg.value
@@ -500,6 +524,9 @@ private void processMultipleColorAttributes(Map msg, String type) {
                 colorMode = it.value == '02' ? 'CT' : 'RGB'
                 utils_sendEvent name:'colorMode', value:colorMode, descriptionText:"Color mode is ${colorMode}", type:type
                 break
+            case 0x4000:
+                hue = Math.round(Integer.parseInt(it.value, 16) / 655.34)
+                hue = hue > 100 ? 100 : (hue < 0 ? 0 : hue)
         }
     }
 
@@ -734,6 +761,9 @@ void parse(String description) {
         // Report/Read Attributes Reponse: EnhancedColorMode
         case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x4001] }:
         case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x4001] }:
+        
+        // Report Attributes Reponse: EnhancedCurrentHue
+        case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x4000] }:
             processMultipleColorAttributes msg, type
             return
         
@@ -882,7 +912,8 @@ void parse(String description) {
         case { contains it, [commandInt:0x0A, isClusterSpecific:false] }:              // ZCL: Attribute report we don't care about (configured by other driver)
         case { contains it, [commandInt:0x0B, isClusterSpecific:false] }:              // ZCL: Default Response
         case { contains it, [clusterInt:0x0003, commandInt:0x01] }:                    // ZCL: Identify Query Command
-            utils_processedZclMessage 'Ignored', "endpoint=${msg.endpoint}, cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+        case { contains it, [clusterInt:0x0003, commandInt:0x04] }:                    // ZCL: Write Attribute Response (IdentifyTime)
+            utils_processedZclMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         case { contains it, [endpointInt:0x00, clusterInt:0x8001, commandInt:0x00] }:  // ZDP: IEEE_addr_rsp
@@ -895,7 +926,7 @@ void parse(String description) {
         case { contains it, [endpointInt:0x00, clusterInt:0x8031, commandInt:0x00] }:  // ZDP: Mgmt_LQI_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8032, commandInt:0x00] }:  // ZDP: Mgmt_Rtg_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8038, commandInt:0x00] }:  // ZDP: Mgmt_NWK_Update_notify
-            utils_processedZdpMessage 'Ignored', "cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+            utils_processedZdpMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         // ---------------------------------------------------------------------------------------------------------------

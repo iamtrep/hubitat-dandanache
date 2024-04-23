@@ -11,6 +11,7 @@ import groovy.transform.Field
 
 // Fields for capability.MultiRelay
 import com.hubitat.app.ChildDeviceWrapper
+import com.hubitat.app.DeviceWrapper
 
 // Fields for capability.PushableButton
 @Field static final Map<String, List<String>> BUTTONS = [
@@ -268,7 +269,7 @@ void configure(boolean auto = false) {
     }
 
     // Apply preferences first
-    List<String> cmds = []
+    List<String> cmds = ["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000213C00}"]
     cmds += updated true
 
     // Clear data (keep firmwareMT information though)
@@ -311,6 +312,7 @@ void configure(boolean auto = false) {
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
     cmds += zigbee.readAttribute(0x0000, [0x0005]) // ModelIdentifier
     cmds += zigbee.readAttribute(0x0000, [0x000A]) // ProductCode
+    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000210000}"
     utils_sendZigbeeCommands cmds
 
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
@@ -356,19 +358,19 @@ private ChildDeviceWrapper fetchChildDevice(Integer moduleNumber) {
     return childDevice ?: addChildDevice('hubitat', 'Generic Component Switch', "${device.deviceNetworkId}-${moduleNumber}", [name:"${device.displayName} - Relay L${moduleNumber}", label:"Relay L${moduleNumber}", isComponent:true])
 }
 
-void componentOff(ChildDeviceWrapper childDevice) {
+void componentOff(DeviceWrapper childDevice) {
     log_debug "▲ Received Off request from ${childDevice.displayName}"
     Integer endpointInt = Integer.parseInt(childDevice.deviceNetworkId.split('-')[1])
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x0${endpointInt} 0x0006 {014300}"])
 }
 
-void componentOn(ChildDeviceWrapper childDevice) {
+void componentOn(DeviceWrapper childDevice) {
     log_debug "▲ Received On request from ${childDevice.displayName}"
     Integer endpointInt = Integer.parseInt(childDevice.deviceNetworkId.split('-')[1])
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x0${endpointInt} 0x0006 {014301}"])
 }
 
-void componentRefresh(ChildDeviceWrapper childDevice) {
+void componentRefresh(DeviceWrapper childDevice) {
     log_debug "▲ Received Refresh request from ${childDevice.displayName}"
     refresh()
 }
@@ -650,7 +652,7 @@ void parse(String description) {
                 childDevice.parse([[name:'switch', value:newState, descriptionText:"${childDevice.displayName} was turned ${newState}", type:type]])
             }
         
-            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Module=${moduleNumber}, Switch=${newState}"
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Relay=${moduleNumber}, Switch=${newState}"
             return
         
         // Other events that we expect but are not usefull
@@ -692,7 +694,8 @@ void parse(String description) {
         case { contains it, [commandInt:0x0A, isClusterSpecific:false] }:              // ZCL: Attribute report we don't care about (configured by other driver)
         case { contains it, [commandInt:0x0B, isClusterSpecific:false] }:              // ZCL: Default Response
         case { contains it, [clusterInt:0x0003, commandInt:0x01] }:                    // ZCL: Identify Query Command
-            utils_processedZclMessage 'Ignored', "endpoint=${msg.endpoint}, cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+        case { contains it, [clusterInt:0x0003, commandInt:0x04] }:                    // ZCL: Write Attribute Response (IdentifyTime)
+            utils_processedZclMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         case { contains it, [endpointInt:0x00, clusterInt:0x8001, commandInt:0x00] }:  // ZDP: IEEE_addr_rsp
@@ -705,7 +708,7 @@ void parse(String description) {
         case { contains it, [endpointInt:0x00, clusterInt:0x8031, commandInt:0x00] }:  // ZDP: Mgmt_LQI_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8032, commandInt:0x00] }:  // ZDP: Mgmt_Rtg_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8038, commandInt:0x00] }:  // ZDP: Mgmt_NWK_Update_notify
-            utils_processedZdpMessage 'Ignored', "cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+            utils_processedZdpMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         // ---------------------------------------------------------------------------------------------------------------

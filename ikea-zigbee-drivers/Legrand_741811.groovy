@@ -32,8 +32,9 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,FC01,0B04,0006', outClusters:'0006,0000,FC01,0005,0019', model:' Connected outlet', manufacturer:' Legrand' // Firmware: 003e (1021-0011-003E4203)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,FC01,0B04,0006,000F', outClusters:'0006,0000,FC01,0005,0019', model:' Mobile outlet', manufacturer:' Legrand' // Firmware: 002f
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,FC01,0B04,0006', outClusters:'0006,0000,FC01,0005,0019', model:' Connected outlet', manufacturer:' Legrand' // Firmware: 003e (1021-0011-003E4203)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,FC01,0B04,0006', outClusters:'0006,0000,FC01,0005,0019', model:' Connected outlet', manufacturer:' Legrand' // Firmware: 0053 (1021-0011-005343FF)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -209,7 +210,7 @@ void configure(boolean auto = false) {
     }
 
     // Apply preferences first
-    List<String> cmds = []
+    List<String> cmds = ["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000213C00}"]
     cmds += updated true
 
     // Clear data (keep firmwareMT information though)
@@ -241,6 +242,7 @@ void configure(boolean auto = false) {
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
     cmds += zigbee.readAttribute(0x0000, [0x0005]) // ModelIdentifier
     cmds += zigbee.readAttribute(0x0000, [0x000A]) // ProductCode
+    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000210000}"
     utils_sendZigbeeCommands cmds
 
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
@@ -536,7 +538,8 @@ void parse(String description) {
         case { contains it, [commandInt:0x0A, isClusterSpecific:false] }:              // ZCL: Attribute report we don't care about (configured by other driver)
         case { contains it, [commandInt:0x0B, isClusterSpecific:false] }:              // ZCL: Default Response
         case { contains it, [clusterInt:0x0003, commandInt:0x01] }:                    // ZCL: Identify Query Command
-            utils_processedZclMessage 'Ignored', "endpoint=${msg.endpoint}, cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+        case { contains it, [clusterInt:0x0003, commandInt:0x04] }:                    // ZCL: Write Attribute Response (IdentifyTime)
+            utils_processedZclMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         case { contains it, [endpointInt:0x00, clusterInt:0x8001, commandInt:0x00] }:  // ZDP: IEEE_addr_rsp
@@ -549,7 +552,7 @@ void parse(String description) {
         case { contains it, [endpointInt:0x00, clusterInt:0x8031, commandInt:0x00] }:  // ZDP: Mgmt_LQI_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8032, commandInt:0x00] }:  // ZDP: Mgmt_Rtg_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8038, commandInt:0x00] }:  // ZDP: Mgmt_NWK_Update_notify
-            utils_processedZdpMessage 'Ignored', "cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+            utils_processedZdpMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         // ---------------------------------------------------------------------------------------------------------------
