@@ -12,9 +12,12 @@ device:
   - type: L2112
     firmwares: 1.1.10 (117C-2804-01010010)
     value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'ORMANAS LED Strip', manufacturer:'IKEA of Sweden'
-  - type:  LED2111G6
+  - type: LED2111G6
     firmwares: 1.0.38 (117C-2805-01000038)
     value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E14 CWS globe 806lm', manufacturer:'IKEA of Sweden'
+  - type: LED1925G6
+    firmwares: 1.0.021 (117C-2802-10021655)
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,0B05,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E14 CWS 470lm', manufacturer:'IKEA of Sweden'
 
   capabilities:
     - file: src/capabilities/Switch.groovy
