@@ -21,6 +21,12 @@ device:
   - type: 30-IL44-1 (Silverglans LED Driver 30W)
     firmwares: 1.0.021 (117C-4104-00010021)
     value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'SILVERGLANS IP44 LED driver', manufacturer:'IKEA of Sweden'
+  - type: LED2103G5
+    firmwares: 1.0.36 (117C-2100-01000036)
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E27 WW globe 806lm', manufacturer:'IKEA of Sweden'
+  - type: LED1842G3
+    firmwares: 2.3.093 (117C-4103-23093631)
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0005,0019,0020,1000', model:'TRADFRI bulb E27 WW clear 250lm', manufacturer:'IKEA of Sweden'
 
   capabilities:
     - file: src/capabilities/Switch.groovy

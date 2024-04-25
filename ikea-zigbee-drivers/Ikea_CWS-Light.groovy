@@ -46,6 +46,10 @@ metadata {
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'ORMANAS LED Strip', manufacturer:'IKEA of Sweden' // L2112: 1.1.10 (117C-2804-01010010)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E14 CWS globe 806lm', manufacturer:'IKEA of Sweden' // LED2111G6: 1.0.38 (117C-2805-01000038)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,0B05,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E14 CWS 470lm', manufacturer:'IKEA of Sweden' // LED1925G6: 1.0.021 (117C-2802-10021655)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,0B05,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb GU10 CWS 345lm', manufacturer:'IKEA of Sweden' // LED1923R5: 1.0.021 (117C-2802-10021655)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019,1000', model:'TRADFRI bulb E27 CWS opal 600lm', manufacturer:'IKEA of Sweden' // LED1624G9E27EU: 2.3.093 (117C-2801-23086631)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019,1000', model:'TRADFRI bulb E14 CWS opal 600lm', manufacturer:'IKEA of Sweden' // LED1624G9E14EU: 2.3.093 (117C-2803-23093631)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,0B05,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E27 CWS 806lm', manufacturer:'IKEA of Sweden' // LED1924G9: 1.0.021 (117C-2802-10021655)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -151,7 +155,7 @@ metadata {
             required: true
         )
         input(
-            name: 'transitionTime', type: 'enum',
+            name: 'levelTransitionTime', type: 'enum',
             title: 'Brightness transition time',
             description: '<small>Time taken to move to/from the target brightness when device is turned On/Off.</small>',
             options: [
@@ -290,12 +294,12 @@ List<String> updated(boolean auto = false) {
         cmds += zigbee.writeAttribute(0x0008, 0x0011, 0x20, 0xFF)
     }
     
-    if (transitionTime == null) {
-        transitionTime = '5'
-        device.updateSetting 'transitionTime', [value:transitionTime, type:'enum']
+    if (levelTransitionTime == null) {
+        levelTransitionTime = '5'
+        device.updateSetting 'levelTransitionTime', [value:levelTransitionTime, type:'enum']
     }
-    log_info "🛠️ transitionTime = ${Integer.parseInt(transitionTime) / 10} second(s)"
-    cmds += zigbee.writeAttribute(0x0008, 0x0010, 0x21, Integer.parseInt(transitionTime))
+    log_info "🛠️ levelTransitionTime = ${Integer.parseInt(levelTransitionTime) / 10} second(s)"
+    cmds += zigbee.writeAttribute(0x0008, 0x0010, 0x21, Integer.parseInt(levelTransitionTime))
     
     if (prestaging == null) {
         prestaging = false
@@ -375,19 +379,19 @@ void configure(boolean auto = false) {
     cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes
     
     // Configuration for capability.ColorControl
-    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0000 0x20 0x0000 0x0258 {02} {}" // Report CurrentHue (uint8) at least every 10 minutes (Δ = 1%)
-    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0001 0x20 0x0000 0x0258 {02} {}" // Report CurrentSaturation (uint8) at least every 10 minutes (Δ = 1%)
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0000 0x20 0x0001 0x0258 {02} {}" // Report CurrentHue (uint8) at least every 10 minutes (Δ = 1%)
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0001 0x20 0x0001 0x0258 {02} {}" // Report CurrentSaturation (uint8) at least every 10 minutes (Δ = 1%)
     cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x4000 0x21 0x0002 0xFFFE {CB0C} {}" // Report EnhancedCurrentHue (uint16) at most every 2 seconds (Δ = 5%)
     
     // Configuration for capability.ColorTemperature
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0300 {${device.zigbeeId}} {}" // Color Control Cluster cluster
-    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0007 0x21 0x0000 0x0258 {01} {}" // Report ColorTemperatureMireds (uint16) at least every 10 minutes (Δ = 1)
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0007 0x21 0x0001 0x0258 {01} {}" // Report ColorTemperatureMireds (uint16) at least every 10 minutes (Δ = 1)
     state.minMireds = 200  // Will be updated in refresh()
     state.maxMireds = 600  // Will be updated in refresh()
     
     // Configuration for capability.Brightness
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0008 {${device.zigbeeId}} {}" // Level Control cluster
-    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0008 0x0000 0x20 0x0000 0x0258 {01} {}" // Report CurrentLevel (uint8) at least every 10 minutes (Δ = 1)
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0008 0x0000 0x20 0x0001 0x0258 {01} {}" // Report CurrentLevel (uint8) at least every 10 minutes (Δ = 1)
     
     // Configuration for capability.HealthCheck
     sendEvent name:'healthStatus', value:'online', descriptionText:'Health status initialized to online'

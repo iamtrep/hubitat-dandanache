@@ -31,7 +31,7 @@ input(
     required: true
 )
 input(
-    name: 'transitionTime', type: 'enum',
+    name: 'levelTransitionTime', type: 'enum',
     title: 'Brightness transition time',
     description: '<small>Time taken to move to/from the target brightness when device is turned On/Off.</small>',
     options: [
@@ -148,12 +148,12 @@ if (turnOnBehavior == 'FIXED_VALUE') {
     cmds += zigbee.writeAttribute(0x0008, 0x0011, 0x20, 0xFF)
 }
 
-if (transitionTime == null) {
-    transitionTime = '5'
-    device.updateSetting 'transitionTime', [value:transitionTime, type:'enum']
+if (levelTransitionTime == null) {
+    levelTransitionTime = '5'
+    device.updateSetting 'levelTransitionTime', [value:levelTransitionTime, type:'enum']
 }
-log_info "🛠️ transitionTime = ${Integer.parseInt(transitionTime) / 10} second(s)"
-cmds += zigbee.writeAttribute(0x0008, 0x0010, 0x21, Integer.parseInt(transitionTime))
+log_info "🛠️ levelTransitionTime = ${Integer.parseInt(levelTransitionTime) / 10} second(s)"
+cmds += zigbee.writeAttribute(0x0008, 0x0010, 0x21, Integer.parseInt(levelTransitionTime))
 
 if (prestaging == null) {
     prestaging = false
@@ -169,7 +169,7 @@ cmds += zigbee.writeAttribute(0x0008, 0x000F, 0x18, prestaging ? 0x01 : 0x00)
 
 // Configuration for capability.Brightness
 cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0008 {${device.zigbeeId}} {}" // Level Control cluster
-cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0008 0x0000 0x20 0x0000 0x0258 {01} {}" // Report CurrentLevel (uint8) at least every 10 minutes (Δ = 1)
+cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0008 0x0000 0x20 0x0001 0x0258 {01} {}" // Report CurrentLevel (uint8) at least every 10 minutes (Δ = 1)
 {{/ @configure }}
 {{!--------------------------------------------------------------------------}}
 {{# @refresh }}

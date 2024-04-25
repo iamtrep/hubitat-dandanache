@@ -129,7 +129,7 @@ cmds += zigbee.writeAttribute(0x0300, 0x000F, 0x18, 0x01)
 
 // Configuration for capability.ColorTemperature
 cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0300 {${device.zigbeeId}} {}" // Color Control Cluster cluster
-cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0007 0x21 0x0000 0x0258 {01} {}" // Report ColorTemperatureMireds (uint16) at least every 10 minutes (Δ = 1)
+cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0007 0x21 0x0001 0x0258 {01} {}" // Report ColorTemperatureMireds (uint16) at least every 10 minutes (Δ = 1)
 state.minMireds = 200  // Will be updated in refresh()
 state.maxMireds = 600  // Will be updated in refresh()
 {{/ @configure }}
