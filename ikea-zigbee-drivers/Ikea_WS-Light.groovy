@@ -36,8 +36,11 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57,FC7C', outClusters:'0019', model:'TRADFRI bulb GU10 WS 345lm', manufacturer:'IKEA of Sweden' // LED2106R3: 3.0.10 (117C-2200-03000010)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'TRADFRI bulb E14 WS globe 470lm', manufacturer:'IKEA of Sweden' // LED2101G4: 1.1.003 (117C-2204-00011003)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'TRADFRIbulbE14WScandleopal470lm', manufacturer:'IKEA of Sweden' // LED1949C5: 1.1.003 (117C-2204-00011003)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'TRADFRIbulbE14WSglobeopal470lm', manufacturer:'IKEA of Sweden' // LED2002G5: 1.0.012 (117C-2205-00010012)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'TRADFRIbulbGU10WS345lm', manufacturer:'IKEA of Sweden' // LED2005R5: 1.0.012 (117C-2205-00010012)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E27 WS globe 1055lm', manufacturer:'IKEA of Sweden' // LED2201G8: 3.0.10 (117C-2206-03000010)
         
         // Attributes for capability.HealthCheck

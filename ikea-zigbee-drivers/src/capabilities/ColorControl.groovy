@@ -8,7 +8,7 @@ capability 'ColorControl'
 // Fields for capability.ColorControl
 
 @Field static final Map<String, Integer> COLOR_LOOP_SPEED = [
-    'switft':3, 'quick':5, 'moderate':10, 'leisurely':30, 'sluggish':60, 'snail\'s pace':180, 'glacial':300, 'stationary':600
+    'swift':3, 'quick':5, 'moderate':10, 'leisurely':30, 'sluggish':60, 'snail\'s pace':180, 'glacial':300, 'stationary':600
 ]
 {{/ @fields }}
 {{!--------------------------------------------------------------------------}}

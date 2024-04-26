@@ -619,7 +619,10 @@ Below you can find the details of each device, including the features and pairin
 #### Tested devices
 * LED2101G4: Tradfri Bulb E14 WS Globe 470lm
 * LED1949C5: Tradfri Bulb E14 WS Candle Opal 470lm
+* LED2002G5: Tradfri Bulb E14 WS Globe Opal 470lm
 * LED2201G8: Tradfri Bulb E27 WS Globe 1055lm
+* LED2005R5: Tradfri Bulb GU10 WS 345lm
+* LED2106R3: Tradfri Bulb GU10 WS 345lm
 
 #### Pairing Instructions
 1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.

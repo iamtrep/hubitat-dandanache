@@ -12,7 +12,7 @@ import groovy.transform.Field
 // Fields for capability.ColorControl
 
 @Field static final Map<String, Integer> COLOR_LOOP_SPEED = [
-    'switft':3, 'quick':5, 'moderate':10, 'leisurely':30, 'sluggish':60, 'snail\'s pace':180, 'glacial':300, 'stationary':600
+    'swift':3, 'quick':5, 'moderate':10, 'leisurely':30, 'sluggish':60, 'snail\'s pace':180, 'glacial':300, 'stationary':600
 ]
 
 // Fields for capability.HealthCheck
@@ -43,13 +43,13 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019,1000', model:'TRADFRI bulb E27 CWS opal 600lm', manufacturer:'IKEA of Sweden' // LED1624G9E27EU: 2.3.093 (117C-2801-23086631)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,0B05,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E27 CWS 806lm', manufacturer:'IKEA of Sweden' // LED1924G9: 1.0.021 (117C-2802-10021655)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,0B05,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb GU10 CWS 345lm', manufacturer:'IKEA of Sweden' // LED1923R5: 1.0.021 (117C-2802-10021655)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,0B05,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E14 CWS 470lm', manufacturer:'IKEA of Sweden' // LED1925G6: 1.0.021 (117C-2802-10021655)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019,1000', model:'TRADFRI bulb E14 CWS opal 600lm', manufacturer:'IKEA of Sweden' // LED1624G9E14EU: 2.3.093 (117C-2803-23093631)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'ORMANAS LED Strip', manufacturer:'IKEA of Sweden' // L2112: 1.1.10 (117C-2804-01010010)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E14 CWS globe 806lm', manufacturer:'IKEA of Sweden' // LED2111G6: 1.0.38 (117C-2805-01000038)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,0B05,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E14 CWS 470lm', manufacturer:'IKEA of Sweden' // LED1925G6: 1.0.021 (117C-2802-10021655)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,0B05,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb GU10 CWS 345lm', manufacturer:'IKEA of Sweden' // LED1923R5: 1.0.021 (117C-2802-10021655)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019,1000', model:'TRADFRI bulb E27 CWS opal 600lm', manufacturer:'IKEA of Sweden' // LED1624G9E27EU: 2.3.093 (117C-2801-23086631)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019,1000', model:'TRADFRI bulb E14 CWS opal 600lm', manufacturer:'IKEA of Sweden' // LED1624G9E14EU: 2.3.093 (117C-2803-23093631)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,0B05,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E27 CWS 806lm', manufacturer:'IKEA of Sweden' // LED1924G9: 1.0.021 (117C-2802-10021655)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']

@@ -34,12 +34,12 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E27 WW globe 806lm', manufacturer:'IKEA of Sweden' // LED2103G5: 1.0.36 (117C-2100-01000036)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0B05,1000', outClusters:'0005,0019,0020,1000', model:'TRADFRI Driver 10W', manufacturer:'IKEA of Sweden' // 10EU-IL-1 (Tradfri LED Driver 10W): 1.2.245 (117C-4101-12245572)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0005,0019,0020,1000', model:'TRADFRI Driver 10W', manufacturer:'IKEA of Sweden' // 10EU-IL-1 (Tradfri LED Driver 10W): 2.3.086 (117C-4101-23086631)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'TRADFRI Driver 30W', manufacturer:'IKEA of Sweden' // 30EU-IL-2 (Tradfri LED Driver 30W): 1.0.002 (117C-4109-00010002)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'SILVERGLANS IP44 LED driver', manufacturer:'IKEA of Sweden' // 30-IL44-1 (Silverglans LED Driver 30W): 1.0.021 (117C-4104-00010021)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E27 WW globe 806lm', manufacturer:'IKEA of Sweden' // LED2103G5: 1.0.36 (117C-2100-01000036)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0005,0019,0020,1000', model:'TRADFRI bulb E27 WW clear 250lm', manufacturer:'IKEA of Sweden' // LED1842G3: 2.3.093 (117C-4103-23093631)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'SILVERGLANS IP44 LED driver', manufacturer:'IKEA of Sweden' // 30-IL44-1 (Silverglans LED Driver 30W): 1.0.021 (117C-4104-00010021)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'TRADFRI Driver 30W', manufacturer:'IKEA of Sweden' // 30EU-IL-2 (Tradfri LED Driver 30W): 1.0.002 (117C-4109-00010002)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
