@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.3.0] - 2024-04-03
 ### Added
-- Add possibility to show command names in plain english
+- Add possibility to show command names in plain english (set ENGLISH_PLEASE value to true in driver code)
+- Add frame control options for `Imperio` spell
 
 ### Fixed
 - `Revelio` now shows all records, not just the ones that fit in a single Zigbee message
+- Fix a bug that caused all commands to always be sent to device endpoint 0x01 (ups!)
 
 ## [2.2.0] - 2023-11-07
 ### Added

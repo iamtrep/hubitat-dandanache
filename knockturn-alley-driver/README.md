@@ -19,10 +19,9 @@ This driver has no registered fingerprints and no configuration / initialization
 3. No initialization / configuration is required.
 4. Cast whatever spells you want using the `Knockturn Alley` driver. Have the `Logs` section opened in a separate tab since the driver talks to you mostly via log entries.
 5. When you decided you had enough fun, cast the `Obliviate` spell with option `1` to get rid of the `ka_*` device state entries (we clean our own mess).
-6. Seriously, do step 5. This driver creates multiple state entries, not to mention the generated report, and this will hit your Hubs RAM.
+6. Seriously, do step 5. This driver creates multiple state entries, not to mention the generated report, and this will hit your hub's RAM.
 7. From the device details page, change back to the original driver. Everything should work without the need to reconfigure / re-pair the device.
 8. Pick a new Zigbee device to torture and go back to Step 2 :)
-
 
 ## Spells
 
@@ -48,18 +47,19 @@ Spells for handling Neighbors Table (LQI), Routing Table and Bindings Table:
 ### A01 - Legilimens
 <img src="img/Legilimens.gif" height="200px"/>
 
-`Legilimens` spell automatically collects information on all Zigbee attributes that the device exposes. When cast, it will:
+`Legilimens` spell automatically collects information on all Zigbee attributes and commands that the device exposes. When cast, it will:
 1. Retrieve all Zigbee endpoints (e.g.: 0x01 = Default endpoint)
-2. For each endpoint, retrieve in and out clusters (e.g.: 0x0006 = On/Off Cluster)
-3. For each in cluster, discover attributes (e.g.: 0x0400 = SWBuildID - for cluster 0x0000)
-4. For each attribute, ask the device to send its current value
-5. If an attribute is known to be reportable, ask the device to send its current reporting configuration
+1. For each endpoint, retrieve in and out clusters (e.g.: 0x0006 = On/Off Cluster)
+1. For each cluster, discover all commands
+1. For each cluster, discover attributes (e.g.: 0x0400 = SWBuildID - for cluster 0x0000)
+1. For each attribute, ask the device to send its current value
+1. If an attribute is known to be reportable, ask the device to send its current reporting configuration
 
 Note: If you specify a manufacturer code (optional), the spell will try to also discover attributes and commands specific to that manufacturer. In the generated report, manufacturer specific attributes and commands are prefixed by `0_` (e.g.: attribute `0_0043`, command `0_01`).
 
 Before casting the spell, have the Logs section open in order to take a peak at the chatty conversation that the driver is having with the device. Be patient, the discovering process will take about 1 minute to finish (depending on the number of endpoints/clusters/attributes). Keep your eyes on the Logs to see when the driver stops adding log entries.
 
-> **Important**: If the device is battery-powered, press any button to wake it before casting the `Legilimens` spell; then, keep on pressing buttons every second or so in order to prevent the device from going back to sleep.
+> **Important**: If the device is battery-powered, press any button to wake it before casting the `Legilimens` spell; then, keep on pressing buttons every 5 seconds or so in order to prevent the device from going back to sleep.
 
 When the discovery process is complete, refresh the device details page to see what data was gathered. This data will be hard to follow in its raw form, so you should continue with casting the next spell.
 
