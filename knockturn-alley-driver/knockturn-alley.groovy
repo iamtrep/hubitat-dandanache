@@ -11,7 +11,7 @@ import java.util.regex.Pattern
 import groovy.transform.CompileStatic
 import groovy.transform.Field
 
-@Field static final Boolean ENGLISH_PLEASE = true
+@Field static final Boolean ENGLISH_PLEASE = false
 @Field static final Pattern HEXADECIMAL_PATTERN = ~/\p{XDigit}+/
 @Field static final Map<String, String> DICT = [
     'a01Legilimens': 'a01InterviewDevice',
