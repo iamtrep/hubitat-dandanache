@@ -284,6 +284,7 @@ void pingExecute() {
 }
 
 // Implementation for capability.HoldableButton
+void hold(String buttonNumber) { hold Integer.parseInt(buttonNumber) }
 void hold(BigDecimal buttonNumber) {
     String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
     if (buttonName == null) {
@@ -294,6 +295,7 @@ void hold(BigDecimal buttonNumber) {
 }
 
 // Implementation for capability.PushableButton
+void push(String buttonNumber) { push Integer.parseInt(buttonNumber) }
 void push(BigDecimal buttonNumber) {
     String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
     if (buttonName == null) {
@@ -304,6 +306,7 @@ void push(BigDecimal buttonNumber) {
 }
 
 // Implementation for capability.ReleasableButton
+void release(String buttonNumber) { release Integer.parseInt(buttonNumber) }
 void release(BigDecimal buttonNumber) {
     String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
     if (buttonName == null) {

@@ -6,6 +6,7 @@ capability 'HoldableButton'
 {{# @implementation }}
 
 // Implementation for capability.HoldableButton
+void hold(String buttonNumber) { hold Integer.parseInt(buttonNumber) }
 void hold(BigDecimal buttonNumber) {
     String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
     if (buttonName == null) {

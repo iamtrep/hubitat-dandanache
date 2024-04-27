@@ -6,6 +6,7 @@ capability 'DoubleTapableButton'
 {{# @implementation }}
 
 // Implementation for capability.DoubleTapableButton
+void doubleTap(String buttonNumber) { doubleTap Integer.parseInt(buttonNumber) }
 void doubleTap(BigDecimal buttonNumber) {
     String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
     if (buttonName == null) {
