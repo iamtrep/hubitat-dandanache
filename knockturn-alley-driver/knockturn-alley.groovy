@@ -2,7 +2,7 @@
 /**
  * Knockturn Alley - Simple toolkit driver to help developers peer deep into the guts of Zigbee devices.
  *
- * @version 2.3.0
+ * @version 3.0.0
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/
  * @see https://dan-danache.github.io/hubitat/knockturn-alley-driver/CHANGELOG
  * @see https://community.hubitat.com/t/dev-knockturn-alley/125167
@@ -103,6 +103,18 @@ metadata {
         [name:'Command*', description:'Command ID - hex format (e.g.: 0x01)', type:'STRING'],
         [name:'Manufacturer', description:'Manufacturer Code - hex format (e.g.: 0x117C)', type:'STRING'],
         [name:'Payload', description:'Raw payload - sent as is, spaces are removed', type:'STRING'],
+        [name:'Frame Type*', type:'ENUM', constraints: [
+            '01 - Command is cluster specific',
+            '00 - Command is global for all clusters (including manufacturer specific clusters)',
+        ]],
+        [name:'Direction*', type:'ENUM', constraints: [
+            '0 - Client to Server',
+            '1 - Server to Client',
+        ]],
+        [name:'Disable Default Response*', type:'ENUM', constraints: [
+            '0 - No',
+            '1 - Yes',
+        ]],
     ]
     command _T('c02Bombarda'), [
         [name:'Zigbee command', description:'Enter raw command to execute (e.g. for toggle on/off: he raw .addr 0x01 0x01 0x0006 {114302})', type:'STRING']
@@ -231,7 +243,7 @@ private String printWeirdTable(String header, String stateKeyName, Integer colum
 }
 
 void a02Scourgify(String operation) {
-    sendEvent name:'documentation', value:'<link rel="stylesheet" type="text/css" href="//necolas.github.io/normalize.css/8.0.1/normalize.css"><a href="https://dan-danache.github.io/hubitat/knockturn-alley-driver/" target="_blank">README ⤴</a>', isStateChange:false
+    sendEvent name:'documentation', value:'<a href="https://dan-danache.github.io/hubitat/knockturn-alley-driver/" target="_blank">README ⤴</a>', isStateChange:false
     log_info "🪄 Scourgify: ${operation}"
     if (!state.ka_endpoints) {
         log_warn 'Raw data is missing. Maybe you should run Legilimens first if you didn\'t do that already ...'
@@ -485,13 +497,13 @@ void b01Accio(String operation, String endpointHex, String clusterHex, String at
         case { it.startsWith '1 - ' }:
             String command = '00'
             String payload = "${utils_payload attribute}"
-            utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {${frameStart}${command} ${payload}}"])
+            utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {${frameStart}${command} ${payload}}"])
             return
 
         case { it.startsWith '2 - ' }:
             String command = '08'
             String payload = "00 ${utils_payload attribute}"
-            utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {${frameStart}${command} ${payload}}"])
+            utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {${frameStart}${command} ${payload}}"])
             return
     }
 }
@@ -519,9 +531,16 @@ void b02EverteStatum(String endpointHex, String clusterHex, String attributeHex,
         log_error "Invalid Manufacturer Code: ${manufacturerHex}"
         return
     }
-    if (valueHex && !HEXADECIMAL_PATTERN.matcher(valueHex).matches()) {
+
+    // String data type
+    String value = valueHex
+    if (typeStr.substring(0, 4) == '0x42') {
+        value = "${utils_hex valueHex.length(), 2}${valueHex.bytes.collect { utils_hex it, 2 }.join()}"
+    } else if (valueHex && !HEXADECIMAL_PATTERN.matcher(valueHex).matches()) {
         log_error "Invalid Value: ${valueHex}"
         return
+    } else {
+        value = utils_flip valueHex
     }
 
     Integer endpoint = Integer.parseInt endpointHex.substring(2), 16
@@ -535,7 +554,6 @@ void b02EverteStatum(String endpointHex, String clusterHex, String attributeHex,
     }
  
     Integer type = Integer.parseInt typeStr.substring(2, 4), 16
-    String value = utils_flip valueHex
     Integer typeLen = Integer.parseInt ZCL_DATA_TYPES[type].bytes
     if (typeLen != 0 && value.size() != typeLen * 2) {
         log_error "Invalid Value: It must have exactly ${typeLen} bytes but you provided ${value.size()}: ${valueHex}"
@@ -545,7 +563,7 @@ void b02EverteStatum(String endpointHex, String clusterHex, String attributeHex,
     // Send zigbee command
     String command = '02'
     String payload = "${utils_payload attribute} ${typeStr.substring(2, 4)} ${value}"
-    utils_sendZigbeeCommands(["he raw ${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {${frameStart}${command} ${payload}}"])
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {${frameStart}${command} ${payload}}"])
 }
 void b02WriteAttribute(String endpointHex, String clusterHex, String attributeHex, String manufacturerHex='', String typeStr, String valueHex) {
     b02EverteStatum endpointHex, clusterHex, attributeHex, manufacturerHex, typeStr, valueHex
@@ -605,15 +623,15 @@ void b03Oppugno(String endpointHex, String clusterHex, String attributeHex, Stri
     // Send zigbee command
     String command = '06'
     String payload = "00 ${utils_payload attribute} ${typeStr.substring 2, 4} ${utils_payload(minInterval as Integer)} ${utils_payload(maxInterval as Integer)} ${reportableChange}"
-    utils_sendZigbeeCommands(["he raw ${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {${frameStart}${command} ${payload}} "])
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {${frameStart}${command} ${payload}} "])
 }
 void b03ConfigureAtributeReporting(String endpointHex, String clusterHex, String attributeHex, String manufacturerHex='', String typeStr, BigDecimal minInterval, BigDecimal maxInterval, String reportableChangeHex) {
     b03Oppugno endpointHex, clusterHex, attributeHex, manufacturerHex, typeStr, minInterval, maxInterval, reportableChangeHex
 }
 
-void c01Imperio(String endpointHex, String clusterHex, String commandHex, String manufacturerHex='', String payload='') {
+void c01Imperio(String endpointHex, String clusterHex, String commandHex, String manufacturerHex='', String payload='', String frameType='01 - Command is cluster specific', String direction='0 - Client to Server', String ddr='No') {
     sendEvent name:'documentation', value:'<a href="https://dan-danache.github.io/hubitat/knockturn-alley-driver/" target="_blank">README ⤴</a>', isStateChange:false
-    log_info "🪄 Imperio: endpoint=${endpointHex}, cluster=${clusterHex}, command=${commandHex}, manufacturer=${manufacturerHex}, payload=${payload}"
+    log_info "🪄 Imperio: endpoint=${endpointHex}, cluster=${clusterHex}, command=${commandHex}, manufacturer=${manufacturerHex}, payload=${payload}, frameType=${frameType}, direction=${direction}, ddr=${ddr}"
 
     if (!endpointHex.startsWith('0x') || endpointHex.size() != 4) {
         log_error "Invalid Endpoint ID: ${endpointHex}"
@@ -641,13 +659,13 @@ void c01Imperio(String endpointHex, String clusterHex, String commandHex, String
     Integer command = Integer.parseInt commandHex.substring(2), 16
 
     Integer manufacturer = manufacturerHex ? Integer.parseInt(manufacturerHex.substring(2), 16) : null
-    String frameStart = '0143'
-    if (manufacturer != null) {
-        frameStart = "05${utils_payload manufacturer}43"
-    }
+    String frameControlOctet = "000${ddr == 'Yes' ? '1' : '0'}${direction[0]}${manufacturerHex ? '1' : '0'}${frameType.substring(0, 2)}"
+    String frameControl = utils_hex Integer.parseInt(frameControlOctet, 2), 2
+    log_info "Frame control: ${frameControlOctet} (${frameControl})"
+    String frameStart = "${frameControl}${manufacturer != null ? "${utils_payload manufacturer}" : ''}43"
 
     // Send zigbee command
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {${frameStart}${utils_hex command, 2} ${payload}}"])
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {${frameStart}${utils_hex command, 2}${payload ? " ${payload}" : ''}}"])
 }
 void c01ExecuteCommand(String endpointHex, String clusterHex, String commandHex, String manufacturerHex='', String payload='') {
     c01Imperio endpointHex, clusterHex, commandHex, manufacturerHex, payload
@@ -739,7 +757,7 @@ void d02ZigbeeBindings(String operation, String srcAddrHex, String srcEndpointHe
 
 void e02UpdateFirmware() {
     log_info '🪄 Update Firmware'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0019 {09 01 00 03 64 FFFF FFFF FFFF FFFF}"])
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0019 {09 01 00 03 64 FFFF FFFF FFFF FFFF}"])
 }
 
 // ===================================================================================================================
@@ -763,6 +781,33 @@ void parse(String description) {
     log_debug "msg=[${msg}]"
 
     switch (msg) {
+
+        // Connecting to router
+        case { contains it, [clusterInt:0x0000, commandInt:0x00, data:['00', '00']] }:
+            Integer frameControl = 0x08
+            Integer txSeq = 0x00
+            Integer command = 0x01
+            String payload = '0000 00 20 03' // ZCL Version = 03
+            utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0000 {${utils_hex frameControl, 2}${utils_hex txSeq, 2}${utils_hex command, 2} ${payload}}"])
+            utils_processedZigbeeMessage 'Connecting to Router', "data=${msg.data}"
+            return
+
+        case { contains it, [clusterInt:0x0B05, commandInt:0x0A, attrInt:0x011C] }:
+            utils_processedZigbeeMessage 'Report Attributes', "cluster=Diagnostics, attr=LastMessageLQI, value=${msg.value}"
+            return
+
+        // // Report Unhandled Attributes
+        // case { contains it, [commandInt:0x0A] }:
+        //     List<String> attrs = ["${msg.attrId}=${msg.value} (${msg.encoding})"]
+        //     msg.additionalAttrs?.each { attrs += "${it.attrId}=${it.value} (${it.encoding})" }
+        //     utils_processedZigbeeMessage 'Report Attributes', "endpoint=${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=${msg.manufacturerId ?: '0000'}, cluster=${msg.clusterId ?: msg.cluster}, attrs=${attrs}"
+        //     return
+
+        // // Read Unhandled Attributes
+        // case { contains it, [commandInt:0x00] }:
+        //     List<String> attrs = msg.data.collate(2).collect { "${it.reverse().join()}" }
+        //     utils_processedZigbeeMessage 'Read Attributes', "endpoint=${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=${msg.manufacturerId ?: '0000'}, cluster=${msg.clusterId ?: msg.cluster}, attrs=${attrs}"
+        //     return
 
         // Read Attribute Response (0x01) & Report attributes (0x0A)
         case { contains it, [isClusterSpecific:false, commandInt:0x01] }:
@@ -900,13 +945,13 @@ void parse(String description) {
 
                     // Read attribute value (use batches of 3 to reduce mesh traffic)
                     String payload = "${attrs.collect { utils_payload it }.join()}"
-                    cmds += "he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {${framestart}00 ${payload}}"
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {${framestart}00 ${payload}}"
 
                     // If attribute is reportable, also inquire its reporting status
                     attrs.each {
                         String acc = ZCL_CLUSTERS.get(cluster)?.get('attributes')?.get(it)?.get('acc') ?: attributes[it][1]
                         if (acc?.endsWith('p')) {
-                            cmds += "he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {${framestart}08 00${utils_payload it}}"
+                            cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {${framestart}08 00${utils_payload it}}"
                         }
                     }
                 }
@@ -916,11 +961,11 @@ void parse(String description) {
             varAttributes.keySet().each { attr ->
 
                 // Read attribute value (use batches of 3 to reduce mesh traffic)
-                cmds += "he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {${framestart}00 ${utils_payload attr}}"
+                cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {${framestart}00 ${utils_payload attr}}"
 
                 // If attribute is reportable, also inquire its reporting status
                 if (ZCL_CLUSTERS.get(cluster)?.get('attributes')?.get(attr)?.get('acc')?.endsWith('p')) {
-                    cmds += "he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {${framestart}08 00${utils_payload attr}}"
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {${framestart}08 00${utils_payload attr}}"
                 }
             }
 
@@ -1148,18 +1193,18 @@ void parse(String description) {
                     inClusters += cluster
 
                     // Discover cluster attributes
-                    cmds += "he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {104315 0000 FF}"
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {104315 0000 FF}"
                     if (manufacturer != '0000') {
-                        cmds += "he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {04${manufacturer}4315 0000 FF}"
+                        cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {04${manufacturer}4315 0000 FF}"
                     }
 
                     //cmds += "he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {10430C 0000 FF}"
                     //cmds += "he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {04FFFF430C 0000 FF}"
 
                     // Discover cluster received commands
-                    cmds += "he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {104311 00 FF}"
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {104311 00 FF}"
                     if (manufacturer != '0000') {
-                        cmds += "he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {04${manufacturer}4311 00 FF}"
+                        cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {04${manufacturer}4311 00 FF}"
                     }
                 }
                 state_addInClusters endpoint, inClusters
@@ -1176,9 +1221,9 @@ void parse(String description) {
                     outClusters += cluster
 
                     // Discover cluster generated commands
-                    cmds += "he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {104313 00 FF}"
+                    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {104313 00 FF}"
                     if (manufacturer != '0000') {
-                        cmds += "he raw 0x${device.deviceNetworkId} 0x${utils_hex endpoint, 2} 0x01 0x${utils_hex cluster} {04${manufacturer}4313 00 FF}"
+                        cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${utils_hex endpoint, 2} 0x${utils_hex cluster} {04${manufacturer}4313 00 FF}"
                     }
                 }
                 state_addOutClusters endpoint, outClusters
@@ -1505,6 +1550,8 @@ private void log_error(String message) {
 // Helper methods (keep them simple, keep them dumb)
 // ===================================================================================================================
 
+private void healthCheck() { }
+
 private void utils_sendZigbeeCommands(List<String> cmds) {
     if (cmds.empty) return
     List<String> send = delayBetween(cmds.findAll { !it.startsWith('delay') }, 1000)
@@ -1517,6 +1564,74 @@ private void utils_sendZigbeeCommands(List<String> cmds) {
 private String utils_hex(Integer value, Integer chars = 4) {
     return zigbee.convertToHexString(value, chars)
 }
+
+static String utils_hexStringToBinaryString(String hex) {
+    return hex
+        .replaceAll('0', '0000')
+        .replaceAll('1', '0001')
+        .replaceAll('2', '0010')
+        .replaceAll('3', '0011')
+        .replaceAll('4', '0100')
+        .replaceAll('5', '0101')
+        .replaceAll('6', '0110')
+        .replaceAll('7', '0111')
+        .replaceAll('8', '1000')
+        .replaceAll('9', '1001')
+        .replaceAll('A', '1010')
+        .replaceAll('B', '1011')
+        .replaceAll('C', '1100')
+        .replaceAll('D', '1101')
+        .replaceAll('E', '1110')
+        .replaceAll('F', '1111')
+}
+
+static Number utils_hexStringToSignedNumber(String hex) {
+    String bin = utils_hexStringToBinaryString hex
+    byte sign = bin[0] == '0' ? 1 : -1
+    bin = '0' + bin.substring(1)
+
+    // Invalid value 0x1[0]+
+    if (sign == 1 && bin.matches('0*')) return Double.POSITIVE_INFINITY
+
+    switch (bin.length()) {
+        case 8:
+            return sign * Byte.parseByte(bin, 2)
+        case 16:
+            return sign * Short.parseShort(bin, 2)
+        case 24:
+        case 32:
+            return sign * Integer.parseInt(bin, 2)
+        case 40:
+        case 48:
+        case 56:
+            return sign * Long.parseLong(bin, 2)
+        default:
+            return sign * new BigInteger(bin, 2)
+    }
+}
+
+static Number utils_hexStringToUnsignedNumber(String hex) {
+    String bin = utils_hexStringToBinaryString hex
+
+    // Invalid value 0x1[1]+
+    if (bin.matches('1*')) return Double.POSITIVE_INFINITY
+
+    switch (bin.length()) {
+        case 8:
+            return Short.parseShort(bin, 2)
+        case 16:
+        case 24:
+        case 32:
+            return Integer.parseInt(bin, 2)
+        case 40:
+        case 48:
+        case 56:
+            return Long.parseLong(bin, 2)
+        default:
+            return new BigInteger(bin, 2)
+    }
+}
+
 private Collection<String> utils_hexs(Collection<Integer> values, Integer chars = 4) {
     return values.collect { "0x${zigbee.convertToHexString it, chars}" }
 }
@@ -1680,31 +1795,31 @@ private void state_addBinding(Integer index, List<String> binding) {
     0x0d: [name:'data48',    bytes:'6'],
     0x0e: [name:'data56',    bytes:'7'],
     0x0f: [name:'data64',    bytes:'8'],
-    0x10: [name:'bool',      bytes:'1', decorate: { value -> "${value == '00' ? 'False' : (value == '01' ? 'True' : 'Invalid value')}" }],
-    0x18: [name:'map8',      bytes:'1', decorate: { value -> "${Integer.toBinaryString(Integer.parseInt(value, 16)).padLeft(8, '0')}" }],
-    0x19: [name:'map16',     bytes:'2', decorate: { value -> "${Integer.toBinaryString(Integer.parseInt(value, 16)).padLeft(16, '0')}" }],
-    0x1a: [name:'map24',     bytes:'3'],
-    0x1b: [name:'map32',     bytes:'4'],
-    0x1c: [name:'map40',     bytes:'5'],
-    0x1d: [name:'map48',     bytes:'6'],
-    0x1e: [name:'map56',     bytes:'7'],
-    0x1f: [name:'map64',     bytes:'8'],
-    0x20: [name:'uint8',     bytes:'1', decorate: { value -> "${Integer.parseInt value, 16}" }],
-    0x21: [name:'uint16',    bytes:'2', decorate: { value -> "${Integer.parseInt value, 16}" }],
-    0x22: [name:'uint24',    bytes:'3', decorate: { value -> "${Integer.parseInt value, 16}" }],
-    0x23: [name:'uint32',    bytes:'4', decorate: { value -> "${Long.parseLong value, 16}" }],
-    0x24: [name:'uint40',    bytes:'5', decorate: { value -> "${Long.parseLong value, 16}" }],
-    0x25: [name:'uint48',    bytes:'6', decorate: { value -> "${Long.parseLong value, 16}" }],
-    0x26: [name:'uint56',    bytes:'7', decorate: { value -> "${Long.parseLong value, 16}" }],
-    0x27: [name:'uint64',    bytes:'8'],
-    0x28: [name:'int8',      bytes:'1', decorate: { value -> "${Integer.parseInt value, 16}" }],
-    0x29: [name:'int16',     bytes:'2', decorate: { value -> "${Integer.parseInt value, 16}" }],
-    0x2a: [name:'int24',     bytes:'3', decorate: { value -> "${Integer.parseInt value, 16}" }],
-    0x2b: [name:'int32',     bytes:'4', decorate: { value -> "${Long.parseLong value, 16}" }],
-    0x2c: [name:'int40',     bytes:'5', decorate: { value -> "${Long.parseLong value, 16}" }],
-    0x2d: [name:'int48',     bytes:'6', decorate: { value -> "${Long.parseLong value, 16}" }],
-    0x2e: [name:'int56',     bytes:'7', decorate: { value -> "${Long.parseLong value, 16}" }],
-    0x2f: [name:'int64',     bytes:'8'],
+    0x10: [name:'bool',      bytes:'1', decorate: { value -> value == '00' ? 'False' : (value == '01' ? 'True' : 'Invalid value') }],
+    0x18: [name:'map8',      bytes:'1', decorate: { value -> utils_hexStringToBinaryString value }],
+    0x19: [name:'map16',     bytes:'2', decorate: { value -> utils_hexStringToBinaryString value }],
+    0x1a: [name:'map24',     bytes:'3', decorate: { value -> utils_hexStringToBinaryString value }],
+    0x1b: [name:'map32',     bytes:'4', decorate: { value -> utils_hexStringToBinaryString value }],
+    0x1c: [name:'map40',     bytes:'5', decorate: { value -> utils_hexStringToBinaryString value }],
+    0x1d: [name:'map48',     bytes:'6', decorate: { value -> utils_hexStringToBinaryString value }],
+    0x1e: [name:'map56',     bytes:'7', decorate: { value -> utils_hexStringToBinaryString value }],
+    0x1f: [name:'map64',     bytes:'8', decorate: { value -> utils_hexStringToBinaryString value }],
+    0x20: [name:'uint8',     bytes:'1', decorate: { value -> utils_hexStringToUnsignedNumber value }],
+    0x21: [name:'uint16',    bytes:'2', decorate: { value -> utils_hexStringToUnsignedNumber value }],
+    0x22: [name:'uint24',    bytes:'3', decorate: { value -> utils_hexStringToUnsignedNumber value }],
+    0x23: [name:'uint32',    bytes:'4', decorate: { value -> utils_hexStringToUnsignedNumber value }],
+    0x24: [name:'uint40',    bytes:'5', decorate: { value -> utils_hexStringToUnsignedNumber value }],
+    0x25: [name:'uint48',    bytes:'6', decorate: { value -> utils_hexStringToUnsignedNumber value }],
+    0x26: [name:'uint56',    bytes:'7', decorate: { value -> utils_hexStringToUnsignedNumber value }],
+    0x27: [name:'uint64',    bytes:'8', decorate: { value -> utils_hexStringToUnsignedNumber value }],
+    0x28: [name:'int8',      bytes:'1', decorate: { value -> utils_hexStringToSignedNumber value }],
+    0x29: [name:'int16',     bytes:'2', decorate: { value -> utils_hexStringToSignedNumber value }],
+    0x2a: [name:'int24',     bytes:'3', decorate: { value -> utils_hexStringToSignedNumber value }],
+    0x2b: [name:'int32',     bytes:'4', decorate: { value -> utils_hexStringToSignedNumber value }],
+    0x2c: [name:'int40',     bytes:'5', decorate: { value -> utils_hexStringToSignedNumber value }],
+    0x2d: [name:'int48',     bytes:'6', decorate: { value -> utils_hexStringToSignedNumber value }],
+    0x2e: [name:'int56',     bytes:'7', decorate: { value -> utils_hexStringToSignedNumber value }],
+    0x2f: [name:'int64',     bytes:'8', decorate: { value -> utils_hexStringToSignedNumber value }],
     0x30: [name:'enum8',     bytes:'1'],
     0x31: [name:'enum16',    bytes:'2'],
     0x38: [name:'semi',      bytes:'2'],
@@ -2029,17 +2144,18 @@ private void state_addBinding(Integer index, List<String> binding) {
         attributes: [
             0x0000: [type:0x20, req:'req', acc:'r-p', name:'Current Level', decorate: { value -> value == 'FF' ? 'Invalid value' : "${((Integer.parseInt(value, 16) * 100 / 0xFE) as Integer)}%" }],
             0x0001: [type:0x21, req:'opt', acc:'r--', name:'Remaining Time', decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
+            0x000F: [type:0x18, req:'req', acc:'rw-', name:'Options'],
             0x0010: [type:0x21, req:'opt', acc:'rw-', name:'On Off Transition Time', decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
             0x0011: [type:0x20, req:'opt', acc:'rw-', name:'On Level', decorate: { value -> value == 'FF' ? 'Last level' : "${((Integer.parseInt(value, 16) * 100 / 0xFE) as Integer)}%" }],
             0x0012: [type:0x21, req:'opt', acc:'rw-', name:'On Transition Time', decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
             0x0013: [type:0x21, req:'opt', acc:'rw-', name:'Off Transition Time', decorate: { value -> "${((Integer.parseInt(value, 16) / 10) as Integer)} seconds" }],
             0x0014: [type:0x21, req:'opt', acc:'rw-', name:'Default Move Rate'],
-            0x4000: [type:0x20, req:'opt', acc:'rw-', name:'StartUp Current Level' ]
+            0x4000: [type:0x20, req:'opt', acc:'rw-', name:'StartUp Level' ]
        ],
         commands: [
             0x00: [req:'req', name:'Move To Level'],
             0x01: [req:'req', name:'Move'],
-            0x02: [req:'req', name:'Step'],
+            0x02: [req:'req', name:'Step Level'],
             0x03: [req:'req', name:'Stop'],
             0x04: [req:'req', name:'Move To Level With On/Off'],
             0x05: [req:'req', name:'Move With On/Off'],
@@ -2508,30 +2624,40 @@ private void state_addBinding(Integer index, List<String> binding) {
     0x0201: [
         name: 'Thermostat Cluster',
         attributes: [
-            0x0000: [req:'req', acc:'r-p', name:'Local Temperature'],
-            0x0001: [req:'opt', acc:'r--', name:'Outdoor Temperature'],
+            0x0000: [req:'req', acc:'r-p', name:'Local Temperature', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
+            0x0001: [req:'opt', acc:'r--', name:'Outdoor Temperature', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
             0x0002: [req:'opt', acc:'r--', name:'Occupancy'],
-            0x0003: [req:'opt', acc:'r--', name:'Abs Min Heat Setpoint Limit'],
-            0x0004: [req:'opt', acc:'r--', name:'Abs Max Heat Setpoint Limit'],
-            0x0005: [req:'opt', acc:'r--', name:'Abs Min Cool Setpoint Limit'],
-            0x0006: [req:'opt', acc:'r--', name:'Abs Max Cool Setpoint Limit'],
+            0x0003: [req:'opt', acc:'r--', name:'Abs Min Heat Setpoint Limit', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
+            0x0004: [req:'opt', acc:'r--', name:'Abs Max Heat Setpoint Limit', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
+            0x0005: [req:'opt', acc:'r--', name:'Abs Min Cool Setpoint Limit', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
+            0x0006: [req:'opt', acc:'r--', name:'Abs Max Cool Setpoint Limit', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
             0x0007: [req:'opt', acc:'r-p', name:'PI Cooling Demand'],
             0x0008: [req:'opt', acc:'r-p', name:'PI Heating Demand'],
             0x0009: [req:'opt', acc:'rw-', name:'HVAC System Type Configuration'],
 
             0x0010: [req:'opt', acc:'rw-', name:'Local Temperature Calibration'],
-            0x0011: [req:'req', acc:'rw-', name:'Occupied Cooling Setpoint'],
-            0x0012: [req:'req', acc:'rws', name:'Occupied Heating Setpoint'],
-            0x0013: [req:'opt', acc:'rw-', name:'Unoccupied Cooling Setpoint'],
-            0x0014: [req:'opt', acc:'rw-', name:'Unoccupied Heating Setpoint'],
-            0x0015: [req:'opt', acc:'rw-', name:'Min Heat Setpoint Limit'],
-            0x0016: [req:'opt', acc:'rw-', name:'Max Heat Setpoint Limit'],
-            0x0017: [req:'opt', acc:'rw-', name:'Min Cool Setpoint Limit'],
-            0x0018: [req:'opt', acc:'rw-', name:'Max Cool Setpoint Limit'],
+            0x0011: [req:'req', acc:'rw-', name:'Occupied Cooling Setpoint', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
+            0x0012: [req:'req', acc:'rws', name:'Occupied Heating Setpoint', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
+            0x0013: [req:'opt', acc:'rw-', name:'Unoccupied Cooling Setpoint', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
+            0x0014: [req:'opt', acc:'rw-', name:'Unoccupied Heating Setpoint', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
+            0x0015: [req:'opt', acc:'rw-', name:'Min Heat Setpoint Limit', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
+            0x0016: [req:'opt', acc:'rw-', name:'Max Heat Setpoint Limit', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
+            0x0017: [req:'opt', acc:'rw-', name:'Min Cool Setpoint Limit', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
+            0x0018: [req:'opt', acc:'rw-', name:'Max Cool Setpoint Limit', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
             0x0019: [req:'opt', acc:'rw-', name:'Min Setpoint Dead Band'],
             0x001A: [req:'opt', acc:'rw-', name:'Remote Sensing'],
             0x001B: [req:'req', acc:'rw-', name:'Control Sequence Of Operation'],
-            0x001C: [req:'req', acc:'rws', name:'System Mode'],
+            0x001C: [req:'req', acc:'rws', name:'System Mode', constraints: [
+                0x00: 'Off',
+                0x01: 'Auto',
+                0x03: 'Cool',
+                0x04: 'Heat',
+                0x05: 'Emergency heating',
+                0x06: 'Precooling',
+                0x07: 'Fan only',
+                0x08: 'Dry',
+                0x09: 'Sleep'
+            ]],
             0x001D: [req:'opt', acc:'r--', name:'Alarm Mask'],
             0x001E: [req:'opt', acc:'r--', name:'Thermostat Running Mode'],
 
@@ -2610,11 +2736,11 @@ private void state_addBinding(Integer index, List<String> binding) {
     0x0300: [
         name: 'Color Control Cluster',
         attributes: [
-            0x0000: [req:'req', acc:'r-p', name:'CurrentHue'],
+            0x0000: [req:'req', acc:'r-p', name:'Current Hue'],
             0x0001: [req:'req', acc:'r-p', name:'Current Saturation'],
             0x0002: [req:'opt', acc:'r--', name:'Remaining Time'],
-            0x0003: [req:'req', acc:'r-p', name:'CurrentX'],
-            0x0004: [req:'req', acc:'r-p', name:'CurrentY'],
+            0x0003: [req:'req', acc:'r-p', name:'Current X'],
+            0x0004: [req:'req', acc:'r-p', name:'Current Y'],
             0x0005: [req:'opt', acc:'r--', name:'Drift Compensation'],
             0x0006: [req:'opt', acc:'r--', name:'Compensation Text'],
             0x0007: [req:'req', acc:'r-p', name:'Color Temperature Mireds'],
@@ -2624,6 +2750,7 @@ private void state_addBinding(Integer index, List<String> binding) {
                 0x02: 'Color Temperature',
                 0x03: 'Enhanced Hue and Saturation'
             ]],
+            0x000F: [req:'req', acc:'rw-', name:'Options'],
             0x0010: [req:'req', acc:'r--', name:'Number Of Primaries'],
             0x0011: [req:'req', acc:'r--', name:'Primary 1 X'],
             0x0012: [req:'opt', acc:'r--', name:'Primary 1 Y'],
@@ -2667,6 +2794,7 @@ private void state_addBinding(Integer index, List<String> binding) {
             0x400A: [req:'req', acc:'r--', name:'Color Capabilities'],
             0x400B: [req:'req', acc:'r--', name:'Color Temp Physical Min Mireds'],
             0x400C: [req:'req', acc:'r--', name:'Color Temp Physical Max Mireds'],
+            0x400D: [req:'opt', acc:'r--', name:'Couple Color Temp To Level Min Mireds'],
             0x4010: [req:'opt', acc:'rw-', name:'StartUp Color Temperature Mireds' ]
        ],
         commands: [
@@ -2738,9 +2866,9 @@ private void state_addBinding(Integer index, List<String> binding) {
     0x0402: [
         name: 'Temperature Measurement Cluster',
         attributes: [
-            0x0000: [req:'req', acc:'r-p', name:'MeasuredValue', decorate: { value -> "${(Integer.parseInt(value, 16) / 100)} °C" }],
-            0x0001: [req:'req', acc:'r--', name:'MinMeasuredValue'],
-            0x0002: [req:'req', acc:'r--', name:'MaxMeasuredValue'],
+            0x0000: [req:'req', acc:'r-p', name:'Measured Value', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
+            0x0001: [req:'req', acc:'r--', name:'Min Measured Value', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
+            0x0002: [req:'req', acc:'r--', name:'Max Measured Value', decorate: { value -> "${(utils_hexStringToSignedNumber(value) / 100)}°C" }],
             0x0003: [req:'opt', acc:'r-p', name:'Tolerance' ]
         ]
    ],
@@ -2771,9 +2899,9 @@ private void state_addBinding(Integer index, List<String> binding) {
     0x0405: [
         name: 'Relative Humidity Cluster',
         attributes: [
-            0x0000: [req:'req', acc:'r-p', name:'Measured Value', decorate: { value -> "${(Integer.parseInt(value, 16) / 100)}% RH" }],
-            0x0001: [req:'req', acc:'r--', name:'Min Measured Value'],
-            0x0002: [req:'req', acc:'r--', name:'Max Measured Value'],
+            0x0000: [req:'req', acc:'r-p', name:'Measured Value', decorate: { value -> "${(utils_hexStringToUnsignedNumber(value) / 100)}% RH" }],
+            0x0001: [req:'req', acc:'r--', name:'Min Measured Value', decorate: { value -> "${(utils_hexStringToUnsignedNumber(value) / 100)}% RH" }],
+            0x0002: [req:'req', acc:'r--', name:'Max Measured Value', decorate: { value -> "${(utils_hexStringToUnsignedNumber(value) / 100)}% RH" }],
             0x0003: [req:'opt', acc:'r-p', name:'Tolerance' ]
         ]
    ],
