@@ -278,13 +278,10 @@ Below you can find the details of each remote device, including the features and
 | Since version | `2.0.0` |
 
 #### Features
-* Button Push event
-* Button Double-Tap event (only on firmware `24.4.6` and above)
-* Button Hold event
-* Button Release event
-* Battery report: %
-* Health status: online / offline
-* Directly control Zigbee devices: On/Off
+* **Button Events**: Supports "Push", "Double-Tap" (only on firmware `24.4.6` and above), "Hold", and "Release" events.
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Direct Zigbee Device Control**: Enables direct control of On/Off and Brightness settings for Zigbee devices.
 
 #### Pairing Instructions
 1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
@@ -394,10 +391,10 @@ This device offers a range of features:
 | Since version | `3.6.0` |
 
 #### Features
-* Motion detection: active / inactive (20 seconds cooldown)
-* Illumination lux reporting (5 minutes cooldown)
-* Battery report: %
-* Health status: online / offline
+* **Motion Detection**: Identifies motion as either "active" or "inactive", with a cooldown period of 20 seconds.
+* **Illumination Lux Reporting**: Provides reports on the level of illumination, measured in lux. Reports are generated every 5 minutes.
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
 
 #### Known Issues
 * Max reported illuminance is 1364 lux; more than enough for indoor usage
@@ -454,7 +451,7 @@ Below you can find the details of each outlet device, including the features and
 * **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
 * **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
 * **Health Status**: Indicates whether the device is online or offline.
-* **Refresh Light State**: Refreshes light state on demand.
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 * **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Pairing Instructions
@@ -481,7 +478,7 @@ Below you can find the details of each outlet device, including the features and
 * **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
 * **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
 * **Health Status**: Indicates whether the device is online or offline.
-* **Refresh Light State**: Refreshes light state on demand.
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 * **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Pairing Instructions
@@ -512,7 +509,7 @@ Below you can find the details of each outlet device, including the features and
 * **Child Lock**: Allows the enabling or disabling of the physical button on the device, providing an additional layer of safety.
 * **Dark Mode**: Allows the LED indicator on the device to be turned off, ensuring total darkness when needed.
 * **Health Status**: Indicates whether the device is online or offline.
-* **Refresh Light State**: Refreshes light state on demand.
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 * **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Pairing Instructions
@@ -543,7 +540,7 @@ Below you can find the details of each lighting device, including the features a
 * **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
 * **Pre-staging**: Allows setting of brightness level when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level.
 * **Health Status**: Indicates whether the device is online or offline.
-* **Refresh Light State**: Refreshes light state on demand.
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 * **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Tested devices
@@ -569,7 +566,7 @@ Below you can find the details of each lighting device, including the features a
 * **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
 * **Pre-staging**: Allows setting of brightness level and color temperature when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level/temperature.
 * **Health Status**: Indicates whether the device is online or offline.
-* **Refresh Light State**: Refreshes light state on demand.
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 * **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Known Issues
@@ -609,7 +606,7 @@ Below you can find the details of each lighting device, including the features a
 * **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
 * **Pre-staging**: Allows setting of brightness level, color temperature, and color when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level/temperature/color.
 * **Health Status**: Indicates whether the device is online or offline.
-* **Refresh Light State**: Refreshes light state on demand.
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 * **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Known Issues
@@ -693,6 +690,7 @@ Below you can find the details of each device, including the features and pairin
 * **Device Temperature Reporting**: Reports the device's temperature.
 * **Power Reporting**: Reports the power (in Watts) of L1 + L2.
 * **Energy Consumption Reporting**: Reports the energy consumption (in kWh) of L1 + L2.
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 * **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
 
 #### Pairing Instructions
@@ -718,6 +716,7 @@ Below you can find the details of each device, including the features and pairin
 * **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
 * **Power Reporting**: Reports the power (in Watts)
 * **LED Mode**: Configures the LED to be always on, always off, or to follow the device's power state.
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 * **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
 
 #### Pairing Instructions
