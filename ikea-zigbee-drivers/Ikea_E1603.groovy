@@ -505,7 +505,8 @@ private void utils_sendZigbeeCommands(List<String> cmds) {
     sendHubCommand new hubitat.device.HubMultiAction(send, hubitat.device.Protocol.ZIGBEE)
 }
 private void utils_sendEvent(Map event) {
-    if (device.currentValue(event.name, true) != event.value || event.isStateChange) {
+    boolean noInfo = event.remove('noInfo') == true
+    if (!noInfo && (device.currentValue(event.name, true) != event.value || event.isStateChange)) {
         log_info "${event.descriptionText} [${event.type}]"
     } else {
         log_debug "${event.descriptionText} [${event.type}]"

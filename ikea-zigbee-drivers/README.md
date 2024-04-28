@@ -30,7 +30,7 @@ Lights:
 * [White Spectrum Light](#white-spectrum-light)
 * [Color White Spectrum Light](#color-white-spectrum-light)
 
-Other:
+Appliances:
 * [Starkvind Air Purifier (E2006)](#starkvind-air-purifier-e2006)
 
 Devices from other vendors (not in HPM):
@@ -59,7 +59,7 @@ Once you have HPM installed, follow these steps to install the IKEA Zigbee drive
 * Select the driver(s) you need from the dropdown list and follow the install instructions.
 
 ### Manual Installation
-If you don’t want to use HPM, you can also install the drivers manually by importing the driver code from GitHub. Follow these steps to do so:
+If you don"t want to use HPM, you can also install the drivers manually by importing the driver code from GitHub. Follow these steps to do so:
 
 * In the Hubitat interface, go to **Drivers Code**.
 * Click **New Driver** in the top right, then click **Import** in the top right.
@@ -69,87 +69,8 @@ If you don’t want to use HPM, you can also install the drivers manually by imp
 
 More info about installing custom drivers is available in the [Official Documentation](https://docs2.hubitat.com/en/how-to/install-custom-drivers).
 
-## Device Features and Pairing
-Below you can find the details of each device, including the features and pairing instructions.
-
-
-### Askvader On/Off Switch (E1836)
-
-| Parameter | Details |
-|-----------|-------------|
-| Product Image | <img src="img/Ikea_E1836.webp" style="width: 200px"> |
-| Product Code | `504.638.80` |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E1836.groovy` |
-| Tested firmwares | `1.0.002` |
-| Since version | `3.1.0` |
-
-#### Features
-* Commands: On, Off, Toggle, On with Timed Off
-* Configure what happens after a power outage (Power On, Power Off, Restore previous state)
-* Health status: online / offline
-* Refresh switch state on demand
-* Can be member of Zigbee groups
-
-#### Pairing Instructions
-1. Locate the small reset hole (located between the On/Off button and the LED light) and have a pin or pencil ready to fit the hole.
-1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
-1. Plug the device back into an outlet.
-1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
-1. Insert the pin into the reset hole and press it for at least 5 seconds; the LED light will start blinking upon release.
-1. Return to the pairing page, provide a name for your device, and assign it to a room.
-1. You're all set! Enjoy using your Askvader On/Off Switch.
-
-
-### Badring Water Leakage Sensor (E2202)
-
-| Parameter | Details |
-|-----------|-------------|
-| Product Image | <img src="img/Ikea_E2202.webp" style="width: 200px"> |
-| Product Code | `605.043.52` |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2202.groovy` |
-| Tested firmwares | `1.0.7` |
-| Since version | `3.9.0` |
-
-#### Features
-* Water detection: wet / dry
-* Battery report: %
-* Health status: online / offline
-
-#### Pairing Instructions
-1. Open the battery compartiment and you should see the small pair button (🔗).
-1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
-1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
-1. **Important**: Immediately after the device LED starts blinking red, position the device as close as possible to your Hubitat hub for **at least 30 seconds** (wait until the LED stops blinking and turns off).
-1. Return to the pairing page, provide a name for your device, and assign it to a room.
-1. Close the device battery compartiment.
-1. You're all set! Enjoy using your Badring Water Leakage Sensor.
-
-### Parasoll Door/Window Sensor (E2013)
-
-| Parameter | Details |
-|-----------|-------------|
-| Product Image | <img src="img/Ikea_E2013.webp" style="width: 200px"> |
-| Product Code | `805.043.08` |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2013.groovy` |
-| Tested firmwares | `1.0.19` |
-| Since version | `3.6.0` |
-
-#### Features
-* Contact status: open / close
-* Battery report: %
-* Health status: online / offline
-* Directly control Zigbee devices: On/Off
-* Directly control Zigbee groups: On/Off
-
-#### Pairing Instructions
-1. Remove device from its position using a small screwdriver and, on the back, you should see the small pair button (🔗).
-1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
-1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
-1. **Important**: Immediately after the device LED starts blinking red, position the device as close as possible to your Hubitat hub for **at least 30 seconds** (wait until the LED stops blinking and turns off).
-1. Return to the pairing page, provide a name for your device, and assign it to a room.
-1. Place the device back to its position by gently pressing it until you hear it clicking in place.
-1. You're all set! Enjoy using your Parasoll Door/Window Sensor.
-
+## Remotes
+Below you can find the details of each remote device, including the features and pairing instructions.
 
 ### Rodret Dimmer (E2201)
 
@@ -162,14 +83,11 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `2.0.0` |
 
 #### Features
-* Button Push events: both buttons
-* Button Hold events: both buttons
-* Button Release events: both buttons
-* Battery report: %
-* Health status: online / offline
-* Directly control Zigbee devices: On/Off and Brightness
-* Directly control Zigbee groups: On/Off and Brightness
-
+* **Button Events**: Supports "Push", "Hold", and "Release" events for both buttons.
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Direct Zigbee Device Control**: Enables direct control of On/Off and Brightness settings for Zigbee devices.
+* **Direct Zigbee Group Control**: Enables direct control of On/Off and Brightness settings for Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Pairing Instructions
 1. Open the battery compartiment and you should see the small pair button (🔗).
@@ -192,12 +110,11 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `3.6.0` |
 
 #### Features
-* Button Push events: both buttons
-* Button Double-Tap event: both buttons
-* Button Hold events: both buttons
-* Button Release events: both buttons
-* Battery report: %
-* Health status: online / offline
+* **Button Events**: Supports "Push", "Double-Tap", "Hold", and "Release" events for both buttons.
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Direct Zigbee Device Control**: Enables direct control of On/Off and Brightness settings for Zigbee devices.
+* **Direct Zigbee Group Control**: Enables direct control of On/Off and Brightness settings for Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Pairing Instructions
 1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
@@ -207,38 +124,6 @@ Below you can find the details of each device, including the features and pairin
 1. Return to the pairing page, provide a name for your device, and assign it to a room.
 1. Close the device battery compartiment.
 1. You're all set! Enjoy using your Somrig Shortcut Button.
-
-
-### Starkvind Air Purifier (E2006)
-
-| Parameter | Details |
-|-----------|-------------|
-| Product Image | <img src="img/Ikea_E2006.webp" style="width: 200px"> |
-| Product Code | `194.442.19` |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2006.groovy` |
-| Tested firmwares | `1.0.033`｜`1.1.001` |
-| Since version | `3.5.0` |
-
-#### Features
-* Commands: On, Off, Toggle, Set/Cycle fan speed
-* Particulate Matter < 2.5 microns (PM 2.5) sensor data
-* Calculate US AQI score based on PM 2.5 value
-* Filter usage (%) and Filter status (normal / replace) information
-* Configuration: Sensor report frequency, Filter life time, LED status
-* Child lock: enable / disable physical controls on the device
-* Dark mode: turn off LED indicator on the device, ensuring total darkness
-* Health status: online / offline
-* Refresh device state on demand
-
-#### Pairing Instructions
-1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
-1. Plug the device back into an outlet.
-1. Open the round top lid and you should see the pair button (🔗) next to the filter reset button.
-1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
-1. Press and hold the pair button **for at least 5 seconds** until the LED starts blinking.
-1. Return to the pairing page, provide a name for your device, and assign it to a room.
-1. Put back the lid and fix it in place.
-1. You're all set! Enjoy using your Starkvind Air Purifier.
 
 
 ### Styrbar Remote Control N2 (E2002)
@@ -252,12 +137,10 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `2.0.0` |
 
 #### Features
-* Button Push events for: all buttons
-* Button Hold events for: Button 1 (🔆) and Button 2 (🔅)
-* Button Release events for: Button 1 (🔆), Button 2 (🔅)
-* Battery report: %
-* Health status: online / offline
-* Directly control Zigbee devices: On/Off, Brightness and Scenes
+* **Button Events**: Supports "Push" events for all buttons, "Hold" and "Release" events for Button 1 (🔆) and Button 2 (🔅).
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Zigbee Device Control**: Enables direct control of On/Off, Brightness, and Scenes for Zigbee devices.
 
 #### Known Issues
 * The Hold / Release events don't work correctly on the Next and Prev buttons.
@@ -284,14 +167,11 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `1.0.0` |
 
 #### Features
-* Button Push events: all buttons
-* Button Hold events: Button 2 (Plus), Button 3 (Minus), Button 6 (•) and Button 7 (••)
-* Button Release events: Button 6 (•) and Button 7 (••)
-* Button Double-Tap events: Button 6 (•) and Button 7 (••)
-* Battery report: %
-* Health status: online / offline
-* Directly control Zigbee devices: On/Off
-* Directly control Zigbee groups: On/Off
+* **Button Events**: Supports "Push" events for all buttons, "Hold" events for Button 2 (Plus), Button 3 (Minus), Button 6 (•), and Button 7 (••), "Release" and "Double-Tap" events for Button 6 (•) and Button 7 (••).
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Zigbee Device Control**: Enables direct control of On/Off settings for Zigbee devices.
+* **Zigbee Group Control**: Enables direct control of On/Off settings for Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Known Issues
 * Old firmware versions (below 1.0.35) does not send the release event for Button 6 (•) and Button 7 (••)
@@ -306,67 +186,6 @@ Below you can find the details of each device, including the features and pairin
 1. You're all set! Enjoy using your Symfonisk Sound Remote.
 
 
-### Tradfri Control Outlet (E1603, E1706)
-
-| Parameter | Details |
-|-----------|-------------|
-| Product Image | <img src="img/Ikea_E1603.webp" style="width: 200px"> |
-| Product Code | `304.883.63`｜`303.561.69` |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E1603.groovy` |
-| Tested firmwares | `2.0.0244`｜`2.3.089` |
-| Since version | `2.0.0` |
-
-#### Features
-* Commands: On, Off, Toggle, On with Timed Off
-* Configure what happens after a power outage (Power On, Power Off, Restore previous state)
-* Health status: online / offline
-* Refresh switch state on demand
-* Can be member of Zigbee groups
-
-#### Pairing Instructions
-1. Find the small reset hole on the side of the device and make sure you have at hand a pin that can fit the reset hole
-   (e.g.: a paper clip or SIM card eject pin).
-1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
-1. Plug the device back into an outlet.
-1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
-1. Insert the pin into the reset hole and press it for at least 5 seconds; upon release, the LED light will start
-   blinking.
-1. Return to the pairing page, provide a name for your device, and assign it to a room.
-1. You're all set! Enjoy using your Tradfri Control Outlet.
-
-
-### Tradfri Motion Sensor (E1745)
-
-| Parameter | Details |
-|-----------|-------------|
-| Product Image | <img src="img/Ikea_E1745.webp" style="width: 200px"> |
-| Product Code | `704.299.13` |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E1745.groovy` |
-| Tested firmwares | `24.4.5` |
-| Since version | `2.3.0` |
-
-#### Features
-* Motion detection: active / inactive (50 seconds cooldown)
-* Illumination detection: dim / bright
-* Option to detect motion only when dark
-* Battery report: %
-* Health status: online / offline
-
-#### Known Issues
-* Old firmware versions (below 24.4.5) suppport binding to groups only and this functionality is not supported by the
-  Hubitat hub. You can update the device to the latest version using Hubitat.
-* Illumination is reported only when motion is detected.
-
-#### Pairing Instructions
-1. Open the back compartiment and you should see the small pair button (🔗).
-1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
-1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
-1. **Important**: Immediately after the device LED starts blinking red, position the device as close as possible to your Hubitat hub for **at least 30 seconds** (wait until the LED stops blinking and turns off).
-1. Return to the pairing page, provide a name for your device, and assign it to a room.
-1. Close the device battery compartiment.
-1. You're all set! Enjoy using your Tradfri Motion Sensor.
-
-
 ### Tradfri On/Off Switch (E1743)
 
 | Parameter | Details |
@@ -378,13 +197,10 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `2.0.0` |
 
 #### Features
-* Button Push events: both buttons
-* Button Hold events: both buttons
-* Button Release events: both buttons
-* Battery report: %
-* Health status: online / offline
-* Directly control Zigbee devices: On/Off and Brightness
-
+* **Button Events**: Supports "Push", "Hold", and "Release" events for both buttons.
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Zigbee Device Control**: Enables direct control of On/Off and Brightness settings for Zigbee devices.
 
 #### Pairing Instructions
 1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
@@ -407,11 +223,10 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `3.3.0` |
 
 #### Features
-* Button Push events: both buttons
-* Button Release events: both buttons
-* Battery report: %
-* Health status: online / offline
-* Directly control Zigbee devices: Window Covering
+* **Button Events**: Supports "Push" and "Release" events for both buttons.
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Zigbee Device Control**: Enables direct control of "Window Covering" for Zigbee devices.
 
 #### Pairing Instructions
 1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
@@ -434,15 +249,10 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `1.1.0` |
 
 #### Features
-* Button Push events: all buttons
-* Button Hold events: Button 2 (🔆), Button 3 (🔅), Button 4 (Next) and Button 5 (Prev)
-* Button Release events: Button 2 (🔆), Button 3 (🔅), Button 4 (Next) and Button 5 (Prev)
-* Button 1 (Play) acts as a switch (on / off)
-* Button 2 (🔆) and Button 3 (🔅) act as a switch level (0 - 100%)
-* Battery report: %
-* Health status: online / offline
-* Directly control Zigbee devices: On/Off, Brightness and Scenes
-
+* **Button Events**: Supports "Push" events for all buttons, "Hold" and "Release" events for Button 2 (🔆), Button 3 (🔅), Button 4 (Next), and Button 5 (Prev).
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Zigbee Device Control**: Enables direct control of On/Off, Brightness, and Scenes for Zigbee devices.
 
 #### Known Issues
 * Old firmware versions suppport binding to groups only and this functionality is not supported by the Hubitat hub. You can update the device to the latest version using Hubitat.
@@ -486,33 +296,91 @@ Below you can find the details of each device, including the features and pairin
 1. You're all set! Enjoy using your Tradfri Shortcut Button.
 
 
-### Tretakt Smart Plug (E2204)
+## Sensors
+Below you can find the details of each sensor device, including the features and pairing instructions.
+
+### Badring Water Leakage Sensor (E2202)
 
 | Parameter | Details |
 |-----------|-------------|
-| Product Image | <img src="img/Ikea_E2204.webp" style="width: 200px"> |
-| Product Code | `805.403.49` |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2204.groovy` |
-| Tested firmwares | `2.4.4` |
-| Since version | `4.0.0` |
+| Product Image | <img src="img/Ikea_E2202.webp" style="width: 200px"> |
+| Product Code | `605.043.52` |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2202.groovy` |
+| Tested firmwares | `1.0.7` |
+| Since version | `3.9.0` |
 
 #### Features
-* Commands: On, Off, Toggle, On with Timed Off
-* Configure what happens after a power outage (Power On, Power Off, Restore previous state)
-* Child lock: enable / disable physical button on the device
-* Dark mode: turn off LED indicator on the device, ensuring total darkness
-* Health status: online / offline
-* Refresh switch state on demand
-* Can be member of Zigbee groups
+* **Water Detection**: Identifies the state of water presence as either "wet" or "dry".
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
 
 #### Pairing Instructions
-1. Find the small reset button near on/off button and make sure you have a pointy object at hand.
-1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
-1. Plug the device back into an outlet.
+1. Open the battery compartiment and you should see the small pair button (🔗).
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
-1. Push the small reset button on top of the smart plug with a pointy object for at least 5 seconds until the LED starts pulsating.
+1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
+1. **Important**: Immediately after the device LED starts blinking red, position the device as close as possible to your Hubitat hub for **at least 30 seconds** (wait until the LED stops blinking and turns off).
 1. Return to the pairing page, provide a name for your device, and assign it to a room.
-1. You're all set! Enjoy using your Tretakt Smart Plug.
+1. Close the device battery compartiment.
+1. You're all set! Enjoy using your Badring Water Leakage Sensor.
+
+### Parasoll Door/Window Sensor (E2013)
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="img/Ikea_E2013.webp" style="width: 200px"> |
+| Product Code | `805.043.08` |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2013.groovy` |
+| Tested firmwares | `1.0.19` |
+| Since version | `3.6.0` |
+
+#### Features
+* **Contact Status**: Identifies the state of contact sensor as either "open" or "close".
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Direct Zigbee Device Control**: Enables direct control of On/Off and Brightness settings for Zigbee devices.
+* **Direct Zigbee Group Control**: Enables direct control of On/Off and Brightness settings for Zigbee groups. This allows for efficient management of multiple devices.
+
+#### Pairing Instructions
+1. Remove device from its position using a small screwdriver and, on the back, you should see the small pair button (🔗).
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
+1. **Important**: Immediately after the device LED starts blinking red, position the device as close as possible to your Hubitat hub for **at least 30 seconds** (wait until the LED stops blinking and turns off).
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. Place the device back to its position by gently pressing it until you hear it clicking in place.
+1. You're all set! Enjoy using your Parasoll Door/Window Sensor.
+
+
+### Tradfri Motion Sensor (E1745)
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="img/Ikea_E1745.webp" style="width: 200px"> |
+| Product Code | `704.299.13` |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E1745.groovy` |
+| Tested firmwares | `24.4.5` |
+| Since version | `2.3.0` |
+
+#### Features
+This device offers a range of features:
+
+* **Motion Detection**: Identifies motion as either "active" or "inactive", with a cooldown period of 50 seconds.
+* **Illumination Detection**: Detects illumination levels as either "dim" or "bright".
+* **Dark Motion Detection**: Provides an option to detect motion only when the illumination is dark.
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+
+#### Known Issues
+* **Firmware Compatibility**: Older firmware versions (below 24.4.5) support binding to groups only. This functionality is not supported by the Hubitat hub. Users can update the device to the latest version using Hubitat.
+* **Illumination Reporting**: Illumination levels are reported only when motion is detected.
+
+#### Pairing Instructions
+1. Open the back compartiment and you should see the small pair button (🔗).
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
+1. **Important**: Immediately after the device LED starts blinking red, position the device as close as possible to your Hubitat hub for **at least 30 seconds** (wait until the LED stops blinking and turns off).
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. Close the device battery compartiment.
+1. You're all set! Enjoy using your Tradfri Motion Sensor.
 
 
 ### Vallhorn Motion Sensor (E2134)
@@ -555,11 +423,12 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `3.8.0` |
 
 #### Features
-* Particulate Matter < 2.5 microns (PM 2.5) sensor data
-* Calculate US AQI score based on PM 2.5 value
-* [Sensirion VOC Index](https://sensirion.com/media/documents/02232963/6294E043/Info_Note_VOC_Index.pdf) (1-500)
-* Temperature and Relative Humidity
-* Health status: online / offline
+* **Particulate Matter Sensor**: Provides data for particulate matter less than 2.5 microns (PM 2.5).
+* **US AQI Score Calculation**: Calculates the US Air Quality Index (AQI) score based on the PM 2.5 value.
+* **Sensirion VOC Index**: Provides a Sensirion Volatile Organic Compounds (VOC) Index that ranges from 1 to 500, offering a quantified measure of the VOCs present in the surrounding air.
+* **Temperature and Humidity Measurements**: Provide standard measurements of the current temperature and the amount of moisture in the air, respectively.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 
 #### Pairing Instructions
 1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
@@ -567,6 +436,97 @@ Below you can find the details of each device, including the features and pairin
 1. Return to the pairing page, provide a name for your device, and assign it to a room.
 1. You're all set! Enjoy using your Vindstyrka Air Quality Sensor.
 
+
+## Outlets
+Below you can find the details of each outlet device, including the features and pairing instructions.
+
+### Askvader On/Off Switch (E1836)
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="img/Ikea_E1836.webp" style="width: 200px"> |
+| Product Code | `504.638.80` |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E1836.groovy` |
+| Tested firmwares | `1.0.002` |
+| Since version | `3.1.0` |
+
+#### Features
+* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
+* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
+* **Health Status**: Indicates whether the device is online or offline.
+* **Refresh Light State**: Refreshes light state on demand.
+* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
+
+#### Pairing Instructions
+1. Locate the small reset hole (located between the On/Off button and the LED light) and have a pin or pencil ready to fit the hole.
+1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
+1. Plug the device back into an outlet.
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. Insert the pin into the reset hole and press it for at least 5 seconds; the LED light will start blinking upon release.
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. You're all set! Enjoy using your Askvader On/Off Switch.
+
+
+### Tradfri Control Outlet (E1603, E1706)
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="img/Ikea_E1603.webp" style="width: 200px"> |
+| Product Code | `304.883.63`｜`303.561.69` |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E1603.groovy` |
+| Tested firmwares | `2.0.0244`｜`2.3.089` |
+| Since version | `2.0.0` |
+
+#### Features
+* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
+* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
+* **Health Status**: Indicates whether the device is online or offline.
+* **Refresh Light State**: Refreshes light state on demand.
+* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
+
+#### Pairing Instructions
+1. Find the small reset hole on the side of the device and make sure you have at hand a pin that can fit the reset hole
+   (e.g.: a paper clip or SIM card eject pin).
+1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
+1. Plug the device back into an outlet.
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. Insert the pin into the reset hole and press it for at least 5 seconds; upon release, the LED light will start
+   blinking.
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. You're all set! Enjoy using your Tradfri Control Outlet.
+
+
+### Tretakt Smart Plug (E2204)
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="img/Ikea_E2204.webp" style="width: 200px"> |
+| Product Code | `805.403.49` |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2204.groovy` |
+| Tested firmwares | `2.4.4` |
+| Since version | `4.0.0` |
+
+#### Features
+* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
+* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
+* **Child Lock**: Allows the enabling or disabling of the physical button on the device, providing an additional layer of safety.
+* **Dark Mode**: Allows the LED indicator on the device to be turned off, ensuring total darkness when needed.
+* **Health Status**: Indicates whether the device is online or offline.
+* **Refresh Light State**: Refreshes light state on demand.
+* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
+
+#### Pairing Instructions
+1. Find the small reset button near on/off button and make sure you have a pointy object at hand.
+1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
+1. Plug the device back into an outlet.
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. Push the small reset button on top of the smart plug with a pointy object for at least 5 seconds until the LED starts pulsating.
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. You're all set! Enjoy using your Tretakt Smart Plug.
+
+
+## Lights
+Below you can find the details of each lighting device, including the features and pairing instructions.
 
 ### Dimmable Light
 
@@ -577,14 +537,14 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `5.0.0` |
 
 #### Features
-* Commands: On, Off, Toggle, On with Timed Off
-* Brightness control: Set brightness level, Start/Stop brightness level change, Step brightness level up/down
-* Configure what happens after a power outage (Power On, Power Off, Restore previous state)
-* Configure brightness level when turned on (Always the same fixed value, Restore last level)
-* Pre-staging: Set brightness level when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level.
-* Health status: online / offline
-* Refresh light state on demand
-* Can be member of Zigbee groups
+* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
+* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
+* **Brightness Control**: Allows setting of brightness level, starting/stopping brightness level change, and stepping brightness level up/down.
+* **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
+* **Pre-staging**: Allows setting of brightness level when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level.
+* **Health Status**: Indicates whether the device is online or offline.
+* **Refresh Light State**: Refreshes light state on demand.
+* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Tested devices
 * 10EU-IL-1: Tradfri LED Driver 10W
@@ -602,19 +562,18 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `5.0.0` |
 
 #### Features
-* Commands: On, Off, Toggle, On with Timed Off
-* Brightness control: Set brightness level, Start/Stop brightness level change, Step brightness level up/down
-* Color temperature (CT) control: Set color temperature, Start/Stop color temperature change, Step color temperature up/down
-* Configure what happens after a power outage (Power On, Power Off, Restore previous state)
-* Configure brightness level when turned on (Always the same fixed value, Restore last level)
-* Pre-staging: Set brightness level when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level.
-* Pre-staging: Set color temperature when the lights are off (and they stay off). When the lights are turned on, they will start with the specified color temperature.
-* Health status: online / offline
-* Refresh light state on demand
-* Can be member of Zigbee groups
+* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
+* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
+* **Brightness Control**: Allows setting of brightness level, starting/stopping brightness level change, and stepping brightness level up/down.
+* **Color Temperature (CT) Control**: Enables setting of color temperature, starting/stopping color temperature change, and stepping color temperature up/down.
+* **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
+* **Pre-staging**: Allows setting of brightness level and color temperature when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level/temperature.
+* **Health Status**: Indicates whether the device is online or offline.
+* **Refresh Light State**: Refreshes light state on demand.
+* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Known Issues
-* Color temperature and brightness level can be set together if the "Transition time" is 0 (or left blank in the UI); if a transition time is specified, only the color temperature is applied.
+* **Color Temperature and Brightness Level**: These can be set together if the "Transition time" is 0 (or left blank in the UI); if a transition time is specified, only the color temperature is applied.
 
 #### Tested devices
 * LED2101G4: Tradfri Bulb E14 WS Globe 470lm
@@ -641,21 +600,20 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `5.0.0` |
 
 #### Features
-* Commands: On, Off, Toggle, On with Timed Off
-* Brightness control: Set brightness level, Start/Stop brightness level change, Step brightness level up/down
-* Color temperature (CT) control: Set color temperature, Start/Stop color temperature change, Step color temperature up/down
-* Color (RGB) control: Set color hue and/or saturation, display color name and colo mode
-* Configure what happens after a power outage (Power On, Power Off, Restore previous state)
-* Configure brightness level when turned on (Always the same fixed value, Restore last level)
-* Pre-staging: Set brightness level when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level.
-* Pre-staging: Set color temperature when the lights are off (and they stay off). When the lights are turned on, they will start with the specified color temperature.
-* Pre-staging: Set color when the lights are off (and they stay off). When the lights are turned on, they will start with the specified color.
-* Health status: online / offline
-* Refresh light state on demand
-* Can be member of Zigbee groups
+* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
+* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
+* **Brightness Control**: Allows setting of brightness level, starting/stopping brightness level change, and stepping brightness level up/down.
+* **Color Temperature (CT) Control**: Enables setting of color temperature, starting/stopping color temperature change, and stepping color temperature up/down.
+* **Color (RGB) Control**: Provides options to set color hue and/or saturation, and display color name and color mode.
+* **Color Loop**: Initiates cycling of the color hue until stopped.
+* **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
+* **Pre-staging**: Allows setting of brightness level, color temperature, and color when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level/temperature/color.
+* **Health Status**: Indicates whether the device is online or offline.
+* **Refresh Light State**: Refreshes light state on demand.
+* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Known Issues
-* Color temperature and brightness level can be set together if the "Transition time" is 0 (or left blank in the UI); if a transition time is specified, only the color temperature is applied.
+* **Color Temperature and Brightness Level**: These can be set together if the "Transition time" is 0 (or left blank in the UI); if a transition time is specified, only the color temperature is applied.
 
 #### Tested devices
 * L2112: Ormanas LED Strip
@@ -678,6 +636,44 @@ Below you can find the details of each device, including the features and pairin
 1. You're all set! Enjoy using your White Spectrum Light.
 
 
+## Appliances
+Below you can find the details of each appliance device, including the features and pairing instructions.
+
+### Starkvind Air Purifier (E2006)
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="img/Ikea_E2006.webp" style="width: 200px"> |
+| Product Code | `194.442.19` |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2006.groovy` |
+| Tested firmwares | `1.0.033`｜`1.1.001` |
+| Since version | `3.5.0` |
+
+#### Features
+* **Command Controls**: Includes "On", "Off", "Toggle", and "Set/Cycle fan speed" commands.
+* **Particulate Matter Sensor**: Provides data for particulate matter less than 2.5 microns (PM 2.5).
+* **US AQI Score Calculation**: Calculates the US Air Quality Index (AQI) score based on the PM 2.5 value.
+* **Filter Information**: Reports filter usage (%) and filter status (options include "normal" and "replace").
+* **Configuration Options**: Allows configuration of sensor report frequency, filter lifetime, and LED status.
+* **Child Lock**: Enables or disables physical controls on the device for safety.
+* **Dark Mode**: Turns off the LED indicator on the device, ensuring total darkness for user comfort.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
+
+#### Pairing Instructions
+1. If the device is already plugged in, unplug it for 20 seconds (power-cycle) before each pairing attempt.
+1. Plug the device back into an outlet.
+1. Open the round top lid and you should see the pair button (🔗) next to the filter reset button.
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. Press and hold the pair button **for at least 5 seconds** until the LED starts blinking.
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. Put back the lid and fix it in place.
+1. You're all set! Enjoy using your Starkvind Air Purifier.
+
+
+## Devices from other vendors
+Below you can find the details of each device, including the features and pairing instructions.
+
 ### Aqara Dual Relay Module T2 (DCM-K01)
 
 | Parameter | Details |
@@ -688,17 +684,16 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `4.0.0` |
 
 #### Features
-* Standard operation mode: switch S1/S2 controls relay L1/L2
-* Decoupled operation mode: switch S1/S2 only sends "push" events
-* Configure switch type: latching / momentary / disabled
-* Configure relay type: wet contact / dry contact / pulse mode (with configurable pulse duration: 200ms .. 2000ms)
-* Configure interlock mode: prevent both Relay L1 and Relay L2 being On at the same time
-* Configure what happens after a power outage (Power On, Power Off, Restore previous state)
-* Report device temperature
-* Report power (W): L1 + L2
-* Report energy consumption (kWh): L1 + L2
-* Health status: online / offline
-* Refresh device state on demand
+* **Standard Operation Mode**: In this mode, the switches S1/S2 control the relays L1/L2.
+* **Decoupled Operation Mode**: In this mode, the switches S1/S2 only send “push” events.
+* **Switch Type Configuration**: Allows the configuration of the switch type to be either latching, momentary, or disabled.
+* **Relay Type Configuration**: Allows the configuration of the relay type to be either a wet contact, dry contact, or pulse mode. The pulse mode has a configurable pulse duration ranging from 200ms to 2000ms.
+* **Interlock Mode Configuration**: Prevents both Relay L1 and Relay L2 from being On at the same time.
+* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
+* **Device Temperature Reporting**: Reports the device's temperature.
+* **Power Reporting**: Reports the power (in Watts) of L1 + L2.
+* **Energy Consumption Reporting**: Reports the energy consumption (in kWh) of L1 + L2.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
 
 #### Pairing Instructions
 1. If the device is already powered on, disconnect it for 20 seconds (power-cycle) before each pairing attempt.
@@ -719,12 +714,11 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `4.0.0` |
 
 #### Features
-* Commands: On, Off, Toggle, On with Timed Off
-* Configure what happens after a power outage (Power On, Power Off, Restore previous state)
-* LED mode: always On, always Off, follow device power state
-* Report power (W)
-* Health status: online / offline
-* Refresh device state on demand
+* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
+* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
+* **Power Reporting**: Reports the power (in Watts)
+* **LED Mode**: Configures the LED to be always on, always off, or to follow the device's power state.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
 
 #### Pairing Instructions
 1. Find the small reset hole under the device face plate and make sure you have at hand a pin that can fit the reset hole
@@ -747,12 +741,12 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `4.0.0` |
 
 #### Features
-* Configure switch style: single rocker / single push button / dual rocker / dual push button
-* Button Push event: both switches
-* Battery report: %
-* Health status: online / offline
-* Directly control Zigbee devices: On/Off
-* Directly control Zigbee groups: On/Off
+* **Switch Style Configuration**: This feature allows users to configure the switch style, with options including single rocker, single push button, dual rocker, and dual push button.
+* **Button Push Event**: This feature supports events triggered by the push of either switch.
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Zigbee Device Control**: Enables direct control of On/Off settings for Zigbee devices.
+* **Direct Zigbee Group Control**: Enables direct control of On/Off settings for Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Pairing Instructions
 1. Connect the S1 switch cable
@@ -773,13 +767,11 @@ Below you can find the details of each device, including the features and pairin
 | Since version | `4.0.0` |
 
 #### Features
-* Button Push event: all 4 buttons
-* Button Hold events: all 4 buttons
-* Button Release events: all 4 buttons
-* Battery report: %
-* Health status: online / offline
-* Directly control Zigbee devices: On/Off
-* Directly control Zigbee groups: On/Off
+* **Button Events**: Supports "Push", "Hold", and "Release" events for all 4 buttons.
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Zigbee Device Control**: Enables direct control of On/Off settings for Zigbee devices.
+* **Direct Zigbee Group Control**: Enables direct control of On/Off settings for Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Pairing Instructions
 1. Open the battery compartiment, find the small reset hole and make sure you have at hand a pin that can fit the reset hole
@@ -802,9 +794,9 @@ Below you can find the details of each device, including the features and pairin
 > I don't own this device and did not test it myself.
 
 #### Features
-* Button Push event: all 4 buttons
-* Battery report: %
-* Health status: online / offline
+* **Button Events**: Supports "Push" events for all 4 buttons.
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
 
 #### Known Issues
 * Device drops off the Zigbee mesh (unknown reason)

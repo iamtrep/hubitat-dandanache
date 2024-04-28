@@ -496,15 +496,17 @@ void setSaturation(BigDecimal saturation) {
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114303 ${payload}}"]) // Move to Saturation
 }
 void startColorLoop(String speed) {
-    Integer seconds = COLOR_LOOP_SPEED[speed]
-    log_debug "Starting color loop with ${seconds} seconds / loop"
+    Integer seconds = COLOR_LOOP_SPEED[speed] ?: 30
+    log_info "Starting color loop at ${speed} speed (${seconds} sec per loop)"
     String payload = "0F 01 01 ${utils_payload seconds, 4} 0000 00 00"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114344 ${payload}}"]) // Color Loop Set
+    state.loop = true
 }
 void stopColorLoop() {
-    log_debug "Stopping color loop"
+    log_info "Stopped color loop"
     String payload = "0F 00 01 0000 0000 00 00"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114344 ${payload}}"]) // Color Loop Set
+    state.remove 'loop'
 }
 private void processMultipleColorAttributes(Map msg, String type) {
     Map<Integer, String> attributes = [:]
@@ -535,7 +537,7 @@ private void processMultipleColorAttributes(Map msg, String type) {
         }
     }
 
-    if (hue >= 0) utils_sendEvent name:'hue', value:hue, descriptionText:"Color hue is ${hue}%", type:type
+    if (hue >= 0) utils_sendEvent name:'hue', value:hue, descriptionText:"Color hue is ${hue}%", type:type, noInfo:(state.loop == true)
     if (saturation >= 0) utils_sendEvent name:'saturation', value:saturation, descriptionText:"Color saturation is ${saturation}%", type:type
 
     // Update colorName, if the case
@@ -543,7 +545,7 @@ private void processMultipleColorAttributes(Map msg, String type) {
         Integer colorHue = hue >= 0 ? hue : device.currentValue('hue', true)
         Integer colorSaturation = saturation >= 0 ? saturation : device.currentValue('saturation', true)
         String colorName = convertHueToGenericColorName colorHue, colorSaturation
-        utils_sendEvent name:'colorName', value:colorName, descriptionText:"Color name is ${colorName}", type:type
+        utils_sendEvent name:'colorName', value:colorName, descriptionText:"Color name is ${colorName}", type:type, noInfo:(state.loop == true)
     }
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "CurrentHue=${hue}%, CurrentSaturation=${saturation}%, ColorMode=${colorMode}"
 }
@@ -971,7 +973,8 @@ private void utils_sendZigbeeCommands(List<String> cmds) {
     sendHubCommand new hubitat.device.HubMultiAction(send, hubitat.device.Protocol.ZIGBEE)
 }
 private void utils_sendEvent(Map event) {
-    if (device.currentValue(event.name, true) != event.value || event.isStateChange) {
+    boolean noInfo = event.remove('noInfo') == true
+    if (!noInfo && (device.currentValue(event.name, true) != event.value || event.isStateChange)) {
         log_info "${event.descriptionText} [${event.type}]"
     } else {
         log_debug "${event.descriptionText} [${event.type}]"
