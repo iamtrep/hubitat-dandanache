@@ -690,8 +690,8 @@ Below you can find the details of each device, including the features and pairin
 * **Device Temperature Reporting**: Reports the device's temperature.
 * **Power Reporting**: Reports the power (in Watts) of L1 + L2.
 * **Energy Consumption Reporting**: Reports the energy consumption (in kWh) of L1 + L2.
-* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 * **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 
 #### Pairing Instructions
 1. If the device is already powered on, disconnect it for 20 seconds (power-cycle) before each pairing attempt.
@@ -716,8 +716,8 @@ Below you can find the details of each device, including the features and pairin
 * **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
 * **Power Reporting**: Reports the power (in Watts)
 * **LED Mode**: Configures the LED to be always on, always off, or to follow the device's power state.
-* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 * **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 
 #### Pairing Instructions
 1. Find the small reset hole under the device face plate and make sure you have at hand a pin that can fit the reset hole
