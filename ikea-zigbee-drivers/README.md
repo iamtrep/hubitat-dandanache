@@ -52,20 +52,20 @@ HPM is an app that allows you to easily install and update custom drivers and ap
 
 Once you have HPM installed, follow these steps to install the IKEA Zigbee drivers:
 
-* In the Hubitat interface, go to **Apps** and select **Hubitat Package Manager**.
-* Select **Install**, then **Search by Keywords**.
-* Enter **IKEA Zigbee drivers** in the search box and click **Next**.
-* Select **IKEA Zigbee drivers by Dan Danache** and click **Next**.
-* Select the driver(s) you need from the dropdown list and follow the install instructions.
+1. In the Hubitat interface, go to **Apps** and select **Hubitat Package Manager**.
+1. Select **Install**, then **Search by Keywords**.
+1. Enter **IKEA Zigbee drivers** in the search box and click **Next**.
+1. Select **IKEA Zigbee drivers by Dan Danache** and click **Next**.
+1. Select the driver(s) you need from the dropdown list and follow the install instructions.
 
 ### Manual Installation
 If you don"t want to use HPM, you can also install the drivers manually by importing the driver code from GitHub. Follow these steps to do so:
 
-* In the Hubitat interface, go to **Drivers Code**.
-* Click **New Driver** in the top right, then click **Import** in the top right.
-* Search below for your device, look for the **Manual install file** property and enter it in the URL field.
-* Click **Import**, then click **OK** and the code should load in the editor.
-* Click **Save** in the top right.
+1. In the Hubitat interface, go to **Drivers Code**.
+1. Click **New Driver** in the top right, then click **Import** in the top right.
+1. Search below for your device, look for the **Manual install file** property and enter it in the URL field.
+1. Click **Import**, then click **OK** and the code should load in the editor.
+1. Click **Save** in the top right.
 
 More info about installing custom drivers is available in the [Official Documentation](https://docs2.hubitat.com/en/how-to/install-custom-drivers).
 
