@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add driver for White Spectrum Lights devices (CT)
 - Add driver for Color White Spectrum Lights devices (RGB+CT)
 - Add Scenes support using Zigbee Bindings for E1810 and E2002
-- Put all devices in "identifying mode" while `configure()` is running - `@UncleAlias`
+- Put all devices in "identifying mode" while "configure()" is running - `@UncleAlias`
+- E2006: Move "Dark Mode" preference to "setIndicatorStatus()" command and "indicatorStatus" attribute - `@userLP24`
 
 ### Changed
 - Remove ICPSHC24 driver; LED drivers must use the new Dimmable Lights driver

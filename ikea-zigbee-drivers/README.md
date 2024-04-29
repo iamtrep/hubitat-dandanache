@@ -651,9 +651,8 @@ Below you can find the details of each appliance device, including the features 
 * **Particulate Matter Sensor**: Provides data for particulate matter less than 2.5 microns (PM 2.5).
 * **US AQI Score Calculation**: Calculates the US Air Quality Index (AQI) score based on the PM 2.5 value.
 * **Filter Information**: Reports filter usage (%) and filter status (options include "normal" and "replace").
-* **Configuration Options**: Allows configuration of sensor report frequency, filter lifetime, and LED status.
+* **Configuration Options**: Allows configuration of sensor report frequency, filter lifetime, and LED indicator status.
 * **Child Lock**: Enables or disables physical controls on the device for safety.
-* **Dark Mode**: Turns off the LED indicator on the device, ensuring total darkness for user comfort.
 * **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
 * **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
 
