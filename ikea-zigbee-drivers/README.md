@@ -544,11 +544,16 @@ Below you can find the details of each lighting device, including the features a
 * **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Tested devices
-* 10EU-IL-1: Tradfri LED Driver 10W
-* 30EU-IL-2: Tradfri LED Driver 30W
-* 30-IL44-1: Silverglans LED Driver 30W
-* LED2103G5: Tradfri Bulb E27 WW Globe 806lm
-* LED1842G3: Tradfri Bulb E27 WW Clear 250lm
+| Type         | Name                            |
+|--------------|---------------------------------|
+| LED2103G5    | Tradfri Bulb E27 WW Globe 806lm |
+| LED2104R3    | Tradfri Bulb GU10 WW 345lm      |
+| LED1623G12   | Tradfri Bulb E27 Opal 1000lm    |
+| 10EU-IL-1    | Tradfri LED Driver 10W          |
+| LED1842G3    | Tradfri Bulb E27 WW Clear 250lm |
+| LED1836G9    | Tradfri Bulb E27 WW 806lm       |
+| 30-IL44-1    | Silverglans LED Driver 30W      |
+| 30EU-IL-2    | Tradfri LED Driver 30W          |
 
 ### White Spectrum Light
 
@@ -573,12 +578,15 @@ Below you can find the details of each lighting device, including the features a
 * **Color Temperature and Brightness Level**: These can be set together if the "Transition time" is 0 (or left blank in the UI); if a transition time is specified, only the color temperature is applied.
 
 #### Tested devices
-* LED2101G4: Tradfri Bulb E14 WS Globe 470lm
-* LED1949C5: Tradfri Bulb E14 WS Candle Opal 470lm
-* LED2002G5: Tradfri Bulb E14 WS Globe Opal 470lm
-* LED2201G8: Tradfri Bulb E27 WS Globe 1055lm
-* LED2005R5: Tradfri Bulb GU10 WS 345lm
-* LED2106R3: Tradfri Bulb GU10 WS 345lm
+
+| Type         | Name                                  |
+|--------------|---------------------------------------|
+| LED2106R3    | Tradfri Bulb GU10 WS 345lm            |
+| LED2101G4    | Tradfri Bulb E14 WS Globe 470lm       |
+| LED1949C5    | Tradfri Bulb E14 WS Candle Opal 470lm |
+| LED2002G5    | Tradfri Bulb E14 WS Globe Opal 470lm  |
+| LED2005R5    | Tradfri Bulb GU10 WS 345lm            |
+| LED2201G8    | Tradfri Bulb E27 WS Globe 1055lm      |
 
 #### Pairing Instructions
 1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
@@ -613,17 +621,16 @@ Below you can find the details of each lighting device, including the features a
 * **Color Temperature and Brightness Level**: These can be set together if the "Transition time" is 0 (or left blank in the UI); if a transition time is specified, only the color temperature is applied.
 
 #### Tested devices
-* L2112: Ormanas LED Strip
-* LED2111G6: Tradfri Bulb E14 CWS Globe 806lm
-* LED1925G6: Tradfri Bulb E14 CWS 470lm
-* LED1923R5: Tradfri Bulb GU10 CWS 345lm
-* LED1624G9E27EU: Tradfri Bulb E27 CWS Opal 600lm
-  - All Colour Temp changes failed. No errors generated in the test. Below errors from the log all happened during config:
-  - Read Attributes Reponse: 0x400B=UNSUPPORTED_ATTRIBUTE, 0x400C=UNSUPPORTED_ATTRIBUTE (ColorTemperaturePhysicalMinMireds, ColorTemperaturePhysicalMaxMireds)
-  - Read Attributes Reponse: 0x0007=UNSUPPORTED_ATTRIBUTE, 0x0008=01 (ColorTemperatureMireds, ColorMode)
-* LED1624G9E14EU: Tradfri Bulb E14 CWS Opal 600lm
-  - Same as above
-* LED1924G9: Tradfri Bulb E27 CWS 806lm
+
+| Type           | Name                                  | Notes                    |
+|----------------|---------------------------------------|--------------------------|
+| LED1624G9E27EU | Tradfri Bulb E27 CWS Opal 600lm       | Color Temp does not work |
+| LED1924G9      | Tradfri Bulb E27 CWS 806lm            | --                       |
+| LED1923R5      | Tradfri Bulb GU10 CWS 345lm           | --                       |
+| LED1925G6      | Tradfri Bulb E14 CWS 470lm            | --                       |
+| LED1624G9E14EU | Tradfri Bulb E14 CWS Opal 600lm       | Color Temp does not work |
+| L2112          | Ormanas LED Strip                     | --                       |
+| LED2111G6      | Tradfri Bulb E14 CWS Globe 806lm      | --                       |
 
 #### Pairing Instructions
 1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
