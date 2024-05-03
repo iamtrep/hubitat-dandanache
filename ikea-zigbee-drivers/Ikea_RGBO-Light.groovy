@@ -1,12 +1,12 @@
 /**
- * IKEA Color White Spectrum Light
+ * IKEA RGB-Only Light
  *
  * @see https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/
  */
 import groovy.transform.CompileStatic
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = 'IKEA Color White Spectrum Light'
+@Field static final String DRIVER_NAME = 'IKEA RGB-Only Light'
 @Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for capability.ColorControl
@@ -29,25 +29,20 @@ import groovy.time.TimeCategory
 ]
 
 metadata {
-    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_CWS-Light.groovy') {
+    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_RGBO-Light.groovy') {
         capability 'Configuration'
         capability 'Refresh'
         capability 'Actuator'
         capability 'Switch'
         capability 'ColorControl'
-        capability 'ColorTemperature'
-        capability 'ColorMode'
         capability 'Light'
         capability 'ChangeLevel'
         capability 'SwitchLevel'
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,0B05,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E27 CWS 806lm', manufacturer:'IKEA of Sweden' // LED1924G9: 1.0.021 (117C-2802-10021655)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,0B05,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb GU10 CWS 345lm', manufacturer:'IKEA of Sweden' // LED1923R5: 1.0.021 (117C-2802-10021655)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,0B05,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E14 CWS 470lm', manufacturer:'IKEA of Sweden' // LED1925G6: 1.0.021 (117C-2802-10021655)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'ORMANAS LED Strip', manufacturer:'IKEA of Sweden' // L2112: 1.1.10 (117C-2804-01010010)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E14 CWS globe 806lm', manufacturer:'IKEA of Sweden' // LED2111G6: 1.0.38 (117C-2805-01000038)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019,1000', model:'TRADFRI bulb E27 CWS opal 600lm', manufacturer:'IKEA of Sweden' // LED1624G9E27EU: 2.3.093 (117C-2801-23086631)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019,1000', model:'TRADFRI bulb E14 CWS opal 600lm', manufacturer:'IKEA of Sweden' // LED1624G9E14EU: 2.3.093 (117C-2803-23093631)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -61,11 +56,6 @@ metadata {
     command 'startColorLoop', [[name:'Speed*', type:'ENUM', constraints: COLOR_LOOP_SPEED.keySet()]]
     command 'stopColorLoop'
     
-    // Commands for capability.ColorTemperature
-    command 'startColorTemperatureChange', [[name:'Direction*', type:'ENUM', constraints: ['up', 'down']]]
-    command 'stopColorTemperatureChange'
-    command 'shiftColorTemperature', [[name:'Direction*', type:'ENUM', constraints: ['up', 'down']]]
-    
     // Commands for capability.Brightness
     command 'shiftLevel', [[name:'Direction*', type:'ENUM', constraints: ['up', 'down']]]
     
@@ -76,10 +66,10 @@ metadata {
         input(
             name: 'helpInfo', type: 'hidden',
             title: '''
-            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_CWS-Light.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                IKEA Color White Spectrum Light <small>v5.0.0</small><br>
+            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_RGBO-Light.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
+                IKEA RGB-Only Light <small>v5.0.0</small><br>
                 <small><div>
-                • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#cws-light" target="_blank">device details</a><br>
+                • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#rgb-only-light" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
                 </div></small>
             </div>
@@ -102,30 +92,6 @@ metadata {
             description: '<small>Select what happens after a power outage.</small>',
             options: ['TURN_POWER_ON':'Turn power On', 'TURN_POWER_OFF':'Turn power Off', 'RESTORE_PREVIOUS_STATE':'Restore previous state'],
             defaultValue: 'RESTORE_PREVIOUS_STATE',
-            required: true
-        )
-        
-        // Inputs for capability.ColorTemperature
-        input(
-            name: 'colorTemperatureStep', type: 'enum',
-            title: 'Color Temperature up/down shift',
-            description: '<small>Color Temperature +/- adjust for the shiftColorTemperature() command.</small>',
-            options: ['1':'1%', '2':'2%', '5':'5%', '10':'10%', '20':'20%', '25':'25%', '33':'33%', '50':'50%'],
-            defaultValue: '25',
-            required: true
-        )
-        input(
-            name: 'colorTemperatureChangeRate', type: 'enum',
-            title: 'Color Temperature change rate',
-            description: '<small>Color Temperature +/- adjust for the startColorTemperatureChange() command.</small>',
-            options: [
-                 '10': '10% / sec - from hot to cold in 10 seconds',
-                 '20': '20% / sec - from hot to cold in 5 seconds',
-                 '33': '33% / sec - from hot to cold in 3 seconds',
-                 '50': '50% / secs - from hot to cold in 2 seconds',
-                '100': '100% / sec - from hot to cold in 1 seconds',
-            ],
-            defaultValue: '20',
             required: true
         )
         
@@ -247,22 +213,6 @@ List<String> updated(boolean auto = false) {
     // Preferences for capability.ColorControl
     cmds += zigbee.writeAttribute(0x0300, 0x000F, 0x18, 0x01)
     
-    // Preferences for capability.ColorTemperature
-    if (colorTemperatureStep == null) {
-        colorTemperatureStep = '20'
-        device.updateSetting 'colorTemperatureStep', [value:colorTemperatureStep, type:'enum']
-    }
-    log_info "🛠️ colorTemperatureStep = ${colorTemperatureStep}%"
-    
-    if (colorTemperatureChangeRate == null) {
-        colorTemperatureChangeRate = '20'
-        device.updateSetting 'colorTemperatureChangeRate', [value:colorTemperatureChangeRate, type:'enum']
-    }
-    log_info "🛠️ colorTemperatureChangeRate = ${colorTemperatureChangeRate}% / second"
-    
-    // Regardless of prestaging, enable update of color temperature without the need for the device to be turned On
-    cmds += zigbee.writeAttribute(0x0300, 0x000F, 0x18, 0x01)
-    
     // Preferences for capability.Brightness
     if (levelStep == null) {
         levelStep = '20'
@@ -381,12 +331,6 @@ void configure(boolean auto = false) {
     cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0001 0x20 0x0001 0x0258 {02} {}" // Report CurrentSaturation (uint8) at least every 10 minutes (Δ = 1%)
     cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x4000 0x21 0x0002 0xFFFE {CB0C} {}" // Report EnhancedCurrentHue (uint16) at most every 2 seconds (Δ = 5%)
     
-    // Configuration for capability.ColorTemperature
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0300 {${device.zigbeeId}} {}" // Color Control Cluster cluster
-    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0300 0x0007 0x21 0x0001 0x0258 {01} {}" // Report ColorTemperatureMireds (uint16) at least every 10 minutes (Δ = 1)
-    state.minMireds = 200  // Will be updated in refresh()
-    state.maxMireds = 600  // Will be updated in refresh()
-    
     // Configuration for capability.Brightness
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0008 {${device.zigbeeId}} {}" // Level Control cluster
     cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0008 0x0000 0x20 0x0001 0x0258 {01} {}" // Report CurrentLevel (uint8) at least every 10 minutes (Δ = 1)
@@ -430,10 +374,6 @@ void refresh(boolean auto = false) {
     
     // Refresh for capability.ColorControl
     cmds += zigbee.readAttribute(0x0300, [0x0000, 0x0001, 0x0008]) // CurrentHue, CurrentSaturation, ColorMode
-    
-    // Refresh for capability.ColorTemperature
-    cmds += zigbee.readAttribute(0x0300, [0x0007, 0x0008]) // ColorTemperatureMireds, ColorMode
-    cmds += zigbee.readAttribute(0x0300, [0x400B, 0x400C]) // ColorTemperaturePhysicalMinMireds, ColorTemperaturePhysicalMaxMireds
     
     // Refresh for capability.Brightness
     cmds += zigbee.readAttribute(0x0008, 0x0000) // CurrentLevel
@@ -546,70 +486,6 @@ private void processMultipleColorAttributes(Map msg, String type) {
         utils_sendEvent name:'colorName', value:colorName, descriptionText:"Color name is ${colorName}", type:type, noInfo:(state.loop == true)
     }
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "CurrentHue=${hue}%, CurrentSaturation=${saturation}%, ColorMode=${colorMode}"
-}
-
-// Implementation for capability.ColorTemperature
-void setColorTemperature(BigDecimal colorTemperature, BigDecimal level = -1, BigDecimal duration = 0) {
-    Integer mireds = Math.round(1000000 / colorTemperature)
-    mireds = mireds < state.minMireds ? state.minMireds : (mireds > state.maxMireds ? state.maxMireds : mireds)
-    Integer newColorTemperature = Math.round(1000000 / mireds)
-    log_debug "Setting color temperature to ${newColorTemperature}k (${mireds} mireds) during ${duration} seconds"
-    Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10 // Max transition time = 30 min
-    String payload = "${utils_payload mireds, 4} ${utils_payload dur, 4}"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {11430A ${payload}}"])
-    if (level > 0 && duration == 0) setLevel level
-}
-void startColorTemperatureChange(String direction) {
-    log_debug "Starting color temperature change ${direction}wards with a rate of ${colorTemperatureChangeRate}% / second"
-    Integer mode = direction == 'up' ? 0x03 : 0x01
-    Integer changeRate = (state.maxMireds - state.minMireds) * Integer.parseInt(colorTemperatureChangeRate) / 100
-    String payload = "${utils_payload mode, 2} ${utils_payload changeRate, 4} ${utils_payload state.minMireds, 4} ${utils_payload state.maxMireds, 4} 00 00"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {11434B ${payload}}"])
-}
-void stopColorTemperatureChange() {
-    log_debug 'Stopping color temperature change'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114347 00 00}"])
-}
-void shiftColorTemperature(String direction) {
-    log_debug "Shifting color temperature ${direction} by ${colorTemperatureStep}%"
-    Integer mode = direction == 'up' ? 0x03 : 0x01
-    Integer stepSize = (state.maxMireds - state.minMireds) * Integer.parseInt(colorTemperatureStep) / 100
-    String payload = "${utils_payload mode, 2} ${utils_payload stepSize, 4} 0000 ${utils_payload state.minMireds, 4} ${utils_payload state.maxMireds, 4} 00 00"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {11434C ${payload}}"])
-}
-private void processMultipleColorTemperatureAttributes(Map msg, String type) {
-    Map<Integer, String> attributes = [:]
-    attributes[msg.attrInt] = msg.value
-    msg.additionalAttrs?.each { attributes[Integer.parseInt(it.attrId, 16)] = it.value }
-
-    Integer mireds = -1
-    Integer temperature = -1
-    String colorMode = null
-    String colorName = null
-    attributes.each {
-        switch (it.key) {
-            case 0x0007:
-                mireds = Integer.parseInt it.value, 16
-                temperature = Math.round(1000000 / mireds)
-                break
-            case 0x0008:
-            case 0x4001:
-                colorMode = it.value == '02' ? 'CT' : 'RGB'
-                utils_sendEvent name:'colorMode', value:colorMode, descriptionText:"Color mode is ${colorMode}", type:type
-                break
-        }
-    }
-
-    if (temperature >= 0) utils_sendEvent name:'colorTemperature', value:temperature, descriptionText:"Color temperature is ${temperature}K", type:type
-
-    // Update colorName, if the case
-    if ("${colorMode ?: device.currentValue('colorMode', true)}" == 'CT') {
-        Integer colorTemperature = temperature >= 0 ? temperature : device.currentValue('colorTemperature', true)
-        colorName = convertTemperatureToGenericColorName colorTemperature
-        utils_sendEvent name:'colorName', value:colorName, descriptionText:"Color name is ${colorName}", type:type
-    }
-
-    utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "ColorTemperatureMireds=${mireds} (${temperature}K), ${colorName}), ColorMode=${colorMode}"
 }
 
 // Implementation for capability.Brightness
@@ -778,37 +654,6 @@ void parse(String description) {
             return
         case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0003] }: // Report Attribute Current X
         case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0004] }: // Report Attribute Current Y
-            return
-        
-        // Events for capability.ColorTemperature
-        // ===================================================================================================================
-        
-        // Report/Read Attributes Reponse: ColorTemperatureMireds
-        case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0007] }:
-        case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x0007] }:
-        
-        // Report/Read Attributes Reponse: ColorMode
-        case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0008] }:
-        case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x0008] }:
-        
-        // Report/Read Attributes Reponse: EnhancedColorMode
-        case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x4001] }:
-        case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x4001] }:
-            processMultipleColorTemperatureAttributes msg, type
-            return
-        
-        // Read Attributes Reponse: ColorTemperaturePhysicalMinMireds, ColorTemperaturePhysicalMaxMireds
-        case { contains it, [clusterInt:0x0300, commandInt:0x01, attrInt:0x400B] }:
-            state.minMireds = Integer.parseInt msg.value, 16
-            msg.additionalAttrs?.each { if (it.attrId == '400C') state.maxMireds = Integer.parseInt it.value, 16 }
-            utils_processedZclMessage 'Read Attributes Response', "ColorTemperaturePhysicalMinMireds=${msg.value} (${state.minMireds} mireds, ${Math.round(1000000 / state.minMireds)}K), ColorTemperaturePhysicalMaxMireds=${msg.value} (${state.maxMireds} mireds, ${Math.round(1000000 / state.maxMireds)}K)"
-            return
-        
-        // Other events that we expect but are not usefull
-        case { contains it, [clusterInt:0x0300, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=ColorTemperatureMireds, data=${msg.data}"
-            return
-        case { contains it, [clusterInt:0x0300, commandInt:0x04] }: // Write Attribute Response (0x04)
             return
         
         // Events for capability.Brightness

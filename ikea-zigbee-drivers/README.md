@@ -3,6 +3,12 @@ This document provides instructions on how to install and use custom drivers for
 
 These drivers enable advanced features and functionalities for the following devices:
 
+Lights:
+* [Dimmable Light](#dimmable-light)
+* [White Spectrum Light](#white-spectrum-light)
+* [Color White Spectrum Light](#color-white-spectrum-light)
+* [RGB-Only Light](#rgb-only-light)
+
 Remotes:
 * [Rodret Dimmer (E2201)](#rodret-dimmer-e2201)
 * [Somrig Shortcut Button (E2213)](#somrig-shortcut-button-e2213)
@@ -25,11 +31,6 @@ Outlets:
 * [Tradfri Control Outlet (E1603, E1706)](#tradfri-control-outlet-e1603-e1706)
 * [Tretakt Smart Plug (E2204)](#tretakt-smart-plug-e2204)
 
-Lights:
-* [Dimmable Light](#dimmable-light)
-* [White Spectrum Light](#white-spectrum-light)
-* [Color White Spectrum Light](#color-white-spectrum-light)
-
 Appliances:
 * [Starkvind Air Purifier (E2006)](#starkvind-air-purifier-e2006)
 
@@ -38,6 +39,7 @@ Devices from other vendors (not in HPM):
 * [Legrand Connected Outlet (741811)](#legrand-connected-outlet-741811)
 * [Philips Hue Wall Switch Module (RDM001)](#philips-hue-wall-switch-module-rdm001)
 * [Philips Hue Dimmer Switch (RWL022)](#philips-hue-dimmer-switch-rwl022)
+* [Schneider Wiser UFH (CCTFR6600)](#schneider-wiser-ufh-cctfr6600)
 * [Swann One Key Fob (SWO-KEF1PA)](#swann-one-key-fob-swo-kef1pa)
 
 Advanced features:
@@ -68,6 +70,167 @@ If you don"t want to use HPM, you can also install the drivers manually by impor
 1. Click **Save** in the top right.
 
 More info about installing custom drivers is available in the [Official Documentation](https://docs2.hubitat.com/en/how-to/install-custom-drivers).
+
+## Lights
+Below you can find the details of each lighting device, including the features and pairing instructions.
+
+### Dimmable Light
+
+| Parameter | Details |
+|-----------|-------------|
+| Icon | <img src="img/Ikea_DIM-Light.webp" style="width: 200px"> |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_DIM-Light.groovy` |
+| Since version | `5.0.0` |
+
+#### Features
+* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
+* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
+* **Brightness Control**: Allows setting of brightness level, starting/stopping brightness level change, and stepping brightness level up/down.
+* **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
+* **Pre-staging**: Allows setting of brightness level when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level.
+* **Health Status**: Indicates whether the device is online or offline.
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
+* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
+
+#### Tested devices
+| Type         | Name                            |
+|--------------|---------------------------------|
+| LED2103G5    | Tradfri Bulb E27 WW Globe 806lm |
+| LED2104R3    | Tradfri Bulb GU10 WW 345lm      |
+| LED1623G12   | Tradfri Bulb E27 Opal 1000lm    |
+| 10EU-IL-1    | Tradfri LED Driver 10W          |
+| LED1842G3    | Tradfri Bulb E27 WW Clear 250lm |
+| LED1836G9    | Tradfri Bulb E27 WW 806lm       |
+| 30-IL44-1    | Silverglans LED Driver 30W      |
+| 30EU-IL-2    | Tradfri LED Driver 30W          |
+
+#### Pairing Instructions
+1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. Put the light in pairing mode ([see video](https://www.youtube.com/watch?v=npxOrPxVfe0)).
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. You're all set! Enjoy using your Dimmable Light.
+
+
+### White Spectrum Light
+
+| Parameter | Details |
+|-----------|-------------|
+| Icon | <img src="img/Ikea_WS-Light.webp" style="width: 200px"> |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_WS-Light.groovy` |
+| Since version | `5.0.0` |
+
+#### Features
+* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
+* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
+* **Brightness Control**: Allows setting of brightness level, starting/stopping brightness level change, and stepping brightness level up/down.
+* **Color Temperature (CT) Control**: Enables setting of color temperature, starting/stopping color temperature change, and stepping color temperature up/down.
+* **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
+* **Pre-staging**: Allows setting of brightness level and color temperature when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level/temperature.
+* **Health Status**: Indicates whether the device is online or offline.
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
+* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
+
+#### Known Issues
+* **Color Temperature and Brightness Level**: These can be set together if the "Transition time" is 0 (or left blank in the UI); if a transition time is specified, only the color temperature is applied.
+
+#### Tested devices
+
+| Type         | Name                                  |
+|--------------|---------------------------------------|
+| LED2106R3    | Tradfri Bulb GU10 WS 345lm            |
+| LED2101G4    | Tradfri Bulb E14 WS Globe 470lm       |
+| LED1949C5    | Tradfri Bulb E14 WS Candle Opal 470lm |
+| LED2002G5    | Tradfri Bulb E14 WS Globe Opal 470lm  |
+| LED2005R5    | Tradfri Bulb GU10 WS 345lm            |
+| LED2201G8    | Tradfri Bulb E27 WS Globe 1055lm      |
+
+#### Pairing Instructions
+1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. Put the light in pairing mode ([see video](https://www.youtube.com/watch?v=npxOrPxVfe0)).
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. You're all set! Enjoy using your White Spectrum Light.
+
+
+### Color White Spectrum Light
+
+| Parameter | Details |
+|-----------|-------------|
+| Icon | <img src="img/Ikea_CWS-Light.webp" style="width: 200px"> |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_CWS-Light.groovy` |
+| Since version | `5.0.0` |
+
+#### Features
+* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
+* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
+* **Brightness Control**: Allows setting of brightness level, starting/stopping brightness level change, and stepping brightness level up/down.
+* **Color Temperature (CT) Control**: Enables setting of color temperature, starting/stopping color temperature change, and stepping color temperature up/down.
+* **Color (RGB) Control**: Provides options to set color hue and/or saturation, and display color name and color mode.
+* **Color Loop**: Initiates cycling of the color hue until stopped.
+* **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
+* **Pre-staging**: Allows setting of brightness level, color temperature, and color when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level/temperature/color.
+* **Health Status**: Indicates whether the device is online or offline.
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
+* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
+
+#### Known Issues
+* **Color Temperature and Brightness Level**: These can be set together if the "Transition time" is 0 (or left blank in the UI); if a transition time is specified, only the color temperature is applied.
+
+#### Tested devices
+
+| Type           | Name                              |
+|----------------|-----------------------------------|
+| LED1924G9      | Tradfri Bulb E27 CWS 806lm        |
+| LED1923R5      | Tradfri Bulb GU10 CWS 345lm       |
+| LED1925G6      | Tradfri Bulb E14 CWS 470lm        |
+| L2112          | Ormanas LED Strip                 |
+| LED2111G6      | Tradfri Bulb E14 CWS Globe 806lm  |
+
+#### Pairing Instructions
+1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. Put the light in pairing mode ([see video](https://www.youtube.com/watch?v=npxOrPxVfe0)).
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. You're all set! Enjoy using your Color White Spectrum Light.
+
+
+### RGB-Only Light
+
+Bulbs of this type lack native support for color temperature control. Their hardware is exclusively equipped with red, green, and blue LEDs, and does not include white light LEDs. As a result, they are unable to natively produce variations in light temperature.
+
+| Parameter | Details |
+|-----------|-------------|
+| Icon | <img src="img/Ikea_RGBO-Light.webp" style="width: 200px"> |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_RGBO-Light.groovy` |
+| Since version | `5.0.0` |
+
+#### Features
+* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
+* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
+* **Brightness Control**: Allows setting of brightness level, starting/stopping brightness level change, and stepping brightness level up/down.
+* **Color (RGB) Control**: Provides options to set color hue and/or saturation, and display color name and color mode.
+* **Color Loop**: Initiates cycling of the color hue until stopped.
+* **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
+* **Pre-staging**: Allows setting of brightness level and color when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level/color.
+* **Health Status**: Indicates whether the device is online or offline.
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
+* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
+
+#### Tested devices
+
+| Type           | Name                             |
+|----------------|----------------------------------|
+| LED1624G9E27EU | Tradfri Bulb E27 CWS Opal 600lm  |
+| LED1624G9E14EU | Tradfri Bulb E14 CWS Opal 600lm  |
+
+#### Pairing Instructions
+1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. Put the light in pairing mode ([see video](https://www.youtube.com/watch?v=npxOrPxVfe0)).
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. You're all set! Enjoy using your RGB-Only Light.
+
 
 ## Remotes
 Below you can find the details of each remote device, including the features and pairing instructions.
@@ -522,124 +685,6 @@ Below you can find the details of each outlet device, including the features and
 1. You're all set! Enjoy using your Tretakt Smart Plug.
 
 
-## Lights
-Below you can find the details of each lighting device, including the features and pairing instructions.
-
-### Dimmable Light
-
-| Parameter | Details |
-|-----------|-------------|
-| Icon | <img src="img/Ikea_DIM-Light.webp" style="width: 200px"> |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_DIM-Light.groovy` |
-| Since version | `5.0.0` |
-
-#### Features
-* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
-* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
-* **Brightness Control**: Allows setting of brightness level, starting/stopping brightness level change, and stepping brightness level up/down.
-* **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
-* **Pre-staging**: Allows setting of brightness level when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level.
-* **Health Status**: Indicates whether the device is online or offline.
-* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
-* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
-
-#### Tested devices
-| Type         | Name                            |
-|--------------|---------------------------------|
-| LED2103G5    | Tradfri Bulb E27 WW Globe 806lm |
-| LED2104R3    | Tradfri Bulb GU10 WW 345lm      |
-| LED1623G12   | Tradfri Bulb E27 Opal 1000lm    |
-| 10EU-IL-1    | Tradfri LED Driver 10W          |
-| LED1842G3    | Tradfri Bulb E27 WW Clear 250lm |
-| LED1836G9    | Tradfri Bulb E27 WW 806lm       |
-| 30-IL44-1    | Silverglans LED Driver 30W      |
-| 30EU-IL-2    | Tradfri LED Driver 30W          |
-
-### White Spectrum Light
-
-| Parameter | Details |
-|-----------|-------------|
-| Icon | <img src="img/Ikea_WS-Light.webp" style="width: 200px"> |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_WS-Light.groovy` |
-| Since version | `5.0.0` |
-
-#### Features
-* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
-* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
-* **Brightness Control**: Allows setting of brightness level, starting/stopping brightness level change, and stepping brightness level up/down.
-* **Color Temperature (CT) Control**: Enables setting of color temperature, starting/stopping color temperature change, and stepping color temperature up/down.
-* **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
-* **Pre-staging**: Allows setting of brightness level and color temperature when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level/temperature.
-* **Health Status**: Indicates whether the device is online or offline.
-* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
-* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
-
-#### Known Issues
-* **Color Temperature and Brightness Level**: These can be set together if the "Transition time" is 0 (or left blank in the UI); if a transition time is specified, only the color temperature is applied.
-
-#### Tested devices
-
-| Type         | Name                                  |
-|--------------|---------------------------------------|
-| LED2106R3    | Tradfri Bulb GU10 WS 345lm            |
-| LED2101G4    | Tradfri Bulb E14 WS Globe 470lm       |
-| LED1949C5    | Tradfri Bulb E14 WS Candle Opal 470lm |
-| LED2002G5    | Tradfri Bulb E14 WS Globe Opal 470lm  |
-| LED2005R5    | Tradfri Bulb GU10 WS 345lm            |
-| LED2201G8    | Tradfri Bulb E27 WS Globe 1055lm      |
-
-#### Pairing Instructions
-1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
-1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
-1. Put the light in pairing mode.
-1. Return to the pairing page, provide a name for your device, and assign it to a room.
-1. You're all set! Enjoy using your White Spectrum Light.
-
-
-### Color White Spectrum Light
-
-| Parameter | Details |
-|-----------|-------------|
-| Icon | <img src="img/Ikea_CWS-Light.webp" style="width: 200px"> |
-| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_CWS-Light.groovy` |
-| Since version | `5.0.0` |
-
-#### Features
-* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
-* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
-* **Brightness Control**: Allows setting of brightness level, starting/stopping brightness level change, and stepping brightness level up/down.
-* **Color Temperature (CT) Control**: Enables setting of color temperature, starting/stopping color temperature change, and stepping color temperature up/down.
-* **Color (RGB) Control**: Provides options to set color hue and/or saturation, and display color name and color mode.
-* **Color Loop**: Initiates cycling of the color hue until stopped.
-* **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
-* **Pre-staging**: Allows setting of brightness level, color temperature, and color when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level/temperature/color.
-* **Health Status**: Indicates whether the device is online or offline.
-* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
-* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
-
-#### Known Issues
-* **Color Temperature and Brightness Level**: These can be set together if the "Transition time" is 0 (or left blank in the UI); if a transition time is specified, only the color temperature is applied.
-
-#### Tested devices
-
-| Type           | Name                                  | Notes                    |
-|----------------|---------------------------------------|--------------------------|
-| LED1624G9E27EU | Tradfri Bulb E27 CWS Opal 600lm       | Color Temp does not work |
-| LED1924G9      | Tradfri Bulb E27 CWS 806lm            | --                       |
-| LED1923R5      | Tradfri Bulb GU10 CWS 345lm           | --                       |
-| LED1925G6      | Tradfri Bulb E14 CWS 470lm            | --                       |
-| LED1624G9E14EU | Tradfri Bulb E14 CWS Opal 600lm       | Color Temp does not work |
-| L2112          | Ormanas LED Strip                     | --                       |
-| LED2111G6      | Tradfri Bulb E14 CWS Globe 806lm      | --                       |
-
-#### Pairing Instructions
-1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
-1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
-1. Put the light in pairing mode.
-1. Return to the pairing page, provide a name for your device, and assign it to a room.
-1. You're all set! Enjoy using your White Spectrum Light.
-
-
 ## Appliances
 Below you can find the details of each appliance device, including the features and pairing instructions.
 
@@ -786,6 +831,29 @@ Below you can find the details of each device, including the features and pairin
 1. Return to the pairing page, provide a name for your device, and assign it to a room.
 1. You're all set! Enjoy using your Philips Hue Dimmer Switch.
 
+
+### Schneider Wiser UFH (CCTFR6600)
+
+This device is extremely chatty as it polls the Hubitat hub for the status of each of the 6 zones every 1 minute. If no reponse is received from the hub for 10 minutes (10 failed polls), the device enters a "lost-connection" mode and turns all 6 zones to "On".
+
+**Warning**: The driver code for this device is still a work-in-progess.
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="img/Schneider_CCTFR6600.webp" style="width: 200px"> |
+| Product Link | [Wiser Underfloor Heating Connection Strip](https://www.productinfo.schneider-electric.com/wiser_home/viewer?docidentity=WiserUnderfloorHeatingConnectionStr-EE42C909&lang=en) |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Schneider_CCTFR6600.groovy` |
+| Since version | `5.0.0` |
+
+#### Features
+* **Command Controls**: Includes "On" and "Off" for each of the 6 zones.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+
+#### Pairing Instructions
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. Press the connect button for at least 5 seconds; upon release, the LED light on the first button will start blinking green.
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. You're all set! Enjoy using your Schneider Wiser UFH.
 
 ### Swann One Key Fob (SWO-KEF1PA)
 

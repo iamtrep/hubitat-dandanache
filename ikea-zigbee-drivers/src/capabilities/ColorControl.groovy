@@ -8,7 +8,7 @@ capability 'ColorControl'
 // Fields for capability.ColorControl
 
 @Field static final Map<String, Integer> COLOR_LOOP_SPEED = [
-    'swift':3, 'quick':5, 'moderate':10, 'leisurely':30, 'sluggish':60, 'snail\'s pace':180, 'glacial':300, 'stationary':600
+    'swift':5, 'quick':10, 'moderate':20, 'leisurely':30, 'sluggish':60, 'snail\'s pace':180, 'glacial':300, 'stationary':600
 ]
 {{/ @fields }}
 {{!--------------------------------------------------------------------------}}
@@ -56,8 +56,8 @@ void startColorLoop(String speed) {
     state.loop = true
 }
 void stopColorLoop() {
-    log_info "Stopped color loop"
-    String payload = "0F 00 01 0000 0000 00 00"
+    log_info 'Stopped color loop'
+    String payload = '0F 00 01 0000 0000 00 00'
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114344 ${payload}}"]) // Color Loop Set
     state.remove 'loop'
 }
