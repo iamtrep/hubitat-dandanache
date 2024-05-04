@@ -185,6 +185,7 @@ Below you can find the details of each lighting device, including the features a
 | LED1923R5      | Tradfri Bulb GU10 CWS 345lm       |
 | LED1925G6      | Tradfri Bulb E14 CWS 470lm        |
 | L2112          | Ormanas LED Strip                 |
+| LED2110R3      | Tradfri Bulb GU10 CWS 345lm       |
 | LED2111G6      | Tradfri Bulb E14 CWS Globe 806lm  |
 
 #### Pairing Instructions
