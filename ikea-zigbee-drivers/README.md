@@ -75,6 +75,10 @@ More info about installing custom drivers is available in the [Official Document
 Below you can find the details of each lighting device, including the features and pairing instructions.
 
 ### Dimmable Light
+These products come equipped with the following features:
+* **Wireless Dimming**: Provides the flexibility to adjust the brightness level from a minimal 0% to a maximum 100%, catering to your specific lighting needs.
+
+Also includes the 10W and 30W LED drivers.
 
 | Parameter | Details |
 |-----------|-------------|
@@ -113,6 +117,11 @@ Below you can find the details of each lighting device, including the features a
 
 
 ### White Spectrum Light
+These products have the following features:
+These products come equipped with the following features:
+* **Wireless Dimming**: Provides the flexibility to adjust the brightness level from a minimal 0% to a maximum 100%, catering to your specific lighting needs.
+
+* **Adjustable White Tones**: Offers the ability to modify the color temperature within a range of 2200 Kelvin (which emits a warm glow) to 4000 Kelvin (which produces a cool white light), allowing you to create the perfect ambiance.
 
 | Parameter | Details |
 |-----------|-------------|
@@ -154,6 +163,12 @@ Below you can find the details of each lighting device, including the features a
 
 
 ### Color White Spectrum Light
+These products come equipped with the following features:
+* **Wireless Dimming**: Provides the flexibility to adjust the brightness level from a minimal 0% to a maximum 100%, catering to your specific lighting needs.
+
+* **Adjustable White Tones**: Offers the ability to modify the color temperature within a range of 2200 Kelvin (which emits a warm glow) to 4000 Kelvin (which produces a cool white light), allowing you to create the perfect ambiance.
+
+* **Adjustable Color**: Grants comprehensive control over the light color by manipulating the hue, saturation, and level (HSL), enabling you to personalize your lighting experience.
 
 | Parameter | Details |
 |-----------|-------------|
@@ -197,6 +212,10 @@ Below you can find the details of each lighting device, including the features a
 
 
 ### RGB-Only Light
+These products come equipped with the following features:
+* **Wireless Dimming**: Provides the flexibility to adjust the brightness level from a minimal 0% to a maximum 100%, catering to your specific lighting needs.
+
+* **Adjustable Color**: Grants comprehensive control over the light color by manipulating the hue, saturation, and level (HSL), enabling you to personalize your lighting experience.
 
 Bulbs of this type lack native support for color temperature control. Their hardware is exclusively equipped with red, green, and blue LEDs, and does not include white light LEDs. As a result, they are unable to natively produce variations in light temperature.
 
