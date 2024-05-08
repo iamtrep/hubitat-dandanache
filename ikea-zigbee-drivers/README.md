@@ -230,7 +230,6 @@ Bulbs of this type lack native support for color temperature control. Their hard
 * **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
 * **Brightness Control**: Allows setting of brightness level, starting/stopping brightness level change, and stepping brightness level up/down.
 * **Color (RGB) Control**: Provides options to set color hue and/or saturation, and display color name and color mode.
-* **Color Loop**: Initiates cycling of the color hue until stopped.
 * **Brightness Configuration**: Configures brightness level when turned on (options include "Always the same fixed value", and "Restore last level").
 * **Pre-staging**: Allows setting of brightness level and color when the lights are off (and they stay off). When the lights are turned on, they will start at the specified level/color.
 * **Health Status**: Indicates whether the device is online or offline.
