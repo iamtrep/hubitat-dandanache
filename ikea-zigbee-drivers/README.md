@@ -102,11 +102,11 @@ Also includes the 10W and 30W LED drivers.
 | LED2103G5    | Tradfri Bulb E27 WW Globe 806lm |
 | LED2104R3    | Tradfri Bulb GU10 WW 345lm      |
 | LED1623G12   | Tradfri Bulb E27 Opal 1000lm    |
-| 10EU-IL-1    | Tradfri LED Driver 10W          |
 | LED1842G3    | Tradfri Bulb E27 WW Clear 250lm |
 | LED1836G9    | Tradfri Bulb E27 WW 806lm       |
-| 30-IL44-1    | Silverglans LED Driver 30W      |
-| 30EU-IL-2    | Tradfri LED Driver 30W          |
+| 10EU-IL-1    | Tradfri LED Driver (10W)        |
+| 30-IL44-1    | Silverglans LED Driver (30W)    |
+| 30EU-IL-2    | Tradfri LED Driver (30W)        |
 
 #### Pairing Instructions
 1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
