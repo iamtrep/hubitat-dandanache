@@ -10,7 +10,6 @@ import groovy.transform.Field
 @Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for capability.ColorControl
-
 @Field static final Map<String, Integer> COLOR_LOOP_SPEED = [
     'swift':5, 'quick':10, 'moderate':20, 'leisurely':30, 'sluggish':60, 'snail\'s pace':180, 'glacial':300, 'stationary':600
 ]
@@ -779,6 +778,7 @@ void parse(String description) {
             return
         case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0003] }: // Report Attribute Current X
         case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0004] }: // Report Attribute Current Y
+        case { contains it, [clusterInt:0x0300, commandInt:0x04] }: // Write Attribute Response (0x04)
             return
         
         // Events for capability.ColorTemperature

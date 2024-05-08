@@ -34,6 +34,8 @@ device:
         powerOnBehavior: true
         onWithTimedOff: true
     - file: src/capabilities/ColorControl.groovy
+      params:
+        colorLoop: true
     - file: src/capabilities/ColorTemperature.groovy
     - file: src/capabilities/Brightness.groovy
     - file: src/capabilities/HealthCheck.groovy

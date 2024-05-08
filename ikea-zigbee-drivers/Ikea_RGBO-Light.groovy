@@ -9,12 +9,6 @@ import groovy.transform.Field
 @Field static final String DRIVER_NAME = 'IKEA RGB-Only Light'
 @Field static final String DRIVER_VERSION = '5.0.0'
 
-// Fields for capability.ColorControl
-
-@Field static final Map<String, Integer> COLOR_LOOP_SPEED = [
-    'swift':5, 'quick':10, 'moderate':20, 'leisurely':30, 'sluggish':60, 'snail\'s pace':180, 'glacial':300, 'stationary':600
-]
-
 // Fields for capability.HealthCheck
 import groovy.time.TimeCategory
 
@@ -51,10 +45,6 @@ metadata {
     // Commands for capability.Switch
     command 'toggle'
     command 'onWithTimedOff', [[name:'On duration*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
-    
-    // Commands for capability.ColorControl
-    command 'startColorLoop', [[name:'Speed*', type:'ENUM', constraints: COLOR_LOOP_SPEED.keySet()]]
-    command 'stopColorLoop'
     
     // Commands for capability.Brightness
     command 'shiftLevel', [[name:'Direction*', type:'ENUM', constraints: ['up', 'down']]]
@@ -433,19 +423,6 @@ void setSaturation(BigDecimal saturation) {
     String payload = "${utils_payload newSaturation, 2} 0000 00 00"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114303 ${payload}}"]) // Move to Saturation
 }
-void startColorLoop(String speed) {
-    Integer seconds = COLOR_LOOP_SPEED[speed] ?: 30
-    log_info "Starting color loop at ${speed} speed (${seconds} sec per loop)"
-    String payload = "0F 01 01 ${utils_payload seconds, 4} 0000 00 00"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114344 ${payload}}"]) // Color Loop Set
-    state.loop = true
-}
-void stopColorLoop() {
-    log_info 'Stopped color loop'
-    String payload = '0F 00 01 0000 0000 00 00'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {114344 ${payload}}"]) // Color Loop Set
-    state.remove 'loop'
-}
 private void processMultipleColorAttributes(Map msg, String type) {
     Map<Integer, String> attributes = [:]
     attributes[msg.attrInt] = msg.value
@@ -475,7 +452,7 @@ private void processMultipleColorAttributes(Map msg, String type) {
         }
     }
 
-    if (hue >= 0) utils_sendEvent name:'hue', value:hue, descriptionText:"Color hue is ${hue}%", type:type, noInfo:(state.loop == true)
+    if (hue >= 0) utils_sendEvent name:'hue', value:hue, descriptionText:"Color hue is ${hue}%", type:type
     if (saturation >= 0) utils_sendEvent name:'saturation', value:saturation, descriptionText:"Color saturation is ${saturation}%", type:type
 
     // Update colorName, if the case
@@ -483,7 +460,7 @@ private void processMultipleColorAttributes(Map msg, String type) {
         Integer colorHue = hue >= 0 ? hue : device.currentValue('hue', true)
         Integer colorSaturation = saturation >= 0 ? saturation : device.currentValue('saturation', true)
         String colorName = convertHueToGenericColorName colorHue, colorSaturation
-        utils_sendEvent name:'colorName', value:colorName, descriptionText:"Color name is ${colorName}", type:type, noInfo:(state.loop == true)
+        utils_sendEvent name:'colorName', value:colorName, descriptionText:"Color name is ${colorName}", type:type
     }
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "CurrentHue=${hue}%, CurrentSaturation=${saturation}%, ColorMode=${colorMode}"
 }
@@ -654,6 +631,7 @@ void parse(String description) {
             return
         case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0003] }: // Report Attribute Current X
         case { contains it, [clusterInt:0x0300, commandInt:0x0A, attrInt:0x0004] }: // Report Attribute Current Y
+        case { contains it, [clusterInt:0x0300, commandInt:0x04] }: // Write Attribute Response (0x04)
             return
         
         // Events for capability.Brightness
