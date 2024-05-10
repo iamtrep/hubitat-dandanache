@@ -166,7 +166,7 @@ void configure(boolean auto = false) {
     state.lastRx = 0
     state.lastCx = DRIVER_VERSION
     
-    // Configuration for devices.E1743
+    // Configuration for devices.Ikea_E1743
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0008 {${device.zigbeeId}} {}" // Level Control cluster
     

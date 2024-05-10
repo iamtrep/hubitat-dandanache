@@ -10,6 +10,7 @@ Lights:
 * [RGB-Only Light](#rgb-only-light)
 
 Remotes:
+* [Knycklan Water Valve Remote (E1841)](#knycklan-water-valve-remote-e1841)
 * [Rodret Dimmer (E2201)](#rodret-dimmer-e2201)
 * [Somrig Shortcut Button (E2213)](#somrig-shortcut-button-e2213)
 * [Styrbar Remote Control N2 (E2002)](#styrbar-remote-control-n2-e2002)
@@ -32,6 +33,7 @@ Outlets:
 * [Tretakt Smart Plug (E2204)](#tretakt-smart-plug-e2204)
 
 Appliances:
+* [Knycklan Water Valve Receiver (E1842)](#knycklan-water-valve-receiver-e1842)
 * [Starkvind Air Purifier (E2006)](#starkvind-air-purifier-e2006)
 
 Devices from other vendors (not in HPM):
@@ -97,16 +99,19 @@ Also includes the 10W and 30W LED drivers.
 * **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Tested devices
-| Type         | Name                            |
-|--------------|---------------------------------|
-| LED2103G5    | Tradfri Bulb E27 WW Globe 806lm |
-| LED2104R3    | Tradfri Bulb GU10 WW 345lm      |
-| LED1623G12   | Tradfri Bulb E27 Opal 1000lm    |
-| LED1842G3    | Tradfri Bulb E27 WW Clear 250lm |
-| LED1836G9    | Tradfri Bulb E27 WW 806lm       |
-| 10EU-IL-1    | Tradfri LED Driver (10W)        |
-| 30-IL44-1    | Silverglans LED Driver (30W)    |
-| 30EU-IL-2    | Tradfri LED Driver (30W)        |
+| Type           | Name                            |
+|----------------|---------------------------------|
+| LED2103G5      | Tradfri Bulb E27 WW Globe 806lm |
+| LED2104R3      | Tradfri Bulb GU10 WW 345lm      |
+| LED1623G12     | Tradfri Bulb E27 Opal 1000lm    |
+| LED1649C5E14EU | Tradfri Bulb E14 W op/ch 400lm  |
+| LED1934G3      | Tradfri Bulb E27 WW Clear 250lm |
+| LED1837R5      | Tradfri Bulb GU10 WW 400lm      |
+| LED1842G3      | Tradfri Bulb E27 WW Clear 250lm |
+| LED1836G9      | Tradfri Bulb E27 WW 806lm       |
+| 10EU-IL-1      | Tradfri LED Driver (10W)        |
+| 30-IL44-1      | Silverglans LED Driver (30W)    |
+| 30EU-IL-2      | Tradfri LED Driver (30W)        |
 
 #### Pairing Instructions
 1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
@@ -151,8 +156,10 @@ These products come equipped with the following features:
 | LED2101G4    | Tradfri Bulb E14 WS Globe 470lm       |
 | LED1949C5    | Tradfri Bulb E14 WS Candle Opal 470lm |
 | LED2002G5    | Tradfri Bulb E14 WS Globe Opal 470lm  |
+| LED2003G10   | Tradfri Bulb E27 WS Globe Opal 1055lm |
 | LED2005R5    | Tradfri Bulb GU10 WS 345lm            |
 | LED2201G8    | Tradfri Bulb E27 WS Globe 1055lm      |
+| LED1835C6    | Tradfri Bulb E14 WS 470lm             |
 
 #### Pairing Instructions
 1. If the device is already powered on, power it off for 20 seconds (power-cycle) before each pairing attempt.
@@ -253,6 +260,32 @@ Bulbs of this type lack native support for color temperature control. Their hard
 
 ## Remotes
 Below you can find the details of each remote device, including the features and pairing instructions.
+
+### Knycklan Water Valve Remote (E1841)
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="img/Ikea_E1841.webp" style="width: 200px"> |
+| Product Code | `204.257.24` |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E1841.groovy` |
+| Tested firmwares | `2.3.019` |
+| Since version | `5.0.0` |
+
+#### Features
+* **Button Events**: Supports "Push", "Hold", and "Release" events for both buttons.
+* **Battery Report**: Provides a percentage-based report on the current battery level.
+* **Health Status**: Indicates the operational status of the device, showing whether it's "online" or "offline".
+* **Zigbee Device Control**: Enables direct control of On/Off and Brightness settings for Zigbee devices.
+
+#### Pairing Instructions
+1. Using a small screwdriver, open the battery compartiment and you should see the small pair button (🔗).
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. **Important**: Move closer to your Hubitat hub and press the pair button in the battery compartment **four times within five seconds**.
+1. **Important**: Immediately after the device LED starts blinking red, position the device as close as possible to your Hubitat hub for **at least 30 seconds** (wait until the LED stops blinking and turns off).
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. Close the device battery compartiment.
+1. You're all set! Enjoy using your Knycklan Water Valve Remote.
+
 
 ### Rodret Dimmer (E2201)
 
@@ -707,6 +740,30 @@ Below you can find the details of each outlet device, including the features and
 ## Appliances
 Below you can find the details of each appliance device, including the features and pairing instructions.
 
+### Knycklan Water Valve Receiver (E1842)
+
+| Parameter | Details |
+|-----------|-------------|
+| Product Image | <img src="img/Ikea_E1842.webp" style="width: 200px"> |
+| Product Code | `204.257.24` |
+| Manual install file | `https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E1842.groovy` |
+| Tested firmwares | `2.3.024` |
+| Since version | `5.0.0` |
+
+#### Features
+* **Command Controls**: Includes "On", "Off", "Toggle", and "On with Timed Off" commands.
+* **Power Outage Configuration**: Configures the state after a power outage (options include "Power On", "Power Off", and "Restore previous state").
+* **Health Status**: Indicates whether the device is online or offline.
+* **Device State Refresh**: Refreshes the device state on demand for real-time status updates.
+* **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
+
+#### Pairing Instructions
+1. In the Hubitat interface, navigate to **Devices**, click **Add Device** in the top right corner, select **Zigbee**, and then click **Start Zigbee Pairing**.
+1. Press and hold the On and Off buttons simultaneously for 5 seconds.
+1. Return to the pairing page, provide a name for your device, and assign it to a room.
+1. You're all set! Enjoy using your Knycklan Water Valve Receiver.
+
+
 ### Starkvind Air Purifier (E2006)
 
 | Parameter | Details |
@@ -736,7 +793,6 @@ Below you can find the details of each appliance device, including the features 
 1. Return to the pairing page, provide a name for your device, and assign it to a room.
 1. Put back the lid and fix it in place.
 1. You're all set! Enjoy using your Starkvind Air Purifier.
-
 
 ## Devices from other vendors
 Below you can find the details of each device, including the features and pairing instructions.

@@ -1,12 +1,12 @@
 /**
- * IKEA Dimmable Light
+ * IKEA Knycklan Water Valve Remote (E1841)
  *
  * @see https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/
  */
 import groovy.transform.CompileStatic
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = 'IKEA Dimmable Light'
+@Field static final String DRIVER_NAME = 'IKEA Knycklan Water Valve Remote (E1841)'
 @Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for capability.HealthCheck
@@ -14,49 +14,31 @@ import groovy.time.TimeCategory
 
 @Field static final Map<String, String> HEALTH_CHECK = [
     'schedule': '0 0 0/1 ? * * *', // Health will be checked using this cron schedule
-    'thereshold': '3600' // When checking, mark the device as offline if no Zigbee message was received in the last 3600 seconds
+    'thereshold': '43200' // When checking, mark the device as offline if no Zigbee message was received in the last 43200 seconds
 ]
 
-// Fields for capability.ZigbeeGroups
-@Field static final Map<String, String> GROUPS = [
-    '9900':'Alfa', '9901':'Bravo', '9902':'Charlie', '9903':'Delta', '9904':'Echo', '9905':'Foxtrot', '9906':'Golf', '9907':'Hotel', '9908':'India', '9909':'Juliett', '990A':'Kilo', '990B':'Lima', '990C':'Mike', '990D':'November', '990E':'Oscar', '990F':'Papa', '9910':'Quebec', '9911':'Romeo', '9912':'Sierra', '9913':'Tango', '9914':'Uniform', '9915':'Victor', '9916':'Whiskey', '9917':'Xray', '9918':'Yankee', '9919':'Zulu'
+// Fields for capability.PushableButton
+@Field static final Map<String, List<String>> BUTTONS = [
+    'ON': ['1', '💧'],
+    'OFF': ['2', '🩸'],
 ]
 
 metadata {
-    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_DIM-Light.groovy') {
+    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E1841.groovy') {
         capability 'Configuration'
         capability 'Refresh'
-        capability 'Actuator'
-        capability 'Switch'
-        capability 'Light'
-        capability 'ChangeLevel'
-        capability 'SwitchLevel'
+        capability 'Battery'
         capability 'HealthCheck'
+        capability 'HoldableButton'
         capability 'PowerSource'
+        capability 'PushableButton'
+        capability 'ReleasableButton'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E27 WW globe 806lm', manufacturer:'IKEA of Sweden' // LED2103G5: 1.0.36 (117C-2100-01000036)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb GU10 WW 345lm8', manufacturer:'IKEA of Sweden' // LED2104R3: 1.0.36 (117C-2100-01000036)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0005,0019,0020,1000', model:'TRADFRI bulb E27 opal 1000lm', manufacturer:'IKEA of Sweden' // LED1623G12: 2.3.094 (117C-2101-23094631)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0005,0019,0020,1000', model:'TRADFRI bulb E14 W op/ch 400lm', manufacturer:'IKEA of Sweden' // LED1649C5E14EU: 2.3.094 (117C-2101-23094631)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'TRADFRIbulbE27WWclear250lm', manufacturer:'IKEA of Sweden' // LED1934G3: 1.0.010 (117C-2102-00010010)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0B05,1000', outClusters:'0005,0019,0020,1000', model:'TRADFRI Driver 10W', manufacturer:'IKEA of Sweden' // 10EU-IL-1: 1.2.245 (117C-4101-12245572)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0005,0019,0020,1000', model:'TRADFRI Driver 10W', manufacturer:'IKEA of Sweden' // 10EU-IL-1: 2.3.086 (117C-4101-23086631)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0005,0019,0020,1000', model:'TRADFRI bulb GU10 WW 400lm', manufacturer:'IKEA of Sweden' // LED1837R5: 2.3.093 (117C-4103-23093631)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0005,0019,0020,1000', model:'TRADFRI bulb E27 WW clear 250lm', manufacturer:'IKEA of Sweden' // LED1842G3: 2.3.093 (117C-4103-23093631)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0005,0019,0020,1000', model:'TRADFRI bulb E27 WW 806lm', manufacturer:'IKEA of Sweden' // LED1836G9: 2.3.094 (117C-4103-23093631)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'SILVERGLANS IP44 LED driver', manufacturer:'IKEA of Sweden' // 30-IL44-1: 1.0.021 (117C-4104-00010021)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'TRADFRI Driver 30W', manufacturer:'IKEA of Sweden' // 30EU-IL-2: 1.0.002 (117C-4109-00010002)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0009,0020,1000', outClusters:'0003,0004,0006,0008,0019,0102,1000', model:'KNYCKLAN Open/Close remote', manufacturer:'IKEA of Sweden' // Firmware: 2.3.019 (117C-11C9-23019631)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
     }
-    
-    // Commands for capability.Switch
-    command 'toggle'
-    command 'onWithTimedOff', [[name:'On duration*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
-    
-    // Commands for capability.Brightness
-    command 'shiftLevel', [[name:'Direction*', type:'ENUM', constraints: ['up', 'down']]]
     
     // Commands for capability.FirmwareUpdate
     command 'updateFirmware'
@@ -65,10 +47,10 @@ metadata {
         input(
             name: 'helpInfo', type: 'hidden',
             title: '''
-            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_DIM-Light.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                IKEA Dimmable Light <small>v5.0.0</small><br>
+            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E1841.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
+                IKEA Knycklan Water Valve Remote (E1841) <small>v5.0.0</small><br>
                 <small><div>
-                • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#dimmable-light" target="_blank">device details</a><br>
+                • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#knycklan-water-valve-remote-e1841" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
                 </div></small>
             </div>
@@ -83,94 +65,12 @@ metadata {
             required: true
         )
         
-        // Inputs for capability.Switch
-        input(
-            name: 'powerOnBehavior',
-            type: 'enum',
-            title: 'Power On behaviour',
-            description: '<small>Select what happens after a power outage.</small>',
-            options: ['TURN_POWER_ON':'Turn power On', 'TURN_POWER_OFF':'Turn power Off', 'RESTORE_PREVIOUS_STATE':'Restore previous state'],
-            defaultValue: 'RESTORE_PREVIOUS_STATE',
-            required: true
-        )
-        
-        // Inputs for capability.Brightness
-        input(
-            name: 'levelStep', type: 'enum',
-            title: 'Brightness up/down shift',
-            description: '<small>Brightness +/- adjust for the shiftLevel() command.</small>',
-            options: ['1':'1%', '2':'2%', '5':'5%', '10':'10%', '20':'20%', '25':'25%', '33':'33%', '50':'50%'],
-            defaultValue: '25',
-            required: true
-        )
-        input(
-            name: 'levelChangeRate', type: 'enum',
-            title: 'Brightness change rate',
-            description: '<small>Brightness +/- adjust for the startLevelChange() command.</small>',
-            options: [
-                 '10': '10% / sec - from 0% to 100% in 10 seconds',
-                 '20': '20% / sec - from 0% to 100% in 5 seconds',
-                 '33': '33% / sec - from 0% to 100% in 3 seconds',
-                 '50': '50% / secs - from 0% to 100% in 2 seconds',
-                '100': '100% / sec - from 0% to 100% in 1 seconds',
-            ],
-            defaultValue: '20',
-            required: true
-        )
-        input(
-            name: 'levelTransitionTime', type: 'enum',
-            title: 'Brightness transition time',
-            description: '<small>Time taken to move to/from the target brightness when device is turned On/Off.</small>',
-            options: [
-                 '0': 'Instant',
-                 '5': '0.5 seconds',
-                '10': '1 second',
-                '15': '1.5 seconds',
-                '20': '2 seconds',
-                '30': '3 seconds',
-                '40': '4 seconds',
-                '50': '5 seconds',
-               '100': '10 seconds'
-            ],
-            defaultValue: '5',
-            required: true
-        )
-        input(
-            name: 'turnOnBehavior', type: 'enum',
-            title: 'Turn On behavior',
-            description: '<small>Select what happens when the device is turned On.</small>',
-            options: [
-                'RESTORE_PREVIOUS_LEVEL': 'Restore previous brightness',
-                'FIXED_VALUE': 'Always start with the same fixed brightness'
-            ],
-            defaultValue: 'RESTORE_PREVIOUS_LEVEL',
-            required: true
-        )
-        if (turnOnBehavior == 'FIXED_VALUE') {
-            input(
-                name: 'onLevelValue',
-                type: 'number',
-                title: 'Fixed brightness value',
-                description: '<small>Range 1..100</small>',
-                defaultValue: 50,
-                range: '1..100',
-                required: true
-            )
-        }
-        input(
-            name: 'prestaging', type: 'bool',
-            title: 'Pre-staging',
-            description: '<small>Set brightness level without turning On the device (for later use).</small>',
-            defaultValue: false,
-            required: true
-        )
-        
         // Inputs for capability.ZigbeeBindings
         input(
-            name: 'joinGroup', type: 'enum',
-            title: 'Join a Zigbee group',
-            description: '<small>Select a Zigbee group you want to join.</small>',
-            options: ['0000':'❌ Leave all Zigbee groups', '----':'- - - -'] + GROUPS,
+            name: 'controlDevice', type: 'enum',
+            title: 'Control Zigbee device',
+            description: '<small>Select the target Zigbee device that will be <abbr title="Without involving the Hubitat hub" style="cursor:help">directly controlled</abbr> by this device.</small>',
+            options: ['0000':'❌ Stop controlling all Zigbee devices', '----':'- - - -'] + retrieveSwitchDevices(),
             defaultValue: '----',
             required: false
         )
@@ -201,74 +101,22 @@ List<String> updated(boolean auto = false) {
     if (logLevel == '1') runIn 1800, 'logsOff'
     log_info "🛠️ logLevel = ${['1':'Debug', '2':'Info', '3':'Warning', '4':'Error'].get(logLevel)}"
     
-    // Preferences for capability.Switch
-    if (powerOnBehavior == null) {
-        powerOnBehavior = 'RESTORE_PREVIOUS_STATE'
-        device.updateSetting 'powerOnBehavior', [value:powerOnBehavior, type:'enum']
-    }
-    log_info "🛠️ powerOnBehavior = ${powerOnBehavior}"
-    cmds += zigbee.writeAttribute(0x0006, 0x4003, 0x30, powerOnBehavior == 'TURN_POWER_OFF' ? 0x00 : (powerOnBehavior == 'TURN_POWER_ON' ? 0x01 : 0xFF))
-    
-    // Preferences for capability.Brightness
-    if (levelStep == null) {
-        levelStep = '20'
-        device.updateSetting 'levelStep', [value:levelStep, type:'enum']
-    }
-    log_info "🛠️ levelStep = ${levelStep}%"
-    
-    if (levelChangeRate == null) {
-        levelChangeRate = '20'
-        device.updateSetting 'levelChangeRate', [value:levelChangeRate, type:'enum']
-    }
-    log_info "🛠️ levelChangeRate = ${levelChangeRate}% / second"
-    
-    if (turnOnBehavior == null) {
-        turnOnBehavior = 'RESTORE_PREVIOUS_LEVEL'
-        device.updateSetting 'turnOnBehavior', [value:turnOnBehavior, type:'enum']
-    }
-    log_info "🛠️ turnOnBehavior = ${turnOnBehavior}"
-    if (turnOnBehavior == 'FIXED_VALUE') {
-        Integer onLevelValue = onLevelValue == null ? 50 : onLevelValue.intValue()
-        device.updateSetting 'onLevelValue', [value:onLevelValue, type:'number']
-        log_info "🛠️ onLevelValue = ${onLevelValue}%"
-        Integer lvl = onLevelValue * 2.54
-        utils_sendZigbeeCommands zigbee.writeAttribute(0x0008, 0x0011, 0x20, lvl)
-    } else {
-        log_debug 'Disabling OnLevel (0xFF)'
-        cmds += zigbee.writeAttribute(0x0008, 0x0011, 0x20, 0xFF)
-    }
-    
-    if (levelTransitionTime == null) {
-        levelTransitionTime = '5'
-        device.updateSetting 'levelTransitionTime', [value:levelTransitionTime, type:'enum']
-    }
-    log_info "🛠️ levelTransitionTime = ${Integer.parseInt(levelTransitionTime) / 10} second(s)"
-    cmds += zigbee.writeAttribute(0x0008, 0x0010, 0x21, Integer.parseInt(levelTransitionTime))
-    
-    if (prestaging == null) {
-        prestaging = false
-        device.updateSetting 'prestaging', [value:prestaging, type:'bool']
-    }
-    log_info "🛠️ prestaging = ${prestaging}"
-    
-    // If prestaging is true, enable update of brightness without the need for the device to be turned On
-    cmds += zigbee.writeAttribute(0x0008, 0x000F, 0x18, prestaging ? 0x01 : 0x00)
-    
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, 'healthCheck'
     
-    // Preferences for capability.ZigbeeGroups
-    if (joinGroup != null && joinGroup != '----') {
-        if (joinGroup == '0000') {
-            log_info '🛠️ Leaving all Zigbee groups'
-            cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 04}" // Leave all groups
+    // Preferences for capability.ZigbeeBindings
+    if (controlDevice != null && controlDevice != '----') {
+        if (controlDevice == '0000') {
+            log_info '🛠️ Clearing all device bindings'
+            state.stopControlling = 'devices'
         } else {
-            String groupName = GROUPS.getOrDefault(joinGroup, 'Unknown')
-            log_info "🛠️ Joining group: ${joinGroup} (${groupName})"
-            cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 00 ${utils_payload joinGroup} ${Integer.toHexString(groupName.length()).padLeft(2, '0')}${groupName.bytes.encodeHex()}}"  // Join group
+            log_info "🛠️ Adding binding to device #${controlDevice} for clusters [0x0006 0x0008]"
+    
+            cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0021 {49 ${utils_payload "${device.zigbeeId}"} ${utils_payload "${device.endpointId}"} ${utils_payload '0x0006'} 03 ${utils_payload "${controlDevice}"} 01} {0x0000}" // Add device binding for cluster 0x0006
+            cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0021 {49 ${utils_payload "${device.zigbeeId}"} ${utils_payload "${device.endpointId}"} ${utils_payload '0x0008'} 03 ${utils_payload "${controlDevice}"} 01} {0x0000}" // Add device binding for cluster 0x0008
         }
-        device.updateSetting 'joinGroup', [value:'----', type:'enum']
-        cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}" // Get groups membership
+        device.updateSetting 'controlDevice', [value:'----', type:'enum']
+        cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0033 {57 00} {0x0000}"
     }
 
     if (auto) return cmds
@@ -318,13 +166,13 @@ void configure(boolean auto = false) {
     state.lastRx = 0
     state.lastCx = DRIVER_VERSION
     
-    // Configuration for capability.Switch
+    // Configuration for devices.Ikea_E1841
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
-    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes
-    
-    // Configuration for capability.Brightness
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0008 {${device.zigbeeId}} {}" // Level Control cluster
-    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0008 0x0000 0x20 0x0001 0x0258 {01} {}" // Report CurrentLevel (uint8) at least every 10 minutes (Δ = 1)
+    
+    // Configuration for capability.Battery
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0001 {${device.zigbeeId}} {}" // Power Configuration cluster
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0001 0x0021 0x20 0x0000 0x4650 {02} {}" // Report BatteryPercentage (uint8) at least every 5 hours (Δ = 1%)
     
     // Configuration for capability.HealthCheck
     sendEvent name:'healthStatus', value:'online', descriptionText:'Health status initialized to online'
@@ -333,6 +181,10 @@ void configure(boolean auto = false) {
     // Configuration for capability.PowerSource
     sendEvent name:'powerSource', value:'unknown', type:'digital', descriptionText:'Power source initialized to unknown'
     cmds += zigbee.readAttribute(0x0000, 0x0007) // PowerSource
+    
+    // Configuration for capability.PushableButton
+    Integer numberOfButtons = BUTTONS.count { true }
+    sendEvent name:'numberOfButtons', value:numberOfButtons, descriptionText:"Number of buttons is ${numberOfButtons}"
 
     // Query Basic cluster attributes
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
@@ -359,68 +211,12 @@ void refresh(boolean auto = false) {
 
     List<String> cmds = []
     
-    // Refresh for capability.Switch
-    cmds += zigbee.readAttribute(0x0006, 0x0000) // OnOff
-    cmds += zigbee.readAttribute(0x0006, 0x4003) // PowerOnBehavior
+    // Refresh for capability.Battery
+    cmds += zigbee.readAttribute(0x0001, 0x0021) // BatteryPercentage
     
-    // Refresh for capability.Brightness
-    cmds += zigbee.readAttribute(0x0008, 0x0000) // CurrentLevel
-    
-    // Refresh for capability.ZigbeeGroups
-    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}" // Get groups membership
+    // Refresh for capability.ZigbeeBindings
+    cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0033 {57 00} {0x0000}" // Start querying the Bindings Table
     utils_sendZigbeeCommands cmds
-}
-
-// Implementation for capability.Switch
-void on() {
-    log_debug 'Sending On command'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114301}"])
-}
-void off() {
-    log_debug 'Sending Off command'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114300}"])
-}
-
-void toggle() {
-    log_debug 'Sending Toggle command'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114302}"])
-}
-
-void onWithTimedOff(BigDecimal onTime = 1) {
-    Integer delay = onTime < 1 ? 1 : (onTime > 6500 ? 6500 : onTime)
-    log_debug 'Sending OnWithTimedOff command'
-    Integer dur = delay * 10
-    String payload = "00 ${utils_payload dur, 4} 0000"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114342 ${payload}}"])
-}
-
-// Implementation for capability.Brightness
-void setLevel(BigDecimal level, BigDecimal duration = 0) {
-    Integer newLevel = level > 100 ? 100 : (level < 0 ? 0 : level)
-    log_debug "Setting brightness level to ${newLevel}% during ${duration} seconds"
-    Integer lvl = newLevel * 2.54
-    Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10 // Max transition time = 30 min
-    String command = prestaging == false ? '04' : '00'
-    String payload = "${utils_payload lvl, 2} ${utils_payload dur, 4}"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {1143${command} ${payload}}"])
-}
-void startLevelChange(String direction) {
-    log_debug "Starting brightness level change ${direction}wards with a rate of ${levelChangeRate}% / second"
-    Integer mode = direction == 'up' ? 0x00 : 0x01
-    Integer rate = Integer.parseInt(levelChangeRate) * 2.54
-    String payload = "${utils_payload mode, 2} ${utils_payload rate, 2}"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114301 ${payload}}"])
-}
-void stopLevelChange() {
-    log_debug 'Stopping brightness level change'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114303}"])
-}
-void shiftLevel(String direction) {
-    log_debug "Shifting brightness level ${direction} by ${levelStep}%"
-    Integer mode = direction == 'up' ? 0x00 : 0x01
-    Integer stepSize = Integer.parseInt(levelStep) * 2.54
-    String payload = "${utils_payload mode, 2} ${utils_payload stepSize, 2} 0000"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114302 ${payload}}"])
 }
 
 // Implementation for capability.HealthCheck
@@ -447,6 +243,55 @@ void pingExecute() {
 
     String offlineMarkAgo = TimeCategory.minus(thereshold, now).toString().replace('.000 seconds', ' seconds')
     log_info "Will be marked as offline if no message is received until ${thereshold.format('yyyy-MM-dd HH:mm:ss', location.timeZone)} (${offlineMarkAgo} from now)"
+}
+
+// Implementation for capability.HoldableButton
+void hold(String buttonNumber) { hold Integer.parseInt(buttonNumber) }
+void hold(BigDecimal buttonNumber) {
+    String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
+    if (buttonName == null) {
+        log_warn "Cannot hold button ${buttonNumber} because it is not defined"
+        return
+    }
+    utils_sendEvent name:'held', value:buttonNumber, type:'digital', isStateChange:true, descriptionText:"Button ${buttonNumber} (${buttonName}) was held"
+}
+
+// Implementation for capability.PushableButton
+void push(String buttonNumber) { push Integer.parseInt(buttonNumber) }
+void push(BigDecimal buttonNumber) {
+    String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
+    if (buttonName == null) {
+        log_warn "Cannot push button ${buttonNumber} because it is not defined"
+        return
+    }
+    utils_sendEvent name:'pushed', value:buttonNumber, type:'digital', isStateChange:true, descriptionText:"Button ${buttonNumber} (${buttonName}) was pressed"
+}
+
+// Implementation for capability.ReleasableButton
+void release(String buttonNumber) { release Integer.parseInt(buttonNumber) }
+void release(BigDecimal buttonNumber) {
+    String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
+    if (buttonName == null) {
+        log_warn "Cannot release button ${buttonNumber} because it is not defined"
+        return
+    }
+    utils_sendEvent name:'released', value:buttonNumber, type:'digital', isStateChange:true, descriptionText:"Button ${buttonNumber} (${buttonName}) was released"
+}
+
+// Implementation for capability.ZigbeeBindings
+private Map<String, String> retrieveSwitchDevices() {
+    try {
+        List<Integer> switchDeviceIds = httpGet([uri:'http://127.0.0.1:8080/device/listJson?capability=capability.switch']) { it.data*.id }
+        httpGet([uri:'http://127.0.0.1:8080/hub/zigbeeDetails/json']) { response ->
+            response.data.devices
+                .findAll { switchDeviceIds.contains(it.id) }
+                .sort { it.name }
+                .collectEntries { [(it.zigbeeId): it.name] }
+        }
+    /* groovylint-disable-next-line CatchException */
+    } catch (Exception ex) {
+        return ['ZZZZ': "Exception: ${ex}"]
+    }
 }
 
 // Implementation for capability.FirmwareUpdate
@@ -496,56 +341,56 @@ void parse(String description) {
 
     switch (msg) {
         
-        // Events for capability.Switch
+        // Events for devices.Ikea_E1841
         // ===================================================================================================================
         
-        // Report/Read Attributes: OnOff
-        case { contains it, [clusterInt:0x0006, commandInt:0x0A, attrInt:0x0000] }:
-        case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x0000] }:
-            String newState = msg.value == '00' ? 'off' : 'on'
-            utils_sendEvent name:'switch', value:newState, descriptionText:"Was turned ${newState}", type:type
-        
-            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "OnOff=${newState}"
+        // I/O button was pressed
+        case { contains it, [clusterInt:0x0006, commandInt:0x00] }:
+        case { contains it, [clusterInt:0x0006, commandInt:0x01] }:
+            List<String> button = msg.commandInt == 0x00 ? BUTTONS.OFF : BUTTONS.ON
+            utils_sendEvent name:'pushed', value:button[0], type:'physical', isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed"
             return
         
-        // Read Attributes Response: powerOnBehavior
-        case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x4003] }:
-            String newValue = ''
-            switch (Integer.parseInt(msg.value, 16)) {
-                case 0x00: newValue = 'TURN_POWER_OFF'; break
-                case 0x01: newValue = 'TURN_POWER_ON'; break
-                case 0xFF: newValue = 'RESTORE_PREVIOUS_STATE'; break
-                default: log_warn "Received unexpected attribute value: PowerOnBehavior=${msg.value}"; return
-            }
-            powerOnBehavior = newValue
-            device.updateSetting 'powerOnBehavior', [value:newValue, type:'enum']
-            utils_processedZclMessage 'Read Attributes Response', "PowerOnBehavior=${newValue}"
+        // I/O button was held
+        case { contains it, [clusterInt:0x0008, commandInt:0x01] }:
+        case { contains it, [clusterInt:0x0008, commandInt:0x05] }:
+            List<String> button = msg.commandInt == 0x01 ? BUTTONS.OFF : BUTTONS.ON
+            utils_sendEvent name:'held', value:button[0], type:'physical', isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was held"
             return
         
-        // Other events that we expect but are not usefull
-        case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
-            return
-        case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attribute Response
-        case { contains it, [clusterInt:0x0006, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Command
-            return
-        
-        // Events for capability.Brightness
-        // ===================================================================================================================
-        
-        // Report/Read Attributes Reponse: CurrentLevel
-        case { contains it, [clusterInt:0x0008, commandInt:0x0A, attrInt:0x0000] }:
-        case { contains it, [clusterInt:0x0008, commandInt:0x01, attrInt:0x0000] }:
-            Integer level = msg.value == '00' ? 0 : Math.ceil(Integer.parseInt(msg.value, 16) / 2.54)
-            utils_sendEvent name:'level', value:level, descriptionText:"Brightness is ${level}%", type:'digital'
-            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "CurrentLevel=${msg.value} (${level}%)"
-            return
-        
-        // Other events that we expect but are not usefull
+        // I/O button was released
         case { contains it, [clusterInt:0x0008, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=CurrentLevel, data=${msg.data}"
+            List<String> button = device.currentValue('held', true) == 1 ? BUTTONS.ON : BUTTONS.OFF
+            utils_sendEvent name:'released', value:button[0], type:'physical', isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was released"
             return
-        case { contains it, [clusterInt:0x0008, commandInt:0x04] }: // Write Attribute Response (0x04)
+        
+        // Events for capability.Battery
+        // ===================================================================================================================
+        
+        // Report/Read Attributes Reponse: BatteryPercentage
+        case { contains it, [clusterInt:0x0001, commandInt:0x0A, attrInt:0x0021] }:
+        case { contains it, [clusterInt:0x0001, commandInt:0x01] }:
+        
+            // Hubitat fails to parse some Read Attributes Responses
+            if (msg.value == null && msg.data != null && msg.data[0] == '21' && msg.data[1] == '00') {
+                msg.value = msg.data[2]
+            }
+        
+            // The value 0xff indicates an invalid or unknown reading
+            if (msg.value == 'FF') {
+                log_warn "Ignored invalid remaining battery percentage value: 0x${msg.value}"
+                return
+            }
+        
+            Integer percentage = Integer.parseInt(msg.value, 16)
+            percentage =  percentage / 2
+            utils_sendEvent name:'battery', value:percentage, unit:'%', descriptionText:"Battery is ${percentage}% full", type:type
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "BatteryPercentage=${percentage}%"
+            return
+        
+        // Other events that we expect but are not usefull
+        case { contains it, [clusterInt:0x0001, commandInt:0x07] }:
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=BatteryPercentage, data=${msg.data}"
             return
         
         // Events for capability.HealthCheck
@@ -575,38 +420,82 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "PowerSource=${msg.value}"
             return
         
-        // Events for capability.ZigbeeGroups
+        // Events for capability.ZigbeeBindings
         // ===================================================================================================================
         
-        // Get Group Membership Response Command
-        case { contains it, [clusterInt:0x0004, commandInt:0x02, direction:'01'] }:
-            Integer count = Integer.parseInt msg.data[1], 16
-            Set<String> groupNames = []
-            for (int pos = 0; pos < count; pos++) {
-                String groupId = "${msg.data[pos * 2 + 3]}${msg.data[pos * 2 + 2]}"
-                String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
-                log_debug "Found group membership: ${groupName}"
-                groupNames.add groupName
+        // Mgmt_Bind_rsp := { 08:Status, 08:BindingTableEntriesTotal, 08:StartIndex, 08:BindingTableEntriesIncluded, 112/168*n:BindingTableList }
+        // BindingTableList: { 64:SrcAddr, 08:SrcEndpoint, 16:ClusterId, 08:DstAddrMode, 16/64:DstAddr, 0/08:DstEndpoint }
+        // Example: [71, 00, 01, 00, 01,  C6, 9C, FE, FE, FF, F9, E3, B4,  01,  06, 00,  03,  E9, A6, C9, 17, 00, 6F, 0D, 00,  01]
+        case { contains it, [endpointInt:0x00, clusterInt:0x8033] }:
+            if (msg.data[1] != '00') {
+                utils_processedZdpMessage 'Mgmt_Bind_rsp', "Status=FAILED, data=${msg.data}"
+                return
             }
-            state.joinGrp = groupNames
-            if (state.joinGrp.size() == 0) state.remove 'joinGrp'
-            log_info "Current group membership: ${groupNames ?: 'None'}"
-            return
+            Integer totalEntries = Integer.parseInt msg.data[2], 16
+            Integer startIndex = Integer.parseInt msg.data[3], 16
+            Integer includedEntries = Integer.parseInt msg.data[4], 16
+            if (startIndex == 0) {
+                state.remove 'ctrlDev'
+                state.remove 'ctrlGrp'
+            }
+            if (includedEntries == 0) {
+                utils_processedZdpMessage 'Mgmt_Bind_rsp', "totalEntries=${totalEntries}, startIndex=${startIndex}, includedEntries=${includedEntries}"
+                return
+            }
         
-        // Add Group Response
-        case { contains it, [clusterInt:0x0004, commandInt:0x00, direction:'01'] }:
-            String status = msg.data[0] == '00' ? 'SUCCESS' : (msg.data[0] == '8A' ? 'ALREADY_MEMBER' : 'FAILED')
-            String groupId = "${msg.data[2]}${msg.data[1]}"
-            String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
-            utils_processedZclMessage 'Add Group Response', "Status=${status}, groupId=${groupId}, groupName=${groupName}"
-            return
+            Integer pos = 5
+            Integer deleted = 0
+            Map<String, String> allDevices = retrieveSwitchDevices()
+            Set<String> devices = []
+            Set<String> groups = []
+            List<String> cmds = []
+            for (int idx = 0; idx < includedEntries; idx++) {
+                String srcDeviceId = msg.data[(pos)..(pos + 7)].reverse().join()
+                String srcEndpoint = msg.data[pos + 8]
+                String cluster = msg.data[(pos + 9)..(pos + 10)].reverse().join()
+                String dstAddrMode = msg.data[pos + 11]
+                if (dstAddrMode != '01' && dstAddrMode != '03') continue
         
-        // Leave Group Response
-        case { contains it, [clusterInt:0x0004, commandInt:0x03, direction:'01'] }:
-            String status = msg.data[0] == '00' ? 'SUCCESS' : (msg.data[0] == '8B' ? 'NOT_A_MEMBER' : 'FAILED')
-            String groupId = "${msg.data[2]}${msg.data[1]}"
-            String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
-            utils_processedZclMessage 'Left Group Response', "Status=${status}, groupId=${groupId}, groupName=${groupName}"
+                // Found device binding
+                if (dstAddrMode == '03') {
+                    String dstDeviceId = msg.data[(pos + 12)..(pos + 19)].reverse().join()
+                    String dstEndpoint = msg.data[pos + 20]
+                    String dstDeviceName = allDevices.getOrDefault(dstDeviceId, "Unknown (${dstDeviceId})")
+                    pos += 21
+        
+                    // Remove all binds that are not targeting the hub
+                    if (state.stopControlling == 'devices') {
+                        if (dstDeviceId != "${location.hub.zigbeeEui}") {
+                            log_debug "Removing binding for device ${dstDeviceName} on cluster 0x${cluster}"
+                            cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0022 {49 ${utils_payload srcDeviceId} ${srcEndpoint} ${utils_payload cluster} 03 ${utils_payload dstDeviceId} ${dstEndpoint}} {0x0000}"
+                            deleted++
+                        }
+                        continue
+                    }
+        
+                    log_debug "Found binding for device ${dstDeviceName} on cluster 0x${cluster}"
+                    devices.add dstDeviceName
+                    continue
+                }
+        
+                // Found group binding
+                pos += 14
+            }
+        
+            Set<String> ctrlDev = (state.ctrlDev ?: []).toSet()
+            ctrlDev.addAll(devices.findAll { !it.startsWith('Unknown') })
+            if (ctrlDev.size() > 0) state.ctrlDev = ctrlDev.unique()
+        
+            // Get next batch
+            if (startIndex + includedEntries < totalEntries) {
+                cmds += "he raw 0x${device.deviceNetworkId} 0x00 0x00 0x0033 {57 ${Integer.toHexString(startIndex + includedEntries - deleted).padLeft(2, '0')}} {0x0000}"
+            } else {
+                log_info "Current device bindings: ${state.ctrlDev ?: 'None'}"
+                log_info "Current group bindings: ${state.ctrlGrp ?: 'None'}"
+                state.remove 'stopControlling'
+            }
+            utils_sendZigbeeCommands cmds
+            utils_processedZdpMessage 'Mgmt_Bind_rsp', "totalEntries=${totalEntries}, startIndex=${startIndex}, devices=${devices}, groups=${groups}"
             return
 
         // ---------------------------------------------------------------------------------------------------------------

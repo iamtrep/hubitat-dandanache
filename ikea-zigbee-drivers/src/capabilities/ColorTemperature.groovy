@@ -50,6 +50,7 @@ void setColorTemperature(BigDecimal colorTemperature, BigDecimal level = -1, Big
     Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10 // Max transition time = 30 min
     String payload = "${utils_payload mireds, 4} ${utils_payload dur, 4}"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {11430A ${payload}}"])
+    /* groovylint-disable-next-line UnnecessarySetter */
     if (level > 0 && duration == 0) setLevel level
 }
 void startColorTemperatureChange(String direction) {

@@ -268,7 +268,7 @@ void parse(String description) {
 
     switch (msg) {
         
-        // Events for devices.E2202
+        // Events for devices.Ikea_E2202
         // ===================================================================================================================
         
         // Report/Read Attributes Reponse: ZoneStatus

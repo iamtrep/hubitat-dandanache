@@ -1,0 +1,36 @@
+device:
+  model: IKEA Knycklan Water Valve Remote (E1841)
+  importUrl: https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E1841.groovy
+  image: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E1841.webp
+  links:
+  - name: device details
+    url: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#knycklan-water-valve-remote-e1841
+  - name: community page
+    url: https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853
+
+  fingerprints:
+  - firmwares: 2.3.019 (117C-11C9-23019631)
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0009,0020,1000', outClusters:'0003,0004,0006,0008,0019,0102,1000', model:'KNYCKLAN Open/Close remote', manufacturer:'IKEA of Sweden'
+
+  capabilities:
+    - file: src/devices/Ikea_E1841/E1841.groovy
+    - file: src/capabilities/Battery.groovy
+      params:
+        half: true
+    - file: src/capabilities/HealthCheck.groovy
+      params:
+        schedule: 0 0 0/1 ? * * *
+        checkInterval: 3600  # every hour
+        thereshold: 43200    # report device as offline if no message was received in the last 12 hours (device should report battery percentage every 5 hours)
+    - file: src/capabilities/HoldableButton.groovy
+    - file: src/capabilities/PowerSource.groovy
+    - file: src/capabilities/PushableButton.groovy
+      params:
+        buttons:
+        - { id: 'ON',  name: '💧', number: 1 }
+        - { id: 'OFF', name: '🩸', number: 2 }
+    - file: src/capabilities/ReleasableButton.groovy
+    - file: src/capabilities/ZigbeeBindings.groovy
+      params:
+        clusters: ['0x0006', '0x0008']
+    - file: src/capabilities/FirmwareUpdate.groovy

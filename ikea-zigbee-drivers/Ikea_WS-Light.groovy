@@ -40,8 +40,10 @@ metadata {
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'TRADFRI bulb E14 WS globe 470lm', manufacturer:'IKEA of Sweden' // LED2101G4: 1.1.003 (117C-2204-00011003)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'TRADFRIbulbE14WScandleopal470lm', manufacturer:'IKEA of Sweden' // LED1949C5: 1.1.003 (117C-2204-00011003)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'TRADFRIbulbE14WSglobeopal470lm', manufacturer:'IKEA of Sweden' // LED2002G5: 1.0.012 (117C-2205-00010012)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'TRADFRIbulbE27WSglobeopal1055lm', manufacturer:'IKEA of Sweden' // LED2003G10: 1.0.012 (117C-2205-00010012)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC57', outClusters:'0019', model:'TRADFRIbulbGU10WS345lm', manufacturer:'IKEA of Sweden' // LED2005R5: 1.0.012 (117C-2205-00010012)
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019', model:'TRADFRI bulb E27 WS globe 1055lm', manufacturer:'IKEA of Sweden' // LED2201G8: 3.0.10 (117C-2206-03000010)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0005,0019,0020,1000', model:'TRADFRI bulb E14 WS 470lm', manufacturer:'IKEA of Sweden' // LED1835C6: 2.3.087 (117C-4205-23087631)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -454,6 +456,7 @@ void setColorTemperature(BigDecimal colorTemperature, BigDecimal level = -1, Big
     Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10 // Max transition time = 30 min
     String payload = "${utils_payload mireds, 4} ${utils_payload dur, 4}"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0300 {11430A ${payload}}"])
+    /* groovylint-disable-next-line UnnecessarySetter */
     if (level > 0 && duration == 0) setLevel level
 }
 void startColorTemperatureChange(String direction) {
