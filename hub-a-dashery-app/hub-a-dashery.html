@@ -1,1191 +1,1270 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <title>Hub-a-Dashery - v1.3.0</title>
-    <meta charset="utf-8">
-    <meta name="keywords" content="hubitat, memory, cpu">
-    <meta name="author" content="Dan Danache">
-    <meta name="description" content="View dashboards for your Hubitat hub metrics.">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes"/>
-    <meta name="apple-mobile-web-app-title" content="Hub-a-Dashery"/>
-    <meta name="application-name" content="Hub-a-Dashery"/>
-    <meta name="msapplication-TileColor" content="#da532c">
-    <meta name="msapplication-config" content="/ui2/images/browserconfig.xml">
-    <meta name="theme-color" content="#fdf6e3">
-    <meta name="x5-orientation" content="portrait">
-    <meta name="x5-page-mode" content="app">
-    <meta name="screen-orientation" content="portrait">
-    <meta name="browsermode" content="application">
-    <meta name="color-scheme" content="dark light">
+    <head>
+        <title>Hub-a-Dashery - v1.3.0</title>
+        <meta charset="utf-8" />
+        <meta name="keywords" content="hubitat, memory, cpu" />
+        <meta name="author" content="Dan Danache" />
+        <meta name="description" content="View dashboards for your Hubitat hub metrics." />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="Hub-a-Dashery" />
+        <meta name="application-name" content="Hub-a-Dashery" />
+        <meta name="msapplication-TileColor" content="#da532c" />
+        <meta name="msapplication-config" content="/ui2/images/browserconfig.xml" />
+        <meta name="theme-color" content="#fdf6e3" />
+        <meta name="x5-orientation" content="portrait" />
+        <meta name="x5-page-mode" content="app" />
+        <meta name="screen-orientation" content="portrait" />
+        <meta name="browsermode" content="application" />
+        <meta name="color-scheme" content="dark light" />
 
-    <link rel="apple-touch-icon" sizes="180x180" href="/ui2/images/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/ui2/images/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/ui2/images/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="/ui2/images/android-chrome-512x512.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/ui2/images/android-chrome-192x192.png">
-    <link rel="icon" sizes="192x192" href="/ui2/images/favicon.ico">
-    <link rel="manifest" href="./app.webmanifest?access_token=${access_token}">
-    <link rel="mask-icon" href="/ui2/images/safari-pinned-tab.svg" color="#5bbad5">
-    <link rel="shortcut icon" href="/ui2/images/favicon.ico">
-    <link rel="preconnect" href="//unpkg.com" crossorigin="anonymous" />
-    <link rel="preconnect" href="//necolas.github.io" crossorigin="anonymous" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/ui2/images/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/ui2/images/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/ui2/images/favicon-16x16.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/ui2/images/android-chrome-512x512.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/ui2/images/android-chrome-192x192.png" />
+        <link rel="icon" sizes="192x192" href="/ui2/images/favicon.ico" />
+        <link rel="manifest" href="./app.webmanifest?access_token=${access_token}" />
+        <link rel="mask-icon" href="/ui2/images/safari-pinned-tab.svg" color="#5bbad5" />
+        <link rel="shortcut icon" href="/ui2/images/favicon.ico" />
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin="anonymous" />
+        <link rel="preconnect" href="//necolas.github.io" crossorigin="anonymous" />
 
-    <link rel="stylesheet" type="text/css" href="https://necolas.github.io/normalize.css/8.0.1/normalize.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <link rel="preload" href="https://necolas.github.io/normalize.css/8.0.1/normalize.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
 
-    <!-- Date handler -->
-    <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
+        <!-- ChartJS -->
+        <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-    <!-- Plugins -->
-    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-gauge-v3@3.0.0/dist/index.min.js"></script>
+        <!-- Date handler -->
+        <script defer src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
 
-    <!-- Grid -->
-    <script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.0/dist/gridstack-all.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/gridstack@10.1.0/dist/gridstack.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/gridstack@10.1.0/dist/gridstack-extra.min.css" rel="stylesheet">
+        <!-- Plugins -->
+        <script defer src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/chartjs-gauge-v3@3.0.0/dist/index.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 
-    <style>
+        <!-- Grid -->
+        <script defer src="https://cdn.jsdelivr.net/npm/gridstack@10.1.0/dist/gridstack-all.min.js"></script>
+        <link rel="preload" href="https://cdn.jsdelivr.net/npm/gridstack@10.1.0/dist/gridstack.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+        <link rel="preload" href="https://cdn.jsdelivr.net/npm/gridstack@10.1.0/dist/gridstack-extra.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
 
-    :root {
-        --Base03: #002b36; /* background tones (dark) */
-        --Base02: #073642; /* -- */
-        --Base01: #586e75; /* content tones */
-        --Base00: #657b83; /* -- */
-        --Base0: #839496;  /* -- */
-        --Base1: #93a1a1;  /* -- */
-        --Base2: #eee8d5;  /* background tones (white) */
-        --Base3: #fdf6e3;  /* -- */
-        --Yellow: #b58900; /* accent tones */
-        --Orange: #cb4b16;
-        --Red: #dc322f;
-        --Magenta: #d33682;
-        --Violet: #6c71c4;
-        --Blue: #268bd2;
-        --Cyan: #2aa198;
-        --Green: #859900;
-        --Black: #000;
+        <style>
+            :root {
+                --Base03: #002b36; /* background tones (dark) */
+                --Base02: #073642; /* -- */
+                --Base01: #586e75; /* content tones */
+                --Base00: #657b83; /* -- */
+                --Base0: #839496;  /* -- */
+                --Base1: #93a1a1;  /* -- */
+                --Base2: #eee8d5;  /* background tones (white) */
+                --Base3: #fdf6e3;  /* -- */
+                --Yellow: #b58900; /* accent tones */
+                --Orange: #cb4b16;
+                --Red: #dc322f;
+                --Magenta: #d33682;
+                --Violet: #6c71c4;
+                --Blue: #268bd2;
+                --Cyan: #2aa198;
+                --Green: #859900;
+                --Black: #000;
 
-        --bg-color: var(--Base2);
-        --bg-color-darker: var(--Base3);
-        --text-color: var(--Base03);
-        --text-color-darker: var(--Base00);
-        --border-color: var(--Base0);
-        --shadow-color: var(--Base1);
-        --separator-color: var(--Base1);
-        --Gray: var(--Base0);
+                --bg-color: var(--Base2);
+                --bg-color-darker: var(--Base3);
+                --text-color: var(--Base03);
+                --text-color-darker: var(--Base00);
+                --border-color: var(--Base0);
+                --shadow-color: var(--Base1);
+                --separator-color: var(--Base1);
+                --Gray: var(--Base0);
 
-        --tooltip-bg-color: var(--Base02);
-        --tooltip-text-color: var(--Base2);
-    }
-
-    [data-theme="dark"] {
-        --bg-color: var(--Base03);
-        --bg-color-darker: var(--Base02);
-        --text-color: var(--Base3);
-        --text-color-darker: var(--Base1);
-        --border-color: var(--Base00);
-        --shadow-color: var(--Black);
-        --separator-color: var(--Base01);
-        --Gray: var(--Base01);
-
-        --tooltip-bg-color: var(--Base2);
-        --tooltip-text-color: var(--Base02);
-    }
-
-    body {
-        margin: 0;
-        padding: 0;
-        font: 0.85rem sans-serif;
-        background: var(--bg-color);
-        color: var(--text-color);
-        cursor: default;
-    }
-
-    html {
-        -webkit-text-size-adjust: 100%;
-    }
-
-    a {
-        text-decoration: none;
-        color: var(--Blue);
-    }
-
-    /* Charts */
-    .chart-container {
-        height: 100%;
-        position: relative;
-        background-color: var(--bg-color-darker);
-    }
-
-    .chart-container .chart-title {
-        position: absolute;
-        top: 0; left: 50%;
-        transform: translate(-50%, 0);
-        cursor: move;
-        color: var(--text-color);
-        background-color: transparent;
-        text-align: center;
-        padding: 0.2em 1em;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
-
-    .chart-container .chart-title:hover {
-        background-color: var(--bg-color);
-        box-shadow: 0 0 .3em var(--shadow-color);
-        border: 1px var(--border-color) solid;
-        border-radius: 0 0 5px 5px;
-        border-top: 0;
-    }
-
-    canvas {
-        image-rendering: optimizeSpeed !important;             /* Older versions of FF          */
-        image-rendering: -moz-crisp-edges !important;          /* FF 6.0+                       */
-        image-rendering: -webkit-optimize-contrast !important; /* Safari                        */
-        image-rendering: -o-crisp-edges !important;            /* OS X & Windows Opera (12.02+) */
-        image-rendering: pixelated !important;                 /* Awesome future-browsers       */
-        -ms-interpolation-mode: nearest-neighbor !important;   /* IE                            */
-        box-sizing: initial !important;
-    }
-
-    .chart-container table {
-        width: 100%;
-        height: 100%;
-        border-collapse: collapse;
-        color: var(--text-color-darker);
-        table-layout: fixed;
-    }
-
-    .chart-container table tr:first-child td {
-        height: 20px;
-        padding: 0;
-        border: 0;
-    }
-
-    .chart-container table td {
-        border-top: 1px var(--bg-color) solid;
-        padding: 0 0.5em;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
-
-    .chart-container table tr td:first-child {
-        text-align: right;
-        font-weight: bold;
-    }
-
-    /* Grid stack */
-    .grid-stack {
-        margin: 5px;
-    }
-
-    .grid-stack-item-content {
-        color: var(--text-color);
-        border: 1px var(--border-color) solid;
-        border-radius: 5px;
-        box-shadow: 0 0 .3em var(--shadow-color);
-    }
-
-    /* Mobile view */
-    @media only screen and (max-width: 790px) {
-
-    }
-
-    /* Loaded inside an iframe */
-    body.embedded {
-        background-color: transparent;
-    }
-
-    body.embedded .grid-stack-item-content {
-        box-shadow: none;
-        border-radius: 10px;
-        border-color: transparent;
-    }
-
-    body.embedded .grid-stack {
-        margin: 0;
-    }
-    </style>
-</head>
-<body>
-
-    <div class="grid-stack"></div>
-
-    <script type="text/javascript">
-    class HubitatConnection {
-
-        constructor(configuration) {
-            this.accessToken = undefined
-
-            this.hubInfoCache = undefined;
-            configuration.addEventListener('config', config => this.accessToken = config.accessToken)
-        }
-
-        init() {
-
-            // Check Access Token
-            if (this.accessToken === undefined) {
-                throw new Error('HubitatConnection: Cannot find Access Token in URL')
+                --tooltip-bg-color: var(--Base02);
+                --tooltip-text-color: var(--Base2);
             }
-        }
 
-        async getGridLayout() {
-            console.info('Fetching Grid layout ...')
-            return fetch(new Request(`./grid-layout.json?access_token=${this.accessToken}`), {cache: 'no-store'})
-                .then((response) => {
-                    if (!response.ok) {
-                        console.error('HubitatConnection.getGridLayout() - Bad response (not 200 OK)', response)
-                        throw new Error(`HubitatConnection.getGridLayout() - HTTP error, status = ${response.status}`)
-                    }
-                    return response.text()
-                })
-                .then(text => JSON.parse(text))
-        }
+            [data-theme='dark'] {
+                --bg-color: var(--Base03);
+                --bg-color-darker: var(--Base02);
+                --text-color: var(--Base3);
+                --text-color-darker: var(--Base1);
+                --border-color: var(--Base00);
+                --shadow-color: var(--Black);
+                --separator-color: var(--Base01);
+                --Gray: var(--Base01);
 
-        async saveGridLayout(layout) {
-            console.info('Saving Grid layout ...')
-            return fetch(new Request(`./grid-layout.json?access_token=${this.accessToken}`), {
-                method: 'PUT',
-                body: JSON.stringify(layout),
-                cache: 'no-store'
-            })
-                .then((response) => {
-                    if (!response.ok) {
-                        console.error('HubitatConnection.saveGridLayout() - Bad response (not 200 OK)', response)
-                        throw new Error(`HubitatConnection.saveGridLayout() - HTTP error, status = ${response.status}`)
-                    }
-                    return response.text()
-                })
-                .then(text => JSON.parse(text))
-                .then(json => {
-                    if (json.status !== true) {
-                        console.error('HubitatConnection#saveGridLayout() - Bad status attribute (not true)', json)
-                        throw new Error(`HubitatConnection#saveGridLayout() - JSON error, status = ${json.status}`)
-                    }
-                    return json
-                })
-        }
+                --tooltip-bg-color: var(--Base2);
+                --tooltip-text-color: var(--Base02);
+            }
 
-        async fetchMemCpuHistory() {
-            console.info('Fetching MEM/CPU history ...')
-            return fetch(new Request('/hub/advanced/freeOSMemoryHistory'), {cache: 'no-store'})
-            //return fetch(new Request('/local/freeOSMemoryHistory.txt'), {cache: 'no-store'})
-                .then((response) => {
-                    if (!response.ok) {
-                        console.error('HubitatConnection.fetchMemCpuHistory() - Bad response (not 200 OK)', response)
-                        throw new Error(`HubitatConnection.fetchMemCpuHistory() - HTTP error, status = ${response.status}`)
-                    }
-                    return response.text()
-                })
-                .then(text => {
-                    const lines = text.split("\n").filter(line => line !== '')
-                    lines.shift()
+            body {
+                margin: 0;
+                padding: 0;
+                font: 0.85rem sans-serif;
+                background: var(--bg-color);
+                color: var(--text-color);
+                cursor: default;
+            }
 
-                    // Count year resets
-                    let yearResets = 0
-                    let prevLine = lines[0]
-                    lines.forEach(line => {
-                        if (line < prevLine) yearResets++
-                        prevLine = line
+            html {
+                -webkit-text-size-adjust: 100%;
+            }
+
+            a {
+                text-decoration: none;
+                color: var(--Blue);
+            }
+
+            /* Charts */
+            .chart-container {
+                width: 100%;
+                height: 100%;
+                position: relative;
+                background-color: var(--bg-color-darker);
+            }
+
+            .chart-container .chart-title {
+                position: absolute;
+                top: 0;
+                left: 50%;
+                transform: translate(-50%, 0);
+                cursor: move;
+                color: var(--text-color);
+                background-color: transparent;
+                text-align: center;
+                padding: 0.2em 1em;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
+
+            .chart-container .chart-title:hover {
+                background-color: var(--bg-color);
+                box-shadow: 0 0 0.3em var(--shadow-color);
+                border: 1px var(--border-color) solid;
+                border-radius: 0 0 5px 5px;
+                border-top: 0;
+            }
+
+            canvas {
+                image-rendering: optimizeSpeed !important;
+                image-rendering: -moz-crisp-edges !important;
+                image-rendering: -webkit-optimize-contrast !important;
+                image-rendering: -o-crisp-edges !important;
+                image-rendering: pixelated !important;
+                -ms-interpolation-mode: nearest-neighbor !important;
+                box-sizing: initial !important;
+            }
+
+            .chart-container table {
+                width: 100%;
+                height: 100%;
+                border-collapse: collapse;
+                color: var(--text-color-darker);
+                table-layout: fixed;
+            }
+
+            .chart-container table tr:first-child td {
+                height: 20px;
+                padding: 0;
+                border: 0;
+            }
+
+            .chart-container table td {
+                border-top: 1px var(--bg-color) solid;
+                padding: 0 0.5em;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
+
+            .chart-container table tr td:first-child {
+                text-align: right;
+                font-weight: bold;
+            }
+
+            /* Grid stack */
+            body { padding: 5px }
+
+            .grid-stack-item-content {
+                color: var(--text-color);
+                border: 1px var(--border-color) solid;
+                border-radius: 5px;
+                box-shadow: 0 0 0.3em var(--shadow-color);
+            }
+
+            /* Mobile view */
+            @media only screen and (max-width: 790px) {
+            }
+
+            /* Loaded inside an iframe */
+            body.embedded {
+                background-color: transparent;
+            }
+
+            body.embedded .grid-stack-item-content {
+                box-shadow: none;
+                border-radius: 10px;
+                border-color: transparent;
+            }
+
+            body.embedded .grid-stack {
+                margin: 0;
+            }
+
+            /* CSS spinner */
+            .spinner {
+                display: inline-block;
+            }
+
+            .spinner:after {
+                position: absolute;
+                top: calc(50% - 32px);
+                left: calc(50% - 32px);
+
+                content: ' ';
+                display: block;
+                width: 64px;
+                height: 64px;
+                border-radius: 50%;
+                border: 1px solid var(--text-color-darker);
+                border-color: var(--text-color-darker) transparent var(--text-color-darker) transparent;
+                animation: spinner 1.2s linear infinite;
+            }
+            @keyframes spinner {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
+    </head>
+    <body class="spinner">
+        <div class="grid-stack"></div>
+
+        <script type="text/javascript">
+            class HubitatConnection {
+                constructor(configuration) {
+                    this.accessToken = undefined
+
+                    this.hubInfoCache = undefined
+                    configuration.addEventListener('config', config => (this.accessToken = config.accessToken))
+                }
+
+                init() {
+                    // Check Access Token
+                    if (this.accessToken === undefined) {
+                        throw new Error('HubitatConnection: Cannot find Access Token in URL')
+                    }
+                }
+
+                async getGridLayout() {
+                    console.info('Fetching Grid layout ...')
+                    return fetch(new Request(`./grid-layout.json?access_token=${this.accessToken}`), { cache: 'no-store' })
+                        .then(response => {
+                            if (!response.ok) {
+                                console.error('HubitatConnection.getGridLayout() - Bad response (not 200 OK)', response)
+                                throw new Error(`HubitatConnection.getGridLayout() - HTTP error, status = ${response.status}`)
+                            }
+                            return response.text()
+                        })
+                        .then(text => JSON.parse(text))
+                }
+
+                async saveGridLayout(layout) {
+                    console.info('Saving Grid layout ...')
+                    return fetch(new Request(`./grid-layout.json?access_token=${this.accessToken}`), {
+                        method: 'PUT',
+                        body: JSON.stringify(layout),
+                        cache: 'no-store'
                     })
+                        .then(response => {
+                            if (!response.ok) {
+                                console.error('HubitatConnection.saveGridLayout() - Bad response (not 200 OK)', response)
+                                throw new Error(`HubitatConnection.saveGridLayout() - HTTP error, status = ${response.status}`)
+                            }
+                            return response.text()
+                        })
+                        .then(text => JSON.parse(text))
+                        .then(json => {
+                            if (json.status !== true) {
+                                console.error('HubitatConnection#saveGridLayout() - Bad status attribute (not true)', json)
+                                throw new Error(`HubitatConnection#saveGridLayout() - JSON error, status = ${json.status}`)
+                            }
+                            return json
+                        })
+                }
 
-                    const currYear = new Date().getFullYear()
-                    prevLine = lines[0]
-                    return lines.map(line => { // 02-24 00:35:14,611576,0.94
-                        if (line < prevLine) yearResets--
-                        prevLine = line
+                async fetchMemCpuHistory() {
+                    console.info('Fetching MEM/CPU history ...')
+                    return (
+                        fetch(new Request('/hub/advanced/freeOSMemoryHistory'), { cache: 'no-store' })
+                            //return fetch(new Request('/local/freeOSMemoryHistory.txt'), {cache: 'no-store'})
+                            .then(response => {
+                                if (!response.ok) {
+                                    console.error('HubitatConnection.fetchMemCpuHistory() - Bad response (not 200 OK)', response)
+                                    throw new Error(`HubitatConnection.fetchMemCpuHistory() - HTTP error, status = ${response.status}`)
+                                }
+                                return response.text()
+                            })
+                            .then(text => {
+                                const lines = text.split('\n').filter(line => line !== '')
+                                lines.shift()
 
-                        const bits = line.split(',')
-                        return {
-                            date: luxon.DateTime.fromFormat(`${bits[0].substring(0, 5)}-${currYear - yearResets} ${bits[0].substring(6, bits[0].length)}`, 'MM-dd-yyyy TT').ts,
-                            mem: Math.round(parseInt(bits[1]) / 1024),
-                            cpu: parseFloat(bits[2])
+                                // Count year resets
+                                let yearResets = 0
+                                let prevLine = lines[0]
+                                lines.forEach(line => {
+                                    if (line < prevLine) yearResets++
+                                    prevLine = line
+                                })
+
+                                const currYear = new Date().getFullYear()
+                                prevLine = lines[0]
+                                return lines.map(line => {
+                                    // 02-24 00:35:14,611576,0.94
+                                    if (line < prevLine) yearResets--
+                                    prevLine = line
+
+                                    const bits = line.split(',')
+                                    return {
+                                        date: luxon.DateTime.fromFormat(`${bits[0].substring(0, 5)}-${currYear - yearResets} ${bits[0].substring(6, bits[0].length)}`, 'MM-dd-yyyy TT').ts,
+                                        mem: Math.round(parseInt(bits[1]) / 1024),
+                                        cpu: parseFloat(bits[2])
+                                    }
+                                })
+                            })
+                            .catch(ex => {
+                                console.error('HubitatConnection.fetchMemCpuHistory() - Failed to fetch data', ex)
+                                alert(`HubitatConnection.fetchMemCpuHistory() - Failed to fetch data: ${ex.message}`)
+                            })
+                    )
+                }
+
+                async fetchMemCpuLast() {
+                    console.info('Fetching MEM/CPU ...')
+                    return fetch(new Request('/hub/advanced/freeOSMemoryLast'), { cache: 'no-store' })
+                        .then(response => {
+                            if (!response.ok) {
+                                console.error('HubitatConnection.fetchMemCpuLast() - Bad response (not 200 OK)', response)
+                                throw new Error(`HubitatConnection.fetchMemCpuLast() - HTTP error, status = ${response.status}`)
+                            }
+                            return response.text()
+                        })
+                        .then(text => {
+                            const bits = text.split('\n')[1].split(',')
+                            return {
+                                time: bits[0].split(' ')[1],
+                                mem: Math.round(parseInt(bits[1]) / 1024),
+                                cpu: Math.round((parseFloat(bits[2]) / 4) * 10000) / 100
+                            }
+                        })
+                }
+
+                async fetchHubInfo(useCache = true) {
+                    // Cache hit
+                    if (useCache === true && this.hubInfoCache !== undefined) return Promise.resolve(this.hubInfoCache)
+
+                    console.info('Fetching Hub information ...')
+                    return fetch(new Request(`./hub-info.json?access_token=${this.accessToken}`), { cache: 'no-store' })
+                        .then(response => {
+                            if (!response.ok) {
+                                console.error('HubitatConnection.fetchHubInfo() - Bad response (not 200 OK)', response)
+                                throw new Error(`HubitatConnection.fetchHubInfo() - HTTP error, status = ${response.status}`)
+                            }
+                            return response.text()
+                        })
+                        .then(text => JSON.parse(text))
+                        .then(json => {
+                            const dt = luxon.DateTime
+                            const lastRestart = dt.now().minus({ seconds: json.uptime }).setLocale(UI.locale())
+                            this.hubInfoCache = DeepMerge.merge(json, {
+                                alive: lastRestart.toRelative({ round: false, unit: ['days', 'hours', 'minutes'] }).replace(' ago', ''),
+                                reboot: lastRestart.toLocaleString(dt.DATETIME_SHORT)
+                            })
+                            return this.hubInfoCache
+                        })
+                }
+
+                async fetchInternalTemperature() {
+                    console.info('Fetching Hub internal temperature ...')
+                    return fetch(new Request('/hub/advanced/internalTempCelsius'), { cache: 'no-store' })
+                        .then(response => {
+                            if (!response.ok) {
+                                console.error('HubitatConnection.fetchInternalTemperature() - Bad response (not 200 OK)', response)
+                                throw new Error(`HubitatConnection.fetchInternalTemperature() - HTTP error, status = ${response.status}`)
+                            }
+                            return response.text()
+                        })
+                        .then(text => parseFloat(text))
+                }
+            }
+
+            class Configuration {
+                constructor() {
+                    this.accessToken = undefined
+                    this.dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                    this.hide = []
+                    this.wh = 206
+
+                    // Event listeners
+                    this.eventListeners = {}
+                }
+
+                addEventListener(eventName, callback) {
+                    if (!Array.isArray(this.eventListeners[eventName])) this.eventListeners[eventName] = []
+                    this.eventListeners[eventName].push(callback)
+                }
+
+                init() {
+                    const params = new URLSearchParams(window.location.search)
+
+                    // Access Token
+                    const accessToken = params.get('access_token')
+                    if (accessToken != null) this.accessToken = accessToken
+
+                    // Dark mode
+                    const dark = params.get('dark')
+                    if (dark != null) this.dark = dark === 'true'
+
+                    // Hide widgets
+                    const hide = params.get('hide')
+                    if (hide != null) this.hide = hide.split(',')
+
+                    // Grid unit vertical height
+                    const wh = params.get('wh')
+                    if (wh != null) this.wh = wh
+
+                    // Notify outside world of the changes
+                    this.#onConfigChange()
+                }
+
+                #onConfigChange() {
+                    const eventName = 'config'
+                    if (!Array.isArray(this.eventListeners[eventName])) return
+                    this.eventListeners[eventName].forEach(eventListener => eventListener(this))
+                }
+            }
+
+            class DeepMerge {
+                static merge(current, update) {
+                    Object.keys(update).forEach(key => {
+                        if (current.hasOwnProperty(key) && typeof current[key] === 'object' && !(current[key] instanceof Array)) {
+                            DeepMerge.merge(current[key], update[key])
+                        } else {
+                            current[key] = update[key]
                         }
                     })
-                })
-                .catch((ex) => {
-                    console.error('HubitatConnection.fetchMemCpuHistory() - Failed to fetch data', ex)
-                    alert(`HubitatConnection.fetchMemCpuHistory() - Failed to fetch data: ${ex.message}`)
-                })
-        }
+                    return current
+                }
+            }
 
-        async fetchMemCpuLast() {
-            console.info('Fetching MEM/CPU ...')
-            return fetch(new Request('/hub/advanced/freeOSMemoryLast'), {cache: 'no-store'})
-                .then((response) => {
-                    if (!response.ok) {
-                        console.error('HubitatConnection.fetchMemCpuLast() - Bad response (not 200 OK)', response)
-                        throw new Error(`HubitatConnection.fetchMemCpuLast() - HTTP error, status = ${response.status}`)
-                    }
-                    return response.text()
-                })
-                .then(text => {
-                    const bits = text.split("\n")[1].split(',')
+            class ChartHelper {
+                static crosshairPlugin() {
                     return {
-                        time: bits[0].split(' ')[1],
-                        mem: Math.round(parseInt(bits[1]) / 1024),
-                        cpu: Math.round(parseFloat(bits[2]) / 4 * 10000) / 100
-                    }
-                })
-        }
-
-        async fetchHubInfo(useCache = true) {
-
-            // Cache hit
-            if (useCache === true && this.hubInfoCache !== undefined) return Promise.resolve(this.hubInfoCache)
-
-            console.info('Fetching Hub information ...')
-            return fetch(new Request(`./hub-info.json?access_token=${this.accessToken}`), {cache: 'no-store'})
-                .then((response) => {
-                    if (!response.ok) {
-                        console.error('HubitatConnection.fetchHubInfo() - Bad response (not 200 OK)', response)
-                        throw new Error(`HubitatConnection.fetchHubInfo() - HTTP error, status = ${response.status}`)
-                    }
-                    return response.text()
-                })
-                .then(text => JSON.parse(text))
-                .then(json => {
-                    const dt = luxon.DateTime
-                    const lastRestart = dt.now().minus({ seconds: json.uptime }).setLocale(UI.locale())
-                    this.hubInfoCache = DeepMerge.merge(json, {
-                        alive: lastRestart.toRelative({ round: false, unit:['days', 'hours', 'minutes'] }).replace(' ago', ''),
-                        reboot: lastRestart.toLocaleString(dt.DATETIME_SHORT)
-                    })
-                    return this.hubInfoCache
-                })
-        }
-
-        async fetchInternalTemperature() {
-            console.info('Fetching Hub internal temperature ...')
-            return fetch(new Request('/hub/advanced/internalTempCelsius'), {cache: 'no-store'})
-                .then((response) => {
-                    if (!response.ok) {
-                        console.error('HubitatConnection.fetchInternalTemperature() - Bad response (not 200 OK)', response)
-                        throw new Error(`HubitatConnection.fetchInternalTemperature() - HTTP error, status = ${response.status}`)
-                    }
-                    return response.text()
-                })
-                .then(text => parseFloat(text))
-        }
-    }
-
-    class Configuration {
-        constructor() {
-            this.accessToken = undefined
-            this.dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-            this.hide = []
-
-            // Event listeners
-            this.eventListeners = {}
-        }
-
-        addEventListener(eventName, callback) {
-            if (!Array.isArray(this.eventListeners[eventName])) this.eventListeners[eventName] = []
-            this.eventListeners[eventName].push(callback)
-        }
-
-        init() {
-            const params = new URLSearchParams(window.location.search)
-
-            // Access Token
-            const accessToken = params.get('access_token')
-            if (accessToken != null) this.accessToken = accessToken
-
-            // Dark mode
-            const dark = params.get('dark')
-            if (dark != null) this.dark = dark === 'true'
-
-            // Hide widgets
-            const hide = params.get('hide')
-            if (hide != null) this.hide = hide.split(',')
-
-            // Notify outside world of the changes
-            this.#onConfigChange()
-        }
-
-        #onConfigChange() {
-            const eventName = 'config'
-            if (!Array.isArray(this.eventListeners[eventName])) return
-            this.eventListeners[eventName].forEach(eventListener => eventListener(this))
-        }
-    }
-
-    class DeepMerge {
-        static merge(current, update) {
-            Object.keys(update).forEach(key => {
-                if (current.hasOwnProperty(key) && typeof current[key] === 'object' && !(current[key] instanceof Array)) {
-                    DeepMerge.merge(current[key], update[key])
-                } else {
-                    current[key] = update[key]
-                }
-            })
-            return current
-        }
-    }
-
-    class ChartHelper {
-
-        static crosshairPlugin() {
-            return {
-                id: 'crosshair',
-                defaults: {
-                    width: 1,
-                    color: 'red',
-                    dash: [2, 2],
-                },
-                afterInit: (chart, args, opts) => {
-                    chart.crosshair = {
-                        x: 0,
-                        y: 0,
-                    }
-                },
-                afterEvent: (chart, args) => {
-                    const {inChartArea} = args
-                    const {type,x,y} = args.event
-
-                    chart.crosshair = {x, y, draw: inChartArea}
-                    chart.draw()
-                },
-                beforeDatasetsDraw: (chart, args, opts) => {
-                    const {ctx} = chart
-                    const {top, bottom, left, right} = chart.chartArea
-                    const {x, y, draw} = chart.crosshair
-                    if (!draw) return
-
-                    ctx.save()
-                    ctx.beginPath()
-                    ctx.lineWidth = opts.width
-                    ctx.strokeStyle = opts.color
-                    ctx.setLineDash(opts.dash)
-                    ctx.moveTo(x, bottom)
-                    ctx.lineTo(x, top)
-                    //ctx.moveTo(left, y)
-                    //ctx.lineTo(right, y)
-                    ctx.stroke()
-                    ctx.restore()
-                }
-            }
-        }
-
-        // Show/hide individual points depending on how many points are in view
-        static updatePointStyle(chart) {
-            if (chart.scales.x === undefined) return
-
-            const min = chart.scales.x.min
-            const max = chart.scales.x.max
-            const visibleDatapoints = chart.config.data.datasets[0].data.filter(point => point.x >= min && point.x <= max)
-
-            const newPointStyle = chart.width / visibleDatapoints.length < 10 ? false : 'circle'
-            if (newPointStyle !== chart.data.datasets[0].pointStyle) {
-                chart.data.datasets[0].pointStyle = newPointStyle
-                chart.update()
-            }
-        }
-
-        static lineChartDefaults() {
-            const colors = UI.colors()
-            return {
-                type: 'line',
-                options: {
-                    parsing: false,
-                    normalized: true,
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    onResize: chart => ChartHelper.updatePointStyle(chart),
-                    animation: { onComplete: ({initial, chart}) => initial ? ChartHelper.updatePointStyle(chart) : undefined },
-                    layout: {
-                        padding: {
-                            top: 20,
-                            bottom: 3
-                        }
-                    },
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                minUnit: 'minute',
-                                displayFormats: {
-                                    minute: 'd LLL T',
-                                    hour: 'd LLL T',
-                                    day: 'd LLL'
-                                },
-                                tooltipFormat: 'd LLL T'
-                            },
-                            title: { display: false },
-                            ticks: {
-                                color: colors.TextColorDarker,
-                                maxRotation: 0,
-                                autoSkipPadding: 15
-                            },
-                            grid: {
-                                color: colors.BgColor
+                        id: 'crosshair',
+                        defaults: {
+                            width: 1,
+                            color: 'red',
+                            dash: [2, 2]
+                        },
+                        afterInit: (chart, args, opts) => {
+                            chart.crosshair = {
+                                x: 0,
+                                y: 0
                             }
                         },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: false,
+                        afterEvent: (chart, args) => {
+                            const { inChartArea } = args
+                            const { type, x, y } = args.event
+
+                            chart.crosshair = { x, y, draw: inChartArea }
+                            chart.draw()
+                        },
+                        beforeDatasetsDraw: (chart, args, opts) => {
+                            const { ctx } = chart
+                            const { top, bottom, left, right } = chart.chartArea
+                            const { x, y, draw } = chart.crosshair
+                            if (!draw) return
+
+                            ctx.save()
+                            ctx.beginPath()
+                            ctx.lineWidth = opts.width
+                            ctx.strokeStyle = opts.color
+                            ctx.setLineDash(opts.dash)
+                            ctx.moveTo(x, bottom)
+                            ctx.lineTo(x, top)
+                            //ctx.moveTo(left, y)
+                            //ctx.lineTo(right, y)
+                            ctx.stroke()
+                            ctx.restore()
+                        }
+                    }
+                }
+
+                // Show/hide individual points depending on how many points are in view
+                static updatePointStyle(chart) {
+                    if (chart.scales.x === undefined) return
+
+                    const min = chart.scales.x.min
+                    const max = chart.scales.x.max
+                    const visibleDatapoints = chart.config.data.datasets[0].data.filter(point => point.x >= min && point.x <= max)
+
+                    chart.config._config.options.plugins.datalabels.display = chart.width / visibleDatapoints.length > 40
+
+                    const newPointStyle = chart.width / visibleDatapoints.length < 10 ? false : 'circle'
+                    if (newPointStyle !== chart.data.datasets[0].pointStyle) {
+                        chart.data.datasets[0].pointStyle = newPointStyle
+                        chart.update()
+                    }
+                }
+
+                static lineChartDefaults() {
+                    const colors = UI.colors()
+                    return {
+                        type: 'line',
+                        options: {
+                            parsing: false,
+                            normalized: true,
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            onResize: chart => ChartHelper.updatePointStyle(chart),
+                            animation: { onComplete: ({ initial, chart }) => (initial ? ChartHelper.updatePointStyle(chart) : undefined) },
+                            layout: {
+                                padding: {
+                                    top: 20,
+                                    bottom: 3
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    type: 'time',
+                                    time: {
+                                        minUnit: 'minute',
+                                        displayFormats: {
+                                            minute: 'd LLL T',
+                                            hour: 'd LLL T',
+                                            day: 'd LLL'
+                                        },
+                                        tooltipFormat: 'd LLL T'
+                                    },
+                                    title: { display: false },
+                                    ticks: {
+                                        color: colors.TextColorDarker,
+                                        maxRotation: 0,
+                                        autoSkipPadding: 15
+                                    },
+                                    grid: {
+                                        color: colors.BgColor
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: false,
+                                        color: colors.TextColor
+                                    },
+                                    ticks: {
+                                        color: colors.TextColorDarker
+                                    },
+                                    grid: {
+                                        color: colors.BgColor
+                                    }
+                                }
+                            },
+                            interaction: {
+                                mode: 'nearest',
+                                axis: 'x',
+                                intersect: false
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: colors.BgColorDarker,
+                                    titleColor: colors.TextColor,
+                                    bodyColor: colors.TextColorDarker,
+                                    borderColor: colors.BorderColor,
+                                    borderWidth: 1
+                                },
+                                decimation: {
+                                    enabled: true,
+                                    algorithm: 'lttb'
+                                },
+                                zoom: {
+                                    pan: {
+                                        enabled: true,
+                                        mode: 'x'
+                                    },
+                                    zoom: {
+                                        wheel: { enabled: true },
+                                        pinch: { enabled: true },
+                                        mode: 'x',
+                                        onZoomComplete: ({ chart }) => ChartHelper.updatePointStyle(chart)
+                                    },
+                                    limits: {
+                                        x: { min: 'original', max: 'original' }
+                                    }
+                                },
+                                crosshair: {
+                                    color: colors.TextColorDarker
+                                },
+                                datalabels: {
+                                    display: false,
+                                    formatter: point => point.y,
+                                    backgroundColor: function (context) {
+                                        return context.dataset.borderColor
+                                    },
+                                    borderRadius: 4,
+                                    color: 'white',
+                                    padding: 6,
+                                    align: 'end',
+                                    anchor: 'end'
+                                }
+                            }
+                        },
+                        plugins: [ChartHelper.crosshairPlugin(), ChartDataLabels]
+                    }
+                }
+
+                static gaugeChartDefaults() {
+                    const colors = UI.colors()
+                    return {
+                        type: 'gauge',
+                        options: {
+                            layout: {
+                                padding: {
+                                    top: 20,
+                                    bottom: 20
+                                }
+                            },
+                            needle: {
+                                radius: '9%',
+                                width: '10%',
+                                length: '90%',
                                 color: colors.TextColor
                             },
-                            ticks: {
-                                color: colors.TextColorDarker
-                            },
-                            grid: {
-                                color: colors.BgColor
+                            cutout: '65%',
+                            valueLabel: {
+                                display: true,
+                                color: colors.TextColorDarker,
+                                backgroundColor: colors.BgColorDarker,
+                                borderWidth: 1,
+                                borderRadius: 5,
+                                borderColor: colors.BorderColor,
+                                padding: {
+                                    top: 2,
+                                    bottom: 2,
+                                    left: 4,
+                                    right: 4
+                                },
+                                offsetY: '-22%'
                             }
                         }
-                    },
-                    interaction: {
-                        mode: 'nearest',
-                        axis: 'x',
-                        intersect: false
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: colors.BgColorDarker,
-                            titleColor: colors.TextColor,
-                            bodyColor: colors.TextColorDarker,
-                            borderColor: colors.BorderColor,
-                            borderWidth: 1
-                        },
-                        decimation: {
-                            enabled: true,
-                            algorithm: 'lttb'
-                        },
-                        zoom: {
-                            pan: {
-                                enabled: true,
-                                mode: 'x',
-                            },
-                            zoom: {
-                                wheel: { enabled: true },
-                                pinch: { enabled: true },
-                                mode: 'x',
-                                onZoomComplete: ({chart}) => ChartHelper.updatePointStyle(chart)
-                            },
-                            limits: {
-                                x: {min: 'original', max: 'original'},
-                            },
-                        },
-                        crosshair: {
-                            color: colors.TextColorDarker,
-                        }
-                    }
-                },
-                plugins: [ ChartHelper.crosshairPlugin() ]
-            }
-        }
-
-        static gaugeChartDefaults() {
-            const colors = UI.colors()
-            return {
-                type: 'gauge',
-                options: {
-                    layout: {
-                        padding: {
-                            top: 20,
-                            bottom: 20
-                        }
-                    },
-                    needle: {
-                        radius: '9%',
-                        width: '10%',
-                        length: '90%',
-                        color: colors.TextColor
-                    },
-                    cutout: '65%',
-                    valueLabel: {
-                        display: true,
-                        color: colors.TextColorDarker,
-                        backgroundColor: colors.BgColorDarker,
-                        borderWidth: 1,
-                        borderRadius: 5,
-                        borderColor: colors.BorderColor,
-                        padding: {
-                            top: 2, bottom: 2, left: 4, right: 4
-                        },
-                        offsetY: '-22%'
                     }
                 }
+
+                static createLineChart(element, config) {
+                    const chart = new Chart(element, DeepMerge.merge(ChartHelper.lineChartDefaults(), config))
+                    element.addEventListener('dblclick', evt => chart.resetZoom())
+                    //element.addEventListener('click', evt => { chart.options.plugins.decimation.enabled = !(chart.options.plugins.decimation.enabled); chart.update();})
+                    //chart.canvas.style.touchAction = "pan-y"
+                    return chart
+                }
+
+                static createGaugeChart(element, config) {
+                    const chart = new Chart(element, DeepMerge.merge(ChartHelper.gaugeChartDefaults(), config))
+                    return chart
+                }
             }
-        }
 
-        static createLineChart(element, config) {
+            class MemCpuHistoryChart {
+                constructor(connection) {
+                    this.connection = connection
 
-            const chart = new Chart(element, DeepMerge.merge(ChartHelper.lineChartDefaults(), config))
-            element.addEventListener('dblclick', evt => chart.resetZoom())
-            //element.addEventListener('click', evt => { chart.options.plugins.decimation.enabled = !(chart.options.plugins.decimation.enabled); chart.update();})
-            //chart.canvas.style.touchAction = "pan-y"
-            return chart
-        }
+                    this.memChart = undefined
+                    this.cpuChart = undefined
+                }
 
-        static createGaugeChart(element, config) {
-            return new Chart(element, DeepMerge.merge(ChartHelper.gaugeChartDefaults(), config))
-        }
-    }
+                async metadata() {
+                    return Promise.resolve({
+                        'mem-history': { w: 6, h: 1, title: 'Free OS Memory' },
+                        'cpu-history': { w: 6, h: 1, title: 'CPU Load Average' }
+                    })
+                }
 
-    class MemCpuHistoryChart {
-        constructor(connection) {
-            this.connection = connection
+                async render() {
+                    const memCpuHistory = await this.connection.fetchMemCpuHistory()
+                    await this.#renderMem(memCpuHistory)
+                    await this.#renderCpu(memCpuHistory)
+                }
 
-            this.memChart = undefined
-            this.cpuChart = undefined
-        }
+                async #renderMem(memCpuHistory) {
+                    const element = document.getElementById('mem-history')
+                    if (element === null) return
 
-        async metadata() {
-            return Promise.resolve({
-                'mem-history': { w: 6, h: 1, title: 'Free OS Memory' },
-                'cpu-history': { w: 6, h: 1, title: 'CPU Load Average' }
-            })
-        }
-
-        async render() {
-            const memCpuHistory = await this.connection.fetchMemCpuHistory()
-            await this.#renderMem(memCpuHistory)
-            await this.#renderCpu(memCpuHistory)
-        }
-
-        async #renderMem(memCpuHistory) {
-            const element = document.getElementById('mem-history')
-            if (element === null) return
-
-            const colors = UI.colors()
-            this.memChart = ChartHelper.createLineChart(element, {
-                data: {
-                    datasets: [{
-                        label: 'Free memory',
-                        data: memCpuHistory.map(record => { return {'x': record.date, 'y': record.mem } }),
-                        pointStyle: false,
-                        backgroundColor: colors.Green + '44',
-                        borderColor: colors.Green,
-                        borderWidth: 1.2,
-                        tension: 0.5,
-                        fill: 'start'
-                    }]
-                },
-                options: {
-                    pointStyle: false,
-                    scales: {
-                        y: {
-                            title: {
-                                text: 'Memory'
-                            },
-                            ticks: {
-                                callback: label => `${(label).toLocaleString(UI.locale(), { style: 'unit', unit: 'megabyte'}) }`
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: t => `${t.dataset.label}: ${(t.parsed.y).toLocaleString(UI.locale(), { style: 'unit', unit: 'megabyte'}) }`
-                            }
+                    const colors = UI.colors()
+                    this.memChart = ChartHelper.createLineChart(element, {
+                        data: {
+                            datasets: [
+                                {
+                                    label: 'Free memory',
+                                    data: memCpuHistory.map(record => {
+                                        return { x: record.date, y: record.mem }
+                                    }),
+                                    pointStyle: false,
+                                    backgroundColor: colors.Green + '44',
+                                    borderColor: colors.Green,
+                                    borderWidth: 1.2,
+                                    tension: 0.5,
+                                    fill: 'start'
+                                }
+                            ]
                         },
-                        annotation: {
-                            annotations: {
-                                lowMemoryWarning: {
-                                    type: 'line',
-                                    yMin: 80,
-                                    yMax: 80,
-                                    borderColor: colors.Red,
-                                    borderWidth: 1,
-                                    borderDash: [2, 2]
+                        options: {
+                            pointStyle: false,
+                            scales: {
+                                y: {
+                                    title: {
+                                        text: 'Memory'
+                                    },
+                                    ticks: {
+                                        callback: label => `${label.toLocaleString(UI.locale(), { style: 'unit', unit: 'megabyte' })}`
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: t => `${t.dataset.label}: ${t.parsed.y.toLocaleString(UI.locale(), { style: 'unit', unit: 'megabyte' })}`
+                                    }
+                                },
+                                annotation: {
+                                    annotations: {
+                                        lowMemoryWarning: {
+                                            type: 'line',
+                                            yMin: 80,
+                                            yMax: 80,
+                                            borderColor: colors.Red,
+                                            borderWidth: 1,
+                                            borderDash: [2, 2]
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
+                    })
                 }
-            })
-        }
 
-        async #renderCpu(memCpuHistory) {
-            const element = document.getElementById('cpu-history')
-            if (element === null) return
+                async #renderCpu(memCpuHistory) {
+                    const element = document.getElementById('cpu-history')
+                    if (element === null) return
 
-            const colors = UI.colors()
-            this.cpuChart = ChartHelper.createLineChart(element, {
-                data: {
-                    datasets: [{
-                        fill: 'start',
-                        label: 'Load average',
-                        data: memCpuHistory.map(record => { return {'x': record.date, 'y': record.cpu } }),
-                        pointStyle: false,
-                        backgroundColor: colors.Blue + '44',
-                        borderColor: colors.Blue,
-                        borderWidth: 1.2,
-                        tension: 0.5,
-                        fill: 'start'
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            title: {
-                                text: 'CPU'
-                            }
-                        }
-                    },
-                    plugins: {
-                        annotation: {
-                            annotations: {
-                                highLoad: {
-                                    type: 'line',
-                                    yMin: 1,
-                                    yMax: 1,
-                                    borderColor: colors.Red,
-                                    borderWidth: 1,
-                                    borderDash: [2, 2]
+                    const colors = UI.colors()
+                    this.cpuChart = ChartHelper.createLineChart(element, {
+                        data: {
+                            datasets: [
+                                {
+                                    fill: 'start',
+                                    label: 'Load average',
+                                    data: memCpuHistory.map(record => {
+                                        return { x: record.date, y: record.cpu }
+                                    }),
+                                    pointStyle: false,
+                                    backgroundColor: colors.Blue + '44',
+                                    borderColor: colors.Blue,
+                                    borderWidth: 1.2,
+                                    tension: 0.5,
+                                    fill: 'start'
+                                }
+                            ]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    title: {
+                                        text: 'CPU'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                annotation: {
+                                    annotations: {
+                                        highLoad: {
+                                            type: 'line',
+                                            yMin: 1,
+                                            yMax: 1,
+                                            borderColor: colors.Red,
+                                            borderWidth: 1,
+                                            borderDash: [2, 2]
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
+                    })
                 }
-            })
-        }
-    }
+            }
 
-    class MemCpuLastChart {
-        constructor(connection) {
-            this.connection = connection
+            class MemCpuLastChart {
+                constructor(connection) {
+                    this.connection = connection
 
-            this.memChart = undefined
-            this.cpuChart = undefined
-            this.memTitleElement = undefined
-            this.cpuTitleElement = undefined
-            this.refreshInterval = undefined
-        }
+                    this.memChart = undefined
+                    this.cpuChart = undefined
+                    this.memTitleElement = undefined
+                    this.cpuTitleElement = undefined
+                    this.refreshInterval = undefined
+                }
 
-        async metadata() {
-            return Promise.resolve({
-                'mem-last': { w: 2, h: 1, title: 'Free OS Memory' },
-                'cpu-last': { w: 2, h: 1, title: 'CPU Load' }
-            })
-        }
+                async metadata() {
+                    return Promise.resolve({
+                        'mem-last': { w: 2, h: 1, title: 'Free OS Memory' },
+                        'cpu-last': { w: 2, h: 1, title: 'CPU Load' }
+                    })
+                }
 
-        async render() {
-            const memCpuLast = await this.connection.fetchMemCpuLast()
-            await this.#renderMem(memCpuLast)
-            await this.#renderCpu(memCpuLast)
+                async render() {
+                    const memCpuLast = await this.connection.fetchMemCpuLast()
+                    await this.#renderMem(memCpuLast)
+                    await this.#renderCpu(memCpuLast)
 
-            this.#updateTitle(memCpuLast.time)
+                    this.#updateTitle(memCpuLast.time)
 
-            // Set auto-refresh every 1 minute
-            this.refreshInterval = setInterval(() => this.#refresh(), 1 * 60 * 1000)
-        }
+                    // Set auto-refresh every 1 minute
+                    this.refreshInterval = setInterval(() => this.refresh(), 1 * 60 * 1000)
+                }
 
-        async #renderMem(memCpuLast) {
-            const element = document.getElementById('mem-last')
-            if (element === null) return
+                async #renderMem(memCpuLast) {
+                    const element = document.getElementById('mem-last')
+                    if (element === null) return
 
-            this.memTitleElement = document.getElementById('mem-last-title')
+                    this.memTitleElement = document.getElementById('mem-last-title')
 
-            const hubInfo = await this.connection.fetchHubInfo()
-            const maxMem = hubInfo.model.includes('Pro') ? 2048 : 1024
+                    const hubInfo = await this.connection.fetchHubInfo()
+                    const maxMem = hubInfo.model.includes('Pro') ? 2048 : 1024
 
-            const colors = UI.colors()
-            this.memChart = ChartHelper.createGaugeChart(element, {
-                data: {
-                    datasets: [{
-                        value: memCpuLast.mem,
-                        minValue: 0,
-                        data: [80, 200, maxMem],
-                        backgroundColor: [colors.Orange, colors.Yellow, colors.Green],
-                        borderColor: 'transparent',
-                    }]
-                },
-                options: {
-                    valueLabel: {
-                        formatter: (value) => {
-                            return `${(value).toLocaleString(UI.locale(), { style: 'unit', unit: 'megabyte'}) }`
+                    const colors = UI.colors()
+                    this.memChart = ChartHelper.createGaugeChart(element, {
+                        data: {
+                            datasets: [
+                                {
+                                    value: memCpuLast.mem,
+                                    minValue: 0,
+                                    data: [80, 200, maxMem],
+                                    backgroundColor: [colors.Orange, colors.Yellow, colors.Green],
+                                    borderColor: 'transparent'
+                                }
+                            ]
+                        },
+                        options: {
+                            valueLabel: {
+                                formatter: value => {
+                                    return `${value.toLocaleString(UI.locale(), { style: 'unit', unit: 'megabyte' })}`
+                                }
+                            }
                         }
-                    }
+                    })
+
+                    // Refresh on dbl-click
+                    element.addEventListener('dblclick', evt => this.refresh())
                 }
-            })
-        }
 
-        async #renderCpu(memCpuLast) {
-            const element = document.getElementById('cpu-last')
-            if (element === null) return
+                async #renderCpu(memCpuLast) {
+                    const element = document.getElementById('cpu-last')
+                    if (element === null) return
 
-            this.cpuTitleElement = document.getElementById('cpu-last-title')
+                    this.cpuTitleElement = document.getElementById('cpu-last-title')
 
-            const colors = UI.colors()
-            this.cpuChart = ChartHelper.createGaugeChart(element, {
-                data: {
-                    datasets: [{
-                        value: memCpuLast.cpu,
-                        minValue: 0,
-                        data: [75, 90, 100],
-                        backgroundColor: [colors.Green, colors.Yellow, colors.Orange],
-                        borderColor: 'transparent',
-                    }]
-                },
-                options: {
-                    valueLabel: {
-                        formatter: (value) => {
-                            return `${(value.toFixed(2))}%`
+                    const colors = UI.colors()
+                    this.cpuChart = ChartHelper.createGaugeChart(element, {
+                        data: {
+                            datasets: [
+                                {
+                                    value: memCpuLast.cpu,
+                                    minValue: 0,
+                                    data: [75, 90, 100],
+                                    backgroundColor: [colors.Green, colors.Yellow, colors.Orange],
+                                    borderColor: 'transparent'
+                                }
+                            ]
+                        },
+                        options: {
+                            valueLabel: {
+                                formatter: value => {
+                                    return `${value.toFixed(2)}%`
+                                }
+                            }
                         }
-                    }
+                    })
+
+                    // Refresh on dbl-click
+                    element.addEventListener('dblclick', evt => this.refresh())
                 }
-            })
-        }
 
-        async #updateTitle(time) {
-            const metadata = await this.metadata()
-            if (this.memTitleElement !== undefined) this.memTitleElement.innerText = `${metadata['mem-last'].title} @ ${time}`
-            if (this.cpuTitleElement !== undefined) this.cpuTitleElement.innerText = `${metadata['cpu-last'].title} @ ${time}`
-        }
+                async #updateTitle(time) {
+                    const metadata = await this.metadata()
+                    if (this.memTitleElement !== undefined) this.memTitleElement.innerText = `${metadata['mem-last'].title} @ ${time}`
+                    if (this.cpuTitleElement !== undefined) this.cpuTitleElement.innerText = `${metadata['cpu-last'].title} @ ${time}`
+                }
 
-        async #refresh() {
-            const memCpuLast = await this.connection.fetchMemCpuLast()
+                async refresh() {
+                    const memCpuLast = await this.connection.fetchMemCpuLast()
 
-            if (this.memChart !== undefined) {
-                this.memChart.data.datasets[0].value = memCpuLast.mem
-                this.memChart.update()
+                    if (this.memChart !== undefined) {
+                        this.memChart.data.datasets[0].value = memCpuLast.mem
+                        this.memChart.update()
+                    }
+
+                    if (this.cpuChart !== undefined) {
+                        this.cpuChart.data.datasets[0].value = memCpuLast.cpu
+                        this.cpuChart.update()
+                    }
+
+                    this.#updateTitle(memCpuLast.time)
+                }
             }
 
-            if (this.cpuChart !== undefined) {
-                this.cpuChart.data.datasets[0].value = memCpuLast.cpu
-                this.cpuChart.update()
-            }
+            class InternalTemperatureChart {
+                constructor(connection) {
+                    this.connection = connection
 
-            this.#updateTitle(memCpuLast.time)
-        }
-    }
+                    this.minValue = -20
+                    this.chart = undefined
+                    this.refreshInterval = undefined
+                    this.convert = val => val
+                }
 
-    class InternalTemperatureChart {
-        constructor(connection) {
-            this.connection = connection
+                async metadata() {
+                    return Promise.resolve({
+                        'int-temp': { w: 2, h: 1, title: 'Internal Temperature' }
+                    })
+                }
 
-            this.chart = undefined
-            this.refreshInterval = undefined
-            this.convert = val => val;
-        }
+                async render() {
+                    const colors = UI.colors()
 
-        async metadata() {
-            return Promise.resolve({
-                'int-temp': { w: 2, h: 1, title: 'Internal Temperature' }
-            })
-        }
+                    const hubInfo = await this.connection.fetchHubInfo()
+                    if (hubInfo.tscale === 'F') {
+                        this.convert = val => (val * 9) / 5 + 32
+                    }
 
-        async render() {
-            const colors = UI.colors()
-
-            const hubInfo = await this.connection.fetchHubInfo()
-            if (hubInfo.tscale === 'F') {
-                this.convert = val => val * 9 / 5 + 32;
-            }
-
-            const negative = 20
-            const intTemp = await this.connection.fetchInternalTemperature() + negative
-
-            const element = document.getElementById('int-temp')
-            this.memChart = ChartHelper.createGaugeChart(element, {
-                data: {
-                    datasets: [{
-                        value: intTemp,
-                        minValue: 0,
-                        data: [0 + negative, 20 + negative, 50 + negative, 70 + negative, 90 + negative],
-                        backgroundColor: [colors.Orange, colors.Yellow, colors.Green, colors.Yellow, colors.Orange],
-                        borderColor: 'transparent',
-                    }]
-                },
-                options: {
-                    valueLabel: {
-                        formatter: (value) => {
-                            return `${(this.convert(value - 20)).toLocaleString(UI.locale(), { style: 'unit', unit: hubInfo.tscale === 'C' ? 'celsius' :'fahrenheit'}) }`
+                    const intTemp = (await this.connection.fetchInternalTemperature()) - this.minValue
+                    const element = document.getElementById('int-temp')
+                    this.chart = ChartHelper.createGaugeChart(element, {
+                        data: {
+                            datasets: [
+                                {
+                                    value: intTemp,
+                                    minValue: 0,
+                                    data: [0 - this.minValue, 20 - this.minValue, 50 - this.minValue, 70 - this.minValue, 90 - this.minValue],
+                                    backgroundColor: [colors.Orange, colors.Yellow, colors.Green, colors.Yellow, colors.Orange],
+                                    borderColor: 'transparent'
+                                }
+                            ]
+                        },
+                        options: {
+                            valueLabel: {
+                                formatter: value => {
+                                    return `${this.convert(value - 20).toLocaleString(UI.locale(), { style: 'unit', unit: hubInfo.tscale === 'C' ? 'celsius' : 'fahrenheit' })}`
+                                }
+                            }
                         }
+                    })
+
+                    // Set auto-refresh every 1 minute
+                    this.refreshInterval = setInterval(() => this.refresh(), 1 * 60 * 1000)
+
+                    // Refresh on dbl-click
+                    element.addEventListener('dblclick', evt => this.refresh())
+                }
+
+                async refresh() {
+                    const intTemp = (await this.connection.fetchInternalTemperature()) - this.minValue
+                    this.chart.data.datasets[0].value = intTemp
+                    this.chart.update()
+                }
+            }
+
+            class TableChart {
+                constructor(connection) {
+                    this.connection = connection
+
+                    this.table = undefined
+                    this.titleElement = undefined
+                }
+
+                async metadata() {
+                    return Promise.resolve({
+                        'hub-info': { w: 2, h: 1, title: 'Hub Information' }
+                    })
+                }
+
+                async render() {
+                    const hubInfo = await this.connection.fetchHubInfo()
+
+                    const canvas = document.getElementById('hub-info')
+                    const parentElement = canvas.parentElement
+                    parentElement.removeChild(canvas)
+
+                    this.table = document.createElement('table')
+                    this.table.setAttribute('id', 'hub-info')
+                    const tblBody = document.createElement('tbody')
+                    this.table.appendChild(tblBody)
+                    parentElement.appendChild(this.table)
+
+                    tblBody.appendChild(this.#buildRow())
+                    tblBody.appendChild(this.#buildRow('IP Address', hubInfo.ip))
+                    tblBody.appendChild(this.#buildRow('FW Ver', hubInfo.fw))
+                    tblBody.appendChild(this.#buildRow('Model', hubInfo.model))
+                    tblBody.appendChild(this.#buildRow('Uptime', hubInfo.alive))
+                    tblBody.appendChild(this.#buildRow('Reboot', hubInfo.reboot))
+
+                    this.memTitleElement = document.getElementById('hub-info-title')
+                    this.memTitleElement.innerText = hubInfo.name
+
+                    // Set auto-refresh every 5 minutes
+                    this.refreshInterval = setInterval(() => this.refresh(), 5 * 60 * 1000)
+
+                    // Refresh on dbl-click
+                    this.table.addEventListener('dblclick', evt => this.refresh())
+                }
+
+                async refresh() {
+                    const hubInfo = await this.connection.fetchHubInfo(false)
+                    this.table.rows[1].cells[1].innerText = hubInfo.ip
+                    this.table.rows[2].cells[1].innerText = hubInfo.fw
+                    this.table.rows[3].cells[1].innerText = hubInfo.model
+                    this.table.rows[4].cells[1].innerText = hubInfo.alive
+                    this.table.rows[5].cells[1].innerText = hubInfo.reboot
+                    this.memTitleElement.innerText = hubInfo.name
+                }
+
+                #buildRow(label, value) {
+                    const row = document.createElement('tr')
+                    let cell = document.createElement('td')
+                    cell.appendChild(document.createTextNode(label === undefined ? '' : label))
+                    row.appendChild(cell)
+
+                    if (label === undefined) {
+                        cell.setAttribute('colspan', 3)
+                    } else {
+                        cell.setAttribute('title', label)
+                        cell = document.createElement('td')
+                        cell.setAttribute('title', value)
+                        cell.setAttribute('colspan', 2)
+                        cell.appendChild(document.createTextNode(value))
+                    }
+
+                    row.appendChild(cell)
+                    return row
+                }
+            }
+
+            class Grid {
+                constructor(configuration, connection) {
+                    this.configuration = configuration
+                    this.connection = connection
+
+                    this.layout = undefined
+                    this.grid = undefined
+                    this.charts = new Set()
+                }
+
+                async init() {
+                    this.layout = await this.connection.getGridLayout()
+                    if (this.layout.widgets === undefined) this.layout.widgets = {}
+                    console.log('gridLayout', this.layout)
+
+                    // Init grid
+                    this.grid = GridStack.init({
+                        sizeToContent: false,
+                        margin: 5,
+                        float: true,
+
+                        // Non-configurable options
+                        cellHeight: this.configuration.wh,
+                        column: 8,
+                        columnOpts: {
+                            layout: 'move', // moveScale move scale list compact none
+                            columnMax: 8,
+                            breakpointForWindow: true,
+
+                            // TODO: fiddle with these until it behaves nicely on mobile/tablet/laptop
+                            breakpoints: [
+                                { w: 420, c: 1 },
+                                { w: 800, c: 2 },
+                                { w: 1024, c: 4 },
+                                { w: 1366, c: 6 }
+                            ]
+                        },
+                        float: true,
+                        handle: '.chart-title'
+                    })
+
+                    // Save grid changes to the Hub
+                    //this.grid.on('change', () => this.saveLayout())
+                }
+
+                async addChart(chart) {
+                    Object.entries(await chart.metadata()).forEach(([chartId, chartDefaults]) => {
+                        const chartLayout = this.layout.widgets[chartId]
+                        if (this.configuration.hide.includes(chartId)) return
+                        this.grid.addWidget(
+                            DeepMerge.merge(chartDefaults, {
+                                content: `<div id="${chartId}-container" class="chart-container spinner"><div id="${chartId}-title" class="chart-title">${chartDefaults.title}</div><canvas id="${chartId}"></canvas></div>`,
+                                id: chartId,
+                                ...chartLayout
+                            })
+                        )
+
+                        // This might be called multiple times, but it's OK as it is adding to Set
+                        this.charts.add(chart)
+                    })
+                }
+
+                async renderCharts() {
+                    this.charts.forEach(async chart => {
+                        await chart.render()
+                        Object.entries(await chart.metadata()).forEach(([chartId, chartDefaults]) => {
+                            const element = document.getElementById(`${chartId}-container`)
+                            if (element !== null) element.classList.remove('spinner')
+                        })
+                    })
+                }
+
+                async saveLayout() {
+                    console.info('Saving layout', this.grid)
+                    const newLayout = { widgets: {} }
+                    this.grid.engine.nodes.forEach(node => {
+                        newLayout.widgets[node.id] = {
+                            x: node.x,
+                            y: node.y,
+                            w: node.w,
+                            h: node.h
+                        }
+                    })
+
+                    this.layout = newLayout
+                    return this.connection.saveGridLayout(newLayout)
+                }
+            }
+
+            class UI {
+                static colors() {
+                    const css = getComputedStyle(document.documentElement)
+                    return {
+                        BgColor: css.getPropertyValue('--bg-color'),
+                        BgColorDarker: css.getPropertyValue('--bg-color-darker'),
+                        TextColor: css.getPropertyValue('--text-color'),
+                        TextColorDarker: css.getPropertyValue('--text-color-darker'),
+                        BorderColor: css.getPropertyValue('--border-color'),
+                        Yellow: css.getPropertyValue('--Yellow'),
+                        Orange: css.getPropertyValue('--Orange'),
+                        Red: css.getPropertyValue('--Red'),
+                        Magenta: css.getPropertyValue('--Magenta'),
+                        Violet: css.getPropertyValue('--Violet'),
+                        Blue: css.getPropertyValue('--Blue'),
+                        Cyan: css.getPropertyValue('--Cyan'),
+                        Green: css.getPropertyValue('--Green'),
+                        Gray: css.getPropertyValue('--Gray')
                     }
                 }
-            })
 
-            // Set auto-refresh every 1 minute
-            this.refreshInterval = setInterval(() => this.refresh(), 1 * 60 * 1000)
-        }
-
-        async refresh() {
-            const memCpuLast = await this.connection.fetchMemCpuLast()
-            
-            this.memChart.data.datasets[0].value = memCpuLast.mem
-            this.cpuChart.data.datasets[0].value = memCpuLast.cpu
-
-            this.memChart.update()
-            this.cpuChart.update()
-            this.#updateTitle(memCpuLast.time)
-        }
-
-        async #updateTitle(time) {
-            const metadata = await this.metadata()
-            this.memTitleElement.innerText = `${metadata['mem-last'].title} @ ${time}`
-            this.cpuTitleElement.innerText = `${metadata['cpu-last'].title} @ ${time}`
-        }
-    }
-
-    class TableChart {
-        constructor(connection) {
-            this.connection = connection
-
-            this.table = undefined
-            this.titleElement = undefined
-        }
-
-        async metadata() {
-            return Promise.resolve({
-                'hub-info': { w: 2, h: 1, title: 'Hub Information' }
-            });
-        }
-
-        async render() {
-            const hubInfo = await this.connection.fetchHubInfo()
-
-            const canvas = document.getElementById('hub-info')
-            const parentElement = canvas.parentElement
-            parentElement.removeChild(canvas)
-            
-            this.table = document.createElement('table')
-            this.table.setAttribute('id', 'hub-info')
-            const tblBody = document.createElement('tbody')
-            this.table.appendChild(tblBody)
-            parentElement.appendChild(this.table)
-
-            tblBody.appendChild(this.#buildRow())
-            tblBody.appendChild(this.#buildRow('IP Address', hubInfo.ip))
-            tblBody.appendChild(this.#buildRow('FW Ver', hubInfo.fw))
-            tblBody.appendChild(this.#buildRow('Model', hubInfo.model))
-            tblBody.appendChild(this.#buildRow('Uptime', hubInfo.alive))
-            tblBody.appendChild(this.#buildRow('Reboot', hubInfo.reboot))
-
-            this.memTitleElement = document.getElementById('hub-info-title')
-            this.memTitleElement.innerText = hubInfo.name
-
-            // Set auto-refresh every 5 minutes
-            this.refreshInterval = setInterval(() => this.refresh(), 5 * 60 * 1000)
-        }
-
-        async refresh() {
-            const hubInfo = await this.connection.fetchHubInfo(false)
-            this.table.rows[1].cells[1].innerText = hubInfo.ip
-            this.table.rows[2].cells[1].innerText = hubInfo.fw
-            this.table.rows[3].cells[1].innerText = hubInfo.model
-            this.table.rows[4].cells[1].innerText = hubInfo.alive
-            this.table.rows[5].cells[1].innerText = hubInfo.reboot
-            this.memTitleElement.innerText = hubInfo.name
-        }
-
-        #buildRow(label, value) {
-            const row = document.createElement('tr')
-            let cell = document.createElement('td')
-            cell.appendChild(document.createTextNode(label === undefined ? '' : label))
-            row.appendChild(cell)
-
-            if (label === undefined) {
-                cell.setAttribute('colspan', 3)
-            } else {
-                cell.setAttribute('title', label)
-                cell = document.createElement('td')
-                cell.setAttribute('title', value)
-                cell.setAttribute('colspan', 2)
-                cell.appendChild(document.createTextNode(value))
-            }
-
-            row.appendChild(cell)
-            return row
-        }
-    }
-
-    class Grid {
-        constructor(configuration, connection) {
-            this.configuration = configuration
-            this.connection = connection
-
-            this.layout = undefined
-            this.grid = undefined
-            this.charts = new Set()
-        }
-
-        async init() {
-            this.layout = await this.connection.getGridLayout()
-            if (this.layout.widgets === undefined) this.layout.widgets = {}
-            console.log('gridLayout', this.layout)
-
-            // Init grid
-            this.grid = GridStack.init({
-                sizeToContent: false,
-                margin: 5,
-                float: true,
-
-                // Non-configurable options
-                cellHeight: 206, //'25vh',
-                column: 8,
-                columnOpts: {
-                    layout: 'move', // moveScale move scale list compact none
-                    columnMax: 8,
-                    breakpointForWindow: true,
-
-                    // TODO: fiddle with these until it behaves nicely on mobile/tablet/laptop
-                    breakpoints: [{w:420, c:1}, {w:800, c:2}, {w:1024, c:4}, {w:1366, c:6}]
-                },
-                float: true,
-                handle: '.chart-title'
-            })
-
-            // Save grid changes to the Hub
-            //this.grid.on('change', () => this.saveLayout())
-        }
-
-        async addChart(chart) {
-            Object.entries(await chart.metadata()).forEach(([chartId, chartDefaults]) => {
-                const chartLayout = this.layout.widgets[chartId]
-                if (this.configuration.hide.includes(chartId)) return;
-                this.grid.addWidget(DeepMerge.merge(chartDefaults, {
-                    content: `<div id="${chartId}-container" class="chart-container"><div id="${chartId}-title" class="chart-title">${chartDefaults.title}</div><canvas id="${chartId}"></canvas></div>`,
-                    id: chartId,
-                    ...chartLayout
-                }))
-
-                // This might be called multiple times, but it's OK as it is adding to Set
-                this.charts.add(chart);
-            })
-        }
-
-        async renderCharts() {
-            this.charts.forEach(async chart => await chart.render())
-        }
-
-        async saveLayout() {
-            console.info('Saving layout', this.grid)
-            const newLayout = { widgets: {} }
-            this.grid.engine.nodes.forEach(node => {
-                newLayout.widgets[node.id] = {
-                    x: node.x, y: node.y, w: node.w, h: node.h
+                static locale() {
+                    return Intl.NumberFormat().resolvedOptions().locale
                 }
-            })
 
-            this.layout = newLayout
-            return this.connection.saveGridLayout(newLayout)
-        }
-    }
+                constructor(configuration) {
+                    // Setup event handlers
+                    configuration.addEventListener('config', config => this.#repaintConfiguration(config))
 
-    class UI {
-        static colors() {
-            const css = getComputedStyle(document.documentElement)
-            return {
-                BgColor: css.getPropertyValue('--bg-color'),
-                BgColorDarker: css.getPropertyValue('--bg-color-darker'),
-                TextColor: css.getPropertyValue('--text-color'),
-                TextColorDarker: css.getPropertyValue('--text-color-darker'),
-                BorderColor: css.getPropertyValue('--border-color'),
-                Yellow: css.getPropertyValue('--Yellow'),
-                Orange: css.getPropertyValue('--Orange'),
-                Red: css.getPropertyValue('--Red'),
-                Magenta: css.getPropertyValue('--Magenta'),
-                Violet: css.getPropertyValue('--Violet'),
-                Blue: css.getPropertyValue('--Blue'),
-                Cyan: css.getPropertyValue('--Cyan'),
-                Green: css.getPropertyValue('--Green'),
-                Gray: css.getPropertyValue('--Gray')
-            }
-        }
-
-        static locale() {
-            return Intl.NumberFormat().resolvedOptions().locale
-        }
-
-        constructor(configuration) {
-
-            // Setup event handlers
-            configuration.addEventListener('config', config => this.#repaintConfiguration(config))
-
-            // Embeddable
-            window.addEventListener('load', () => {
-                console.log(window.top, window.self)
-                if (window.top !== window.self) {
-                    console.log('in iframe!')
-                    document.body.classList.add('embedded')
+                    // Embeddable
+                    window.addEventListener('load', () => {
+                        console.log(window.top, window.self)
+                        if (window.top !== window.self) {
+                            console.log('in iframe!')
+                            document.body.classList.add('embedded')
+                        }
+                    })
                 }
-            })
-        }
 
-        applyConfiguration() {
-            var searchParams = new URLSearchParams()
+                applyConfiguration() {
+                    var searchParams = new URLSearchParams()
 
-            const params = new URLSearchParams(window.location.search)
-            const accessToken = params.get('access_token')
-            if (accessToken) searchParams.set('access_token', accessToken)
+                    const params = new URLSearchParams(window.location.search)
+                    const accessToken = params.get('access_token')
+                    if (accessToken) searchParams.set('access_token', accessToken)
 
-            var goto = window.location.pathname + '?' + searchParams.toString()
-            history.pushState(null, '', goto)
-        }
+                    var goto = window.location.pathname + '?' + searchParams.toString()
+                    history.pushState(null, '', goto)
+                }
 
-        #repaintConfiguration(config) {
-            document.documentElement.setAttribute('data-theme', config.dark ? 'dark' : 'light')
-            document.querySelector('meta[name="theme-color"]').setAttribute('content',  UI.colors().BgColor)
-        }
-    }
-
-    /////////////////////////////////////////////////////////////////
-    // Entry point
-    /////////////////////////////////////////////////////////////////
-
-    // Init instances
-    const configuration = new Configuration()
-    const hubitatConnection = new HubitatConnection(configuration)
-    const ui = new UI(configuration)
-    const grid = new Grid(configuration, hubitatConnection)
-
-    // Init charts
-    const memCpuHistoryChart = new MemCpuHistoryChart(hubitatConnection)
-    const memCpuLastChart = new MemCpuLastChart(hubitatConnection)
-    const tableChart = new TableChart(hubitatConnection)
-    const intTemp = new InternalTemperatureChart(hubitatConnection);
-
-    // Run application on page load
-    window.addEventListener('load', () => run())
-
-    // Helper functions
-    async function saveGrid() {
-        await grid.saveLayout()
-        alert('Grid layout saved to Hub!')
-    }
-
-    async function run() {
-        try {
-            configuration.init()
-            hubitatConnection.init()
-        } catch (ex) {
-            return alert(ex.message)
-        }
-
-        // Init grid (async as it loads its config from the Hub)
-        await grid.init()
-
-        // Place charts into the grid
-        await grid.addChart(memCpuHistoryChart)
-        await grid.addChart(memCpuLastChart)
-        await grid.addChart(tableChart)
-        await grid.addChart(intTemp)
-
-        // Render charts
-        await grid.renderCharts()
-
-        // Setup Ctrl + S keyboard binding
-        document.addEventListener('keydown', event => {
-            if ((event.ctrlKey || event.metaKey) && event.key === 's') {
-                event.preventDefault()
-                saveGrid()
+                #repaintConfiguration(config) {
+                    document.documentElement.setAttribute('data-theme', config.dark ? 'dark' : 'light')
+                    document.querySelector('meta[name="theme-color"]').setAttribute('content', UI.colors().BgColor)
+                }
             }
-        })
-    }
-    </script>
-</body>
+
+            /////////////////////////////////////////////////////////////////
+            // Entry point
+            /////////////////////////////////////////////////////////////////
+
+            // Init instances
+            const configuration = new Configuration()
+            const hubitatConnection = new HubitatConnection(configuration)
+            const ui = new UI(configuration)
+            const grid = new Grid(configuration, hubitatConnection)
+
+            // Init charts
+            const memCpuHistoryChart = new MemCpuHistoryChart(hubitatConnection)
+            const memCpuLastChart = new MemCpuLastChart(hubitatConnection)
+            const tableChart = new TableChart(hubitatConnection)
+            const intTemp = new InternalTemperatureChart(hubitatConnection)
+
+            // Run application on page load
+            window.addEventListener('load', () => run())
+
+            // Helper functions
+            async function saveGrid() {
+                await grid.saveLayout()
+                alert('Grid layout saved to Hub!')
+            }
+
+            async function run() {
+                document.body.classList.remove('spinner')
+                try {
+                    configuration.init()
+                    hubitatConnection.init()
+                } catch (ex) {
+                    return alert(ex.message)
+                }
+
+                // Init grid (async as it loads its config from the Hub)
+                await grid.init()
+
+                // Place charts into the grid
+                await grid.addChart(memCpuHistoryChart)
+                await grid.addChart(memCpuLastChart)
+                await grid.addChart(tableChart)
+                await grid.addChart(intTemp)
+
+                // Render charts
+                await grid.renderCharts()
+
+                // Setup Ctrl + S keyboard binding
+                document.addEventListener('keydown', event => {
+                    if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+                        event.preventDefault()
+                        saveGrid()
+                    }
+                })
+            }
+        </script>
+    </body>
 </html>
