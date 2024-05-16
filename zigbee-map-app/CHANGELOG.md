@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2024-05-16
+
+### Changed
+- Change "poor" link quality color from yellow to violet - `@Horseflesh`
+- Change "good" link quality LQI interval from [150 - 200) to [130 - 200)
+
+### Fixed
+- Scrollbars on tab contents appear only when necessary
+
 ## [2.0.0] - 2024-03-09
 
 ### Changed

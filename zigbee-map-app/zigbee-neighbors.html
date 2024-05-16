@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Zigbee Neighbors Map - v2.0.0</title>
+    <title>Zigbee Neighbors Map - v2.1.0</title>
     <meta charset="utf-8">
     <meta name="keywords" content="hubitat, zigbee, neighbors, map">
     <meta name="author" content="Dan Danache">
@@ -171,11 +171,12 @@
 
         display: block;
         max-height: calc(100vh - 70px);
-        overflow-y: scroll;
+        overflow-y: auto;
     }
 
     /* Tabs */
-    body.embedded #tabs-container {
+    body.embedded #tabs-container,
+    body.spinner #tabs-container {
         visibility: hidden;
     }
 
@@ -508,9 +509,37 @@
             display: none;
         }
     }
+
+    /* CSS spinner */
+    .spinner {
+        display: inline-block;
+    }
+
+    .spinner:after {
+        position: absolute;
+        top: calc(50% - 32px);
+        left: calc(50% - 32px);
+
+        content: ' ';
+        display: block;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 1px solid var(--text-color-darker);
+        border-color: var(--text-color-darker) transparent var(--text-color-darker) transparent;
+        animation: spinner 1.2s linear infinite;
+    }
+    @keyframes spinner {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
     </style>
 </head>
-<body>
+<body class="spinner">
     <!-- Layout placeholder-->
     <div id="home-layout"></div>
 
@@ -518,7 +547,7 @@
     <div id="graph"></div>
 
     <!-- Tabs Container -->
-    <div id="tabs-container">
+    <div id="tabs-container" >
         <tab-container>
             <div role="tablist">
                 <button type="button" id="status" role="tab" tabindex="0" aria-selected="true">Status</button>
@@ -542,13 +571,13 @@
                             <li><b style="color:var(--Magenta)">magenta</b> &#10132; Interview Failed</li>
                         </ul>
 
-                        <b>Link quality</b>
+                        <b>Link quality (LQI)</b>
                         <ul>
-                            <li><b style="color:var(--Red)">red</b> &#10132; Bad: LQI &lt; 50</li>
-                            <li><b style="color:var(--Yellow)">yellow</b> &#10132; Poor: LQI &lt; 150</li>
-                            <li><b style="color:var(--Blue)">blue</b> &#10132; Good: LQI &lt; 200</li>
-                            <li><b style="color:var(--Cyan)">cyan</b> &#10132; Very good: LQI &lt; 220</li>
-                            <li><b style="color:var(--Green)">green</b> &#10132; Excellent: LQI &gt; 220</li>
+                            <li><b style="color:var(--Red)">red</b> &#10132; Bad: [0 - 50)</li>
+                            <li><b style="color:var(--Violet)">violet</b> &#10132; Poor: [50 - 130)</li>
+                            <li><b style="color:var(--Blue)">blue</b> &#10132; Good: [130 - 200)</li>
+                            <li><b style="color:var(--Cyan)">cyan</b> &#10132; Very good: [200 - 220)</li>
+                            <li><b style="color:var(--Green)">green</b> &#10132; Excellent: [220 - 255]</li>
                         </ul>
 
                         <b>More info</b>
@@ -1448,8 +1477,8 @@
 
             if (link.lqi >= 220) return colors.Green + alpha
             if (link.lqi >= 200) return colors.Cyan + alpha
-            if (link.lqi >= 150) return colors.Blue + alpha
-            if (link.lqi >= 50) return colors.Yellow + alpha
+            if (link.lqi >= 130) return colors.Blue + alpha
+            if (link.lqi >= 50) return colors.Violet + alpha
             return colors.Red + alpha
         }
 
@@ -1731,6 +1760,7 @@
 
     // On page load
     window.addEventListener('load', () => {
+        document.body.classList.remove('spinner')
 
         try {
             configuration.loadFromURL()

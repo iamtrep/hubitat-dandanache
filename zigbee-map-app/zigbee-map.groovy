@@ -9,7 +9,7 @@ import groovy.transform.Field
 import com.hubitat.app.ChildDeviceWrapper
 
 @Field static final String APP_NAME = "Zigbee Map"
-@Field static final String APP_VERSION = "2.0.0"
+@Field static final String APP_VERSION = "2.1.0"
 @Field static final String NEIGHBORS_FILE_NAME = "zigbee-neighbors.html"
 @Field static final String ROUTES_FILE_NAME = "zigbee-routes.html"
 @Field static final String MEMCPU_FILE_NAME = "mem-cpu-history.html"
@@ -22,7 +22,7 @@ definition(
     author: "Dan Danache",
     description: "Visualize the topology and connectivity of your Zigbee network.",
     documentationLink: "https://community.hubitat.com/t/release-zigbee-map-app/133888",
-    importUrl: "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_2.0.0/zigbee-map-app/zigbee-map.groovy",
+    importUrl: "https://raw.githubusercontent.com/dan-danache/hubitat/zigbee-map_2.1.0/zigbee-map-app/zigbee-map.groovy",
     category: "Utility",
     singleInstance: true,
     installOnOpen: true,
@@ -174,7 +174,13 @@ Map changelog() {
         uninstall: false
     ) {
 
-        section ("v2.0.0 - 2024-03-09", hideable: true, hidden: false) {
+        section ("v2.1.0 - 2024-05-16", hideable: true, hidden: false) {
+            paragraph "<li>Change \"poor\" link quality color from yellow to violet - @Horseflesh</li>" +
+            "<li>Change \"good\" link quality LQI interval from [150 - 200) to [130 - 200)</li>" +
+            "<li>Scrollbars on tab contents appear only when ncesessary</li>"
+        }
+
+        section ("v2.0.0 - 2024-03-09", hideable: true, hidden: true) {
             paragraph "<li><b>Breaking change</b>: Some files were renamed therefore your bookmarks or PWA installs might be broken</li>" +
             "<li>Add Zigbee routes map - @Tony</li>" +
             "<li>Fade-out the nodes tooltip to see better how things are connected - @danabw</li>"

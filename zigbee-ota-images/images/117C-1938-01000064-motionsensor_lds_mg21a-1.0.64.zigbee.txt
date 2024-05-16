@@ -1,0 +1,12 @@
+Source: http://fw.ota.homesmart.ikea.net/global/GW1.0/01.21.031/bin/motionsensor_lds_mg21a-0x1938-1.0.64-prod.ota.ota.signed
+Image Details: {
+    "otaHeaderVersion": 256,
+    "otaHeaderLength": 56,
+    "otaHeaderFieldControl": 0,
+    "manufacturerCode": 4476,
+    "imageType": 6456,
+    "fileVersion": 16777316,
+    "zigbeeStackVersion": 2,
+    "otaHeaderString": "GBL motionsensor_lds_mg21a\u0000\u0000\u0000\u0000\u0000\u0000",
+    "totalImageSize": 267650
+}

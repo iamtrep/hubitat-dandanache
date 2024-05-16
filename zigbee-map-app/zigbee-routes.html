@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Zigbee Routing Map - v2.0.0</title>
+    <title>Zigbee Routing Map - v2.1.0</title>
     <meta charset="utf-8">
     <meta name="keywords" content="hubitat, zigbee, routing, map">
     <meta name="author" content="Dan Danache">
@@ -175,7 +175,8 @@
     }
  
     /* Tabs */
-    body.embedded #tabs-container {
+    body.embedded #tabs-container,
+    body.spinner #tabs-container {
         visibility: hidden;
     }
 
@@ -492,9 +493,37 @@
             max-width: 100%;
         }
     }
+
+    /* CSS spinner */
+    .spinner {
+        display: inline-block;
+    }
+
+    .spinner:after {
+        position: absolute;
+        top: calc(50% - 32px);
+        left: calc(50% - 32px);
+
+        content: ' ';
+        display: block;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 1px solid var(--text-color-darker);
+        border-color: var(--text-color-darker) transparent var(--text-color-darker) transparent;
+        animation: spinner 1.2s linear infinite;
+    }
+    @keyframes spinner {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
     </style>
 </head>
-<body>
+<body class="spinner">
     <!-- Graph placeholder -->
     <div id="graph"></div>
 
@@ -1646,6 +1675,7 @@
 
     // On page load
     window.addEventListener('load', () => {
+        document.body.classList.remove('spinner')
 
         try {
             configuration.loadFromURL()
