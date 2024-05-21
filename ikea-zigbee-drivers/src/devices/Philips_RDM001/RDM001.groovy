@@ -102,7 +102,7 @@ case { contains it, [endpointInt:0x01, clusterInt:0x0000, commandInt:0x0A, attrI
     return
 
 // Other events that we expect but are not usefull
-case { contains it, [clusterInt:0x0000, commandInt:0x07] }:  // ConfigureReportingResponse
+case { contains it, [clusterInt:0x0000, commandInt:0x07] }: // Configure Reporting Response
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

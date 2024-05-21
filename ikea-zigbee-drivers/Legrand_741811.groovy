@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'Legrand Connected Outlet (741811)'
-@Field static final String DRIVER_VERSION = '4.1.0'
+@Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for capability.HealthCheck
 import groovy.time.TimeCategory
@@ -32,8 +32,9 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        // For firmware: 003e (1021-0011-003E4203)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,FC01,0B04,0006', outClusters:'0006,0000,FC01,0005,0019', model:' Connected outlet', manufacturer:' Legrand'
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,FC01,0B04,0006,000F', outClusters:'0006,0000,FC01,0005,0019', model:' Mobile outlet', manufacturer:' Legrand' // Firmware: 002f
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,FC01,0B04,0006', outClusters:'0006,0000,FC01,0005,0019', model:' Connected outlet', manufacturer:' Legrand' // Firmware: 003e (1021-0011-003E4203)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,FC01,0B04,0006', outClusters:'0006,0000,FC01,0005,0019', model:' Connected outlet', manufacturer:' Legrand' // Firmware: 0053 (1021-0011-005343FF)
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -41,7 +42,7 @@ metadata {
     
     // Commands for capability.Switch
     command 'toggle'
-    command 'onWithTimedOff', [[name:'On time*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
+    command 'onWithTimedOff', [[name:'On duration*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
     
     // Commands for capability.FirmwareUpdate
     command 'updateFirmware'
@@ -51,7 +52,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Legrand_741811.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                Legrand Connected Outlet (741811) <small>v4.1.0</small><br>
+                Legrand Connected Outlet (741811) <small>v5.0.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#legrand-connected-outlet-741811" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -63,12 +64,7 @@ metadata {
             name: 'logLevel', type: 'enum',
             title: 'Log verbosity',
             description: '<small>Select what type of messages appear in the "Logs" section.</small>',
-            options: [
-                '1': 'Debug - log everything',
-                '2': 'Info - log important events',
-                '3': 'Warning - log events that require attention',
-                '4': 'Error - log errors'
-            ],
+            options: ['1':'Debug - log everything', '2':'Info - log important events', '3':'Warning - log events that require attention', '4':'Error - log errors'],
             defaultValue: '1',
             required: true
         )
@@ -79,11 +75,7 @@ metadata {
             type: 'enum',
             title: 'Power On behaviour',
             description: '<small>Select what happens after a power outage.</small>',
-            options: [
-                'TURN_POWER_ON': 'Turn power On',
-                'TURN_POWER_OFF': 'Turn power Off',
-                'RESTORE_PREVIOUS_STATE': 'Restore previous state'
-            ],
+            options: ['TURN_POWER_ON':'Turn power On', 'TURN_POWER_OFF':'Turn power Off', 'RESTORE_PREVIOUS_STATE':'Restore previous state'],
             defaultValue: 'RESTORE_PREVIOUS_STATE',
             required: true
         )
@@ -94,8 +86,8 @@ metadata {
             title: 'LED mode',
             description: '<small>Select how the LED indicator behaves.</small>',
             options: [
-                    'ALWAYS_ON': 'Always On - LED remains lit at all times, making it easy to find in the dark',
-                   'ALWAYS_OFF': 'Always Off - LED remains off, ensuring total darkness',
+                'ALWAYS_ON': 'Always On - LED remains lit at all times, making it easy to find in the dark',
+                'ALWAYS_OFF': 'Always Off - LED remains off, ensuring total darkness',
                 'OUTLET_STATUS': 'Outlet status - LED indicates the power state of the outlet'
             ],
             defaultValue: 'OUTLET_STATUS',
@@ -154,16 +146,16 @@ List<String> updated(boolean auto = false) {
     log_info "🛠️ ledMode = ${ledMode}"
     switch (ledMode) {
         case 'ALWAYS_ON':
-            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x01, [mfgCode: '0x1021']) // Write LED Mode attribute
-            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x01, [mfgCode: '0x1021']) // Write LED Mode attributes
+            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x01, [mfgCode: '0x1021'])
+            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x01, [mfgCode: '0x1021'])
             break
         case 'ALWAYS_OFF':
-            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x00, [mfgCode: '0x1021']) // Write LED Mode attribute
-            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x00, [mfgCode: '0x1021']) // Write LED Mode attributes
+            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x00, [mfgCode: '0x1021'])
+            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x00, [mfgCode: '0x1021'])
             break
         default:
-            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x01, [mfgCode: '0x1021']) // Write LED Mode attribute
-            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x00, [mfgCode: '0x1021']) // Write LED Mode attributes
+            cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x00, [mfgCode: '0x1021'])
+            cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x01, [mfgCode: '0x1021'])
     }
     
     // Preferences for capability.HealthCheck
@@ -173,15 +165,14 @@ List<String> updated(boolean auto = false) {
     if (joinGroup != null && joinGroup != '----') {
         if (joinGroup == '0000') {
             log_info '🛠️ Leaving all Zigbee groups'
-            cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 04}"  // Leave all groups
+            cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 04}" // Leave all groups
         } else {
             String groupName = GROUPS.getOrDefault(joinGroup, 'Unknown')
             log_info "🛠️ Joining group: ${joinGroup} (${groupName})"
             cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 00 ${utils_payload joinGroup} ${Integer.toHexString(groupName.length()).padLeft(2, '0')}${groupName.bytes.encodeHex()}}"  // Join group
         }
-    
         device.updateSetting 'joinGroup', [value:'----', type:'enum']
-        cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}"  // Get groups membership
+        cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}" // Get groups membership
     }
 
     if (auto) return cmds
@@ -219,7 +210,7 @@ void configure(boolean auto = false) {
     }
 
     // Apply preferences first
-    List<String> cmds = []
+    List<String> cmds = ["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000213C00}"]
     cmds += updated true
 
     // Clear data (keep firmwareMT information though)
@@ -245,17 +236,19 @@ void configure(boolean auto = false) {
     
     // Configuration for capability.PowerSource
     sendEvent name:'powerSource', value:'unknown', type:'digital', descriptionText:'Power source initialized to unknown'
-    cmds += zigbee.readAttribute(0x0000, 0x0007)  // PowerSource
+    cmds += zigbee.readAttribute(0x0000, 0x0007) // PowerSource
 
     // Query Basic cluster attributes
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
     cmds += zigbee.readAttribute(0x0000, [0x0005]) // ModelIdentifier
     cmds += zigbee.readAttribute(0x0000, [0x000A]) // ProductCode
+    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000210000}"
     utils_sendZigbeeCommands cmds
 
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -280,7 +273,7 @@ void refresh(boolean auto = false) {
     cmds += zigbee.readAttribute(0x0B04, 0x050B) // ActivePower
     
     // Refresh for capability.ZigbeeGroups
-    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}"  // Get groups membership
+    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}" // Get groups membership
     utils_sendZigbeeCommands cmds
 }
 
@@ -302,8 +295,8 @@ void toggle() {
 void onWithTimedOff(BigDecimal onTime = 1) {
     Integer delay = onTime < 1 ? 1 : (onTime > 6500 ? 6500 : onTime)
     log_debug 'Sending OnWithTimedOff command'
-
-    String payload = "00 ${zigbee.swapOctets(zigbee.convertToHexString(delay * 10, 4))} 0000"
+    Integer dur = delay * 10
+    String payload = "00 ${utils_payload dur, 4} 0000"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114342 ${payload}}"])
 }
 
@@ -314,7 +307,6 @@ void ping() {
     log_debug 'Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
     runIn 5, 'pingExecute'
 }
-
 void pingExecute() {
     if (state.lastRx == 0) {
         log_info 'Did not sent any messages since it was last configured'
@@ -407,7 +399,7 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "PowerOnBehavior=${newValue}"
             return
         
-        // Other events that we expect but are not usefull for capability.Switch behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
             return
@@ -451,11 +443,11 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "PowerDivisor=${msg.value}"
             return
         
-        // Other events that we expect but are not usefull for capability.PowerMeter behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0B04, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=ActivePower, data=${msg.data}"
             return
-        case { contains it, [clusterInt:0x0B04, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Command
+        case { contains it, [clusterInt:0x0B04, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Response
             return
         
         // Events for capability.HealthCheck
@@ -474,18 +466,12 @@ void parse(String description) {
         
             // PowerSource := { 0x00:Unknown, 0x01:MainsSinglePhase, 0x02:MainsThreePhase, 0x03:Battery, 0x04:DC, 0x05:EmergencyMainsConstantlyPowered, 0x06:EmergencyMainsAndTransferSwitch }
             switch (msg.value) {
-                case '01':
-                case '02':
-                case '05':
-                case '06':
-                    powerSource = 'mains'
-                    break
+                case ['01', '02', '05', '06']:
+                    powerSource = 'mains'; break
                 case '03':
-                    powerSource = 'battery'
-                    break
+                    powerSource = 'battery'; break
                 case '04':
                     powerSource = 'dc'
-                    break
             }
             utils_sendEvent name:'powerSource', value:powerSource, type:'digital', descriptionText:"Power source is ${powerSource}"
             utils_processedZclMessage 'Read Attributes Response', "PowerSource=${msg.value}"
@@ -500,11 +486,11 @@ void parse(String description) {
             Set<String> groupNames = []
             for (int pos = 0; pos < count; pos++) {
                 String groupId = "${msg.data[pos * 2 + 3]}${msg.data[pos * 2 + 2]}"
-                String groupName = GROUPS.getOrDefault(groupId, "Unknown (${groupId})")
+                String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
                 log_debug "Found group membership: ${groupName}"
                 groupNames.add groupName
             }
-            state.joinGrp = groupNames.findAll { !it.startsWith('Unknown') }
+            state.joinGrp = groupNames
             if (state.joinGrp.size() == 0) state.remove 'joinGrp'
             log_info "Current group membership: ${groupNames ?: 'None'}"
             return
@@ -513,7 +499,7 @@ void parse(String description) {
         case { contains it, [clusterInt:0x0004, commandInt:0x00, direction:'01'] }:
             String status = msg.data[0] == '00' ? 'SUCCESS' : (msg.data[0] == '8A' ? 'ALREADY_MEMBER' : 'FAILED')
             String groupId = "${msg.data[2]}${msg.data[1]}"
-            String groupName = GROUPS.getOrDefault(groupId, "Unknown (${groupId})")
+            String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
             utils_processedZclMessage 'Add Group Response', "Status=${status}, groupId=${groupId}, groupName=${groupName}"
             return
         
@@ -521,7 +507,7 @@ void parse(String description) {
         case { contains it, [clusterInt:0x0004, commandInt:0x03, direction:'01'] }:
             String status = msg.data[0] == '00' ? 'SUCCESS' : (msg.data[0] == '8B' ? 'NOT_A_MEMBER' : 'FAILED')
             String groupId = "${msg.data[2]}${msg.data[1]}"
-            String groupName = GROUPS.getOrDefault(groupId, "Unknown (${groupId})")
+            String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
             utils_processedZclMessage 'Left Group Response', "Status=${status}, groupId=${groupId}, groupName=${groupName}"
             return
 
@@ -552,7 +538,8 @@ void parse(String description) {
         case { contains it, [commandInt:0x0A, isClusterSpecific:false] }:              // ZCL: Attribute report we don't care about (configured by other driver)
         case { contains it, [commandInt:0x0B, isClusterSpecific:false] }:              // ZCL: Default Response
         case { contains it, [clusterInt:0x0003, commandInt:0x01] }:                    // ZCL: Identify Query Command
-            utils_processedZclMessage 'Ignored', "endpoint=${msg.endpoint}, cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+        case { contains it, [clusterInt:0x0003, commandInt:0x04] }:                    // ZCL: Write Attribute Response (IdentifyTime)
+            utils_processedZclMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         case { contains it, [endpointInt:0x00, clusterInt:0x8001, commandInt:0x00] }:  // ZDP: IEEE_addr_rsp
@@ -565,7 +552,7 @@ void parse(String description) {
         case { contains it, [endpointInt:0x00, clusterInt:0x8031, commandInt:0x00] }:  // ZDP: Mgmt_LQI_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8032, commandInt:0x00] }:  // ZDP: Mgmt_Rtg_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8038, commandInt:0x00] }:  // ZDP: Mgmt_NWK_Update_notify
-            utils_processedZdpMessage 'Ignored', "cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+            utils_processedZdpMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         // ---------------------------------------------------------------------------------------------------------------
@@ -605,7 +592,8 @@ private void utils_sendZigbeeCommands(List<String> cmds) {
     sendHubCommand new hubitat.device.HubMultiAction(send, hubitat.device.Protocol.ZIGBEE)
 }
 private void utils_sendEvent(Map event) {
-    if (device.currentValue(event.name, true) != event.value || event.isStateChange) {
+    boolean noInfo = event.remove('noInfo') == true
+    if (!noInfo && (device.currentValue(event.name, true) != event.value || event.isStateChange)) {
         log_info "${event.descriptionText} [${event.type}]"
     } else {
         log_debug "${event.descriptionText} [${event.type}]"
@@ -635,6 +623,9 @@ private void utils_processedZdpMessage(String type, String details) {
 }
 private String utils_payload(String value) {
     return value.replace('0x', '').split('(?<=\\G.{2})').reverse().join('')
+}
+private String utils_payload(Integer value, Integer size = 4) {
+    return utils_payload(Integer.toHexString(value).padLeft(size, '0'))
 }
 
 // switch/case syntactic sugar

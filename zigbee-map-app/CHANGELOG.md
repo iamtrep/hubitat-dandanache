@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change "good" link quality LQI interval from [150 - 200) to [130 - 200)
 
 ### Fixed
-- Scrollbars on tab contents appear only when ncesessary
+- Scrollbars on tab contents appear only when necessary
 
 ## [2.0.0] - 2024-03-09
 

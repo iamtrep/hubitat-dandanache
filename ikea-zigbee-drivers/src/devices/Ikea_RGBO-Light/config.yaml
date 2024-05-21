@@ -1,0 +1,33 @@
+device:
+  model: IKEA RGB-Only Light
+  importUrl: https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_RGBO-Light.groovy
+  image: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_RGBO-Light.webp
+  links:
+  - name: device details
+    url: https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#rgb-only-light
+  - name: community page
+    url: https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853
+
+  fingerprints:
+  - type: LED1624G9E27EU
+    firmwares: 2.3.093 (117C-2801-23086631)
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019,1000', model:'TRADFRI bulb E27 CWS opal 600lm', manufacturer:'IKEA of Sweden'
+  - type: LED1624G9E14EU
+    firmwares: 2.3.093 (117C-2803-23093631)
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0300,1000,FC7C', outClusters:'0019,1000', model:'TRADFRI bulb E14 CWS opal 600lm', manufacturer:'IKEA of Sweden'
+
+  capabilities:
+    - file: src/capabilities/Switch.groovy
+      params:
+        powerOnBehavior: true
+        onWithTimedOff: true
+    - file: src/capabilities/ColorControl.groovy
+    - file: src/capabilities/Brightness.groovy
+    - file: src/capabilities/HealthCheck.groovy
+      params:
+        schedule: 0 0 0/1 ? * * *
+        checkInterval: 3600  # every hour
+        thereshold: 3600     # report device as offline if no message was received in the last 60 minutes (device should report On/Off status every 10 minutes)
+    - file: src/capabilities/PowerSource.groovy
+    - file: src/capabilities/ZigbeeGroups.groovy
+    - file: src/capabilities/FirmwareUpdate.groovy

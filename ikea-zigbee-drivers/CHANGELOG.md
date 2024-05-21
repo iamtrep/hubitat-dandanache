@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2024-05-21
+
+### Added
+- Add driver for Dimmable Lights devices, including LED drivers
+- Add driver for White Spectrum Lights devices (CT)
+- Add driver for Color White Spectrum Lights devices (RGB+CT)
+- Add driver for RGB-Only Lights devices (RGB)
+- Add "lastBattery" attribute representing the time the last battery report was received
+- Add Scenes support using Zigbee Bindings for E1810 and E2002
+- Put all devices in "identifying mode" while "configure()" is running - `@UncleAlias`
+- E2006: Move "Dark Mode" preference to "setIndicatorStatus()" command and "indicatorStatus" attribute - `@userLP24`
+
+### Changed
+- Remove ICPSHC24 driver; LED drivers must use the new Dimmable Lights driver
+
+### Fixed
+- Legrand Connected Outlet: Fix blue light is ON when the device is OFF and OFF when its ON - `@BorrisTheCat`
+
 ## [4.1.2] - 2024-04-27
 
 ### Fixed

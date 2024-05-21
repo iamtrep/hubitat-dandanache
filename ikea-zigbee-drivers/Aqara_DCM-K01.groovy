@@ -7,10 +7,11 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'Aqara Dual Relay Module T2 (DCM-K01)'
-@Field static final String DRIVER_VERSION = '4.1.0'
+@Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for capability.MultiRelay
 import com.hubitat.app.ChildDeviceWrapper
+import com.hubitat.app.DeviceWrapper
 
 // Fields for capability.PushableButton
 @Field static final Map<String, List<String>> BUTTONS = [
@@ -38,8 +39,7 @@ metadata {
         capability 'PushableButton'
         capability 'HealthCheck'
 
-        // For firmware: Unknown
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0B04,0702,0005,0004,0003,0012,0000,0006,FCC0', outClusters:'0019,000A', model:'lumi.switch.acn047', manufacturer:'Aqara'
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0B04,0702,0005,0004,0003,0012,0000,0006,FCC0', outClusters:'0019,000A', model:'lumi.switch.acn047', manufacturer:'Aqara' // Firmware: Unknown
         
         // Attributes for devices.Aqara_DCM-K01
         attribute 'powerOutageCount', 'number'
@@ -56,7 +56,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Aqara_DCM-K01.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                Aqara Dual Relay Module T2 (DCM-K01) <small>v4.1.0</small><br>
+                Aqara Dual Relay Module T2 (DCM-K01) <small>v5.0.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#aqara-dual-relay-module-t2-dcm-k01" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -68,12 +68,7 @@ metadata {
             name: 'logLevel', type: 'enum',
             title: 'Log verbosity',
             description: '<small>Select what type of messages appear in the "Logs" section.</small>',
-            options: [
-                '1': 'Debug - log everything',
-                '2': 'Info - log important events',
-                '3': 'Warning - log events that require attention',
-                '4': 'Error - log errors'
-            ],
+            options: ['1':'Debug - log everything', '2':'Info - log important events', '3':'Warning - log events that require attention', '4':'Error - log errors'],
             defaultValue: '1',
             required: true
         )
@@ -274,7 +269,7 @@ void configure(boolean auto = false) {
     }
 
     // Apply preferences first
-    List<String> cmds = []
+    List<String> cmds = ["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000213C00}"]
     cmds += updated true
 
     // Clear data (keep firmwareMT information though)
@@ -317,11 +312,13 @@ void configure(boolean auto = false) {
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
     cmds += zigbee.readAttribute(0x0000, [0x0005]) // ModelIdentifier
     cmds += zigbee.readAttribute(0x0000, [0x000A]) // ProductCode
+    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000210000}"
     utils_sendZigbeeCommands cmds
 
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -361,19 +358,19 @@ private ChildDeviceWrapper fetchChildDevice(Integer moduleNumber) {
     return childDevice ?: addChildDevice('hubitat', 'Generic Component Switch', "${device.deviceNetworkId}-${moduleNumber}", [name:"${device.displayName} - Relay L${moduleNumber}", label:"Relay L${moduleNumber}", isComponent:true])
 }
 
-void componentOff(ChildDeviceWrapper childDevice) {
+void componentOff(DeviceWrapper childDevice) {
     log_debug "▲ Received Off request from ${childDevice.displayName}"
     Integer endpointInt = Integer.parseInt(childDevice.deviceNetworkId.split('-')[1])
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x0${endpointInt} 0x0006 {014300}"])
 }
 
-void componentOn(ChildDeviceWrapper childDevice) {
+void componentOn(DeviceWrapper childDevice) {
     log_debug "▲ Received On request from ${childDevice.displayName}"
     Integer endpointInt = Integer.parseInt(childDevice.deviceNetworkId.split('-')[1])
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x0${endpointInt} 0x0006 {014301}"])
 }
 
-void componentRefresh(ChildDeviceWrapper childDevice) {
+void componentRefresh(DeviceWrapper childDevice) {
     log_debug "▲ Received Refresh request from ${childDevice.displayName}"
     refresh()
 }
@@ -396,7 +393,6 @@ void ping() {
     log_debug 'Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
     runIn 5, 'pingExecute'
 }
-
 void pingExecute() {
     if (state.lastRx == 0) {
         log_info 'Did not sent any messages since it was last configured'
@@ -552,7 +548,7 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Temperature=${temperature}, PowerOutageCount=${powerOutageCount}, SoftwareBuild=${softwareBuild}, Energy=${energy}kWh, Voltage=${voltage}V, Power=${power}W, Amperage=${amperage}A"
             return
         
-        // Other events that we expect but are not usefull for devices.Aqara_DCM-K01 behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0xFCC0, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=LumiSpecific, data=${msg.data}"
             return
@@ -563,7 +559,7 @@ void parse(String description) {
             utils_processedZclMessage 'Report Attributes Response', "OperationMode=${msg.value}, Switch=${msg.endpoint}"
             return
         case { contains it, [clusterInt:0xFCC0, commandInt:0x0A, attrInt:0x000A] }:
-            utils_processedZclMessage 'Report Attributes Response', "switchType=${msg.value}"
+            utils_processedZclMessage 'Report Attributes Response', "SwitchType=${msg.value}"
             return
         case { contains it, [clusterInt:0xFCC0, commandInt:0x0A, attrInt:0x02D0] }:
             utils_processedZclMessage 'Report Attributes Response', "Interlock=${msg.value}"
@@ -572,9 +568,9 @@ void parse(String description) {
             utils_processedZclMessage 'Report Attributes Response', "RelayMode=${msg.value}"
             return
         case { contains it, [clusterInt:0xFCC0, commandInt:0x0A, attrInt:0x00EB] }:
-            utils_processedZclMessage 'Report Attributes Response', "pulseDuration=${msg.value}"
+            utils_processedZclMessage 'Report Attributes Response', "PulseDuration=${msg.value}"
             return
-        case { contains it, [clusterInt:0xFCC0, commandInt:0x04] }:  // Write Attribute Response
+        case { contains it, [clusterInt:0xFCC0, commandInt:0x04] }: // Write Attribute Response
             return
         
         // Events for capability.PowerMeter
@@ -606,11 +602,11 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "PowerDivisor=${msg.value}"
             return
         
-        // Other events that we expect but are not usefull for capability.PowerMeter behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0B04, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=ActivePower, data=${msg.data}"
             return
-        case { contains it, [clusterInt:0x0B04, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Command
+        case { contains it, [clusterInt:0x0B04, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Response
             return
         
         // Events for capability.EnergyMeter
@@ -636,7 +632,7 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "EnergyDivisor=${msg.value}"
             return
         
-        // Other events that we expect but are not usefull for capability.PowerMeter behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0702, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=CurrentSummation, data=${msg.data}"
             return
@@ -656,12 +652,12 @@ void parse(String description) {
                 childDevice.parse([[name:'switch', value:newState, descriptionText:"${childDevice.displayName} was turned ${newState}", type:type]])
             }
         
-            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Module=${moduleNumber}, Switch=${newState}"
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Relay=${moduleNumber}, Switch=${newState}"
             return
         
-        // Other events that we expect but are not usefull for capability.MultiRelay behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=switch, data=${msg.data}"
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
             return
         
         // Events for capability.HealthCheck
@@ -698,7 +694,8 @@ void parse(String description) {
         case { contains it, [commandInt:0x0A, isClusterSpecific:false] }:              // ZCL: Attribute report we don't care about (configured by other driver)
         case { contains it, [commandInt:0x0B, isClusterSpecific:false] }:              // ZCL: Default Response
         case { contains it, [clusterInt:0x0003, commandInt:0x01] }:                    // ZCL: Identify Query Command
-            utils_processedZclMessage 'Ignored', "endpoint=${msg.endpoint}, cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+        case { contains it, [clusterInt:0x0003, commandInt:0x04] }:                    // ZCL: Write Attribute Response (IdentifyTime)
+            utils_processedZclMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         case { contains it, [endpointInt:0x00, clusterInt:0x8001, commandInt:0x00] }:  // ZDP: IEEE_addr_rsp
@@ -711,7 +708,7 @@ void parse(String description) {
         case { contains it, [endpointInt:0x00, clusterInt:0x8031, commandInt:0x00] }:  // ZDP: Mgmt_LQI_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8032, commandInt:0x00] }:  // ZDP: Mgmt_Rtg_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8038, commandInt:0x00] }:  // ZDP: Mgmt_NWK_Update_notify
-            utils_processedZdpMessage 'Ignored', "cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+            utils_processedZdpMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         // ---------------------------------------------------------------------------------------------------------------
@@ -751,7 +748,8 @@ private void utils_sendZigbeeCommands(List<String> cmds) {
     sendHubCommand new hubitat.device.HubMultiAction(send, hubitat.device.Protocol.ZIGBEE)
 }
 private void utils_sendEvent(Map event) {
-    if (device.currentValue(event.name, true) != event.value || event.isStateChange) {
+    boolean noInfo = event.remove('noInfo') == true
+    if (!noInfo && (device.currentValue(event.name, true) != event.value || event.isStateChange)) {
         log_info "${event.descriptionText} [${event.type}]"
     } else {
         log_debug "${event.descriptionText} [${event.type}]"
@@ -781,6 +779,9 @@ private void utils_processedZdpMessage(String type, String details) {
 }
 private String utils_payload(String value) {
     return value.replace('0x', '').split('(?<=\\G.{2})').reverse().join('')
+}
+private String utils_payload(Integer value, Integer size = 4) {
+    return utils_payload(Integer.toHexString(value).padLeft(size, '0'))
 }
 
 // switch/case syntactic sugar

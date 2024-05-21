@@ -33,7 +33,7 @@ case { contains it, [clusterInt:0xFC00, commandInt:0x00] }:
 
 // Other events that we expect but are not usefull
 case { contains it, [clusterInt:0x0000, commandInt:0x04, isClusterSpecific:false] }:
-    utils_processedZclMessage 'Write Attribute Response', 'attribute=Philips magic attribute'
+    utils_processedZclMessage 'Write Attribute Response', 'attribute=Philips Magic Attribute'
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

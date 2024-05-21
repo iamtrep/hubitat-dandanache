@@ -21,13 +21,15 @@ attribute 'airQuality', 'enum', ['good', 'moderate', 'unhealthy for sensitive gr
 attribute 'filterUsage', 'number'
 attribute 'pm25', 'number'
 attribute 'auto', 'enum', ['on', 'off']
+attribute 'indicatorStatus', 'enum', ['on', 'off']
 {{/ @attributes }}
 {{!--------------------------------------------------------------------------}}
 {{# @commands }}
 
 // Commands for devices.Ikea_E2006
-command 'setSpeed', [[name:'Fan speed*', type:'ENUM', description:'Fan speed to set', constraints:SUPPORTED_FAN_SPEEDS]]
+command 'setSpeed', [[name:'Fan speed*', type:'ENUM', description:'Select the desired fan speed', constraints:SUPPORTED_FAN_SPEEDS]]
 command 'toggle'
+command 'setIndicatorStatus', [[name:'Status*', type:'ENUM', description:'Select LED indicators status on the device', constraints:['on', 'off']]]
 {{/ @commands }}
 {{!--------------------------------------------------------------------------}}
 {{# @inputs }}
@@ -64,12 +66,6 @@ input(
     name: 'childLock', type: 'bool',
     title: 'Child lock',
     description: '<small>Lock physical controls, safeguarding against accidental operation.</small>',
-    defaultValue: false
-)   
-input(
-    name: 'darkMode', type: 'bool',
-    title: 'Dark mode',
-    description: '<small>Turn off LED indicators on the device, ensuring total darkness.</small>',
     defaultValue: false
 )
 {{/ @inputs }}
@@ -154,6 +150,10 @@ void cycleSpeed() {
     log_debug "Cycling speed to: ${newSpeed}"
     utils_sendZigbeeCommands(zigbee.writeAttribute(0xFC7D, 0x0006, 0x20, newSpeed, [mfgCode:'0x117C']))
 }
+void setIndicatorStatus(String status) {
+    utils_sendZigbeeCommands(zigbee.writeAttribute(0xFC7D, 0x0003, 0x10, status == 'off' ? 0x01 : 0x00, [mfgCode:'0x117C']))
+    utils_sendEvent name:'indicatorStatus', value:status, descriptionText:"Indicator status turned ${status}", type:'digital'
+}
 private Integer lerp(Integer ylo, Integer yhi, BigDecimal xlo, BigDecimal xhi, Integer cur) {
     return Math.round(((cur - xlo) / (xhi - xlo)) * (yhi - ylo) + ylo)
 }
@@ -193,13 +193,6 @@ if (childLock == null) {
 }
 log_info "🛠️ childLock = ${childLock}"
 cmds += zigbee.writeAttribute(0xFC7D, 0x0005, 0x10, childLock ? 0x01 : 0x00, [mfgCode:'0x117C'])
-
-if (darkMode == null) {
-    darkMode = false
-    device.updateSetting 'darkMode', [value:darkMode, type:'bool']
-}
-log_info "🛠️ darkMode = ${darkMode}"
-cmds += zigbee.writeAttribute(0xFC7D, 0x0003, 0x10, darkMode ? 0x01 : 0x00, [mfgCode:'0x117C'])
 {{/ @updated }}
 {{!--------------------------------------------------------------------------}}
 {{# @configure }}
@@ -211,7 +204,7 @@ cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0xFC7D {${device.zigbeeI
 cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0000 0x23 0x0000 0x0258 {0A} {117C}"  // Report FilterRunTime (uint32) at least every 10 minutes
 cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0001 0x20 0x0000 0x0000 {01} {117C}"  // Report ReplaceFilter (uint8)
 cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0002 0x23 0x0000 0x0000 {01} {117C}"  // Report FilterLifeTime (uint32)
-//cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0003 0x10 0x0000 0x0000 {01} {117C}"  // Report DarkMode (bool)
+//cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0003 0x10 0x0000 0x0000 {01} {117C}"  // Report IndicatorStatus (bool)
 //cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0004 0x21 0x0000 0x0258 {01} {117C}"  // Report PM25Measurement (uint16)
 cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0005 0x10 0x0000 0x0000 {01} {117C}"  // Report ChildLock (bool)
 cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0006 0x20 0x0000 0x0000 {01} {117C}"  // Report FanMode (uint8)
@@ -225,7 +218,7 @@ cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0007 0x20 0x0000 0x0000
 cmds += zigbee.readAttribute(0xFC7D, 0x0000, [mfgCode: '0x117C']) // FilterRunTime
 cmds += zigbee.readAttribute(0xFC7D, 0x0001, [mfgCode: '0x117C']) // ReplaceFilter
 cmds += zigbee.readAttribute(0xFC7D, 0x0002, [mfgCode: '0x117C']) // FilterLifeTime
-cmds += zigbee.readAttribute(0xFC7D, 0x0003, [mfgCode: '0x117C']) // DarkMode
+cmds += zigbee.readAttribute(0xFC7D, 0x0003, [mfgCode: '0x117C']) // IndicatorStatus
 cmds += zigbee.readAttribute(0xFC7D, 0x0004, [mfgCode: '0x117C']) // PM25Measurement
 cmds += zigbee.readAttribute(0xFC7D, 0x0005, [mfgCode: '0x117C']) // ChildLock
 cmds += zigbee.readAttribute(0xFC7D, 0x0006, [mfgCode: '0x117C']) // FanMode
@@ -327,11 +320,11 @@ case { contains it, [clusterInt:0xFC7D, commandInt:0x01, attrInt:0x0002] }:
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "FilterLifeTime=${msg.value} (${lifeTimeDays} days)"
     return
 
-// Read Attributes: DarkMode
+// Read Attributes: IndicatorStatus
 case { contains it, [clusterInt:0xFC7D, commandInt:0x01, attrInt:0x0003] }:
-    darkMode = msg.value == '01'
-    device.updateSetting 'darkMode', [value:darkMode, type:'bool']
-    utils_processedZclMessage 'Read Attributes Response', "DarkMode=${msg.value}"
+    String indicatorStatus = msg.value == '01' ? 'off' : 'on'
+    utils_sendEvent name:'indicatorStatus', value:status, descriptionText:"Indicator status turned ${indicatorStatus}", type:'digital'
+    utils_processedZclMessage 'Read Attributes Response', "IndicatorStatus=${indicatorStatus}"
     return
 
 // Report/Read Attributes: ChildLock
@@ -342,9 +335,11 @@ case { contains it, [clusterInt:0xFC7D, commandInt:0x01, attrInt:0x0005] }:
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "ChildLock=${msg.value}"
     return
 
-// Other events that we expect but are not usefull for devices.E2006 behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0xFC7D, commandInt:0x04] }: // Write Attribute Response (0x04)
-case { contains it, [clusterInt:0xFC7D, commandInt:0x07] }: // Configure Reporting Response
+    return
+case { contains it, [clusterInt:0xFC7D, commandInt:0x07] }:
+    utils_processedZclMessage 'Configure Reporting Response', "data=${msg.data}"
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

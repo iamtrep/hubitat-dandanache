@@ -36,9 +36,9 @@ case { contains it, [clusterInt:0x0405, commandInt:0x01, attrInt:0x0000] }:
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "RelativeHumidity=${msg.value}"
     return
 
-// Other events that we expect but are not usefull for capability.RelativeHumidity behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0x0405, commandInt:0x07] }:
-    utils_processedZclMessage 'Configure Reporting Response', "attribute=humidity, data=${msg.data}"
+    utils_processedZclMessage 'Configure Reporting Response', "attribute=RelativeHumidity, data=${msg.data}"
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

@@ -20,8 +20,6 @@ device:
       params:
         endpoint: '0x02'
     - file: src/capabilities/Battery.groovy
-      params:
-        half: true
     - file: src/capabilities/HealthCheck.groovy
       params:
         schedule: 0 0 0/1 ? * * *

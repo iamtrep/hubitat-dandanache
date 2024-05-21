@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME = 'IKEA Starkvind Air Purifier (E2006)'
-@Field static final String DRIVER_VERSION = '4.1.0'
+@Field static final String DRIVER_VERSION = '5.0.0'
 
 // Fields for devices.Ikea_E2006
 @Field static final List<String> SUPPORTED_FAN_SPEEDS = [
@@ -35,25 +35,24 @@ metadata {
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        // For firmware: 1.0.033 (117C-110C-00010033)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0202,FC57,FC7D', outClusters:'0019,0400,042A', model:'STARKVIND Air purifier table', manufacturer:'IKEA of Sweden'
-
-        // For firmware: 1.1.001 (117C-110C-00011001)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0202,FC57,FC7C,FC7D', outClusters:'0019,0400,042A', model:'STARKVIND Air purifier table', manufacturer:'IKEA of Sweden'
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0202,FC57,FC7D', outClusters:'0019,0400,042A', model:'STARKVIND Air purifier table', manufacturer:'IKEA of Sweden' // Firmware: 1.0.033 (117C-110C-00010033)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0202,FC57,FC7C,FC7D', outClusters:'0019,0400,042A', model:'STARKVIND Air purifier table', manufacturer:'IKEA of Sweden' // Firmware: 1.1.001 (117C-110C-00011001)
         
         // Attributes for devices.Ikea_E2006
         attribute 'airQuality', 'enum', ['good', 'moderate', 'unhealthy for sensitive groups', 'unhealthy', 'hazardous']
         attribute 'filterUsage', 'number'
         attribute 'pm25', 'number'
         attribute 'auto', 'enum', ['on', 'off']
+        attribute 'indicatorStatus', 'enum', ['on', 'off']
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
     }
     
     // Commands for devices.Ikea_E2006
-    command 'setSpeed', [[name:'Fan speed*', type:'ENUM', description:'Fan speed to set', constraints:SUPPORTED_FAN_SPEEDS]]
+    command 'setSpeed', [[name:'Fan speed*', type:'ENUM', description:'Select the desired fan speed', constraints:SUPPORTED_FAN_SPEEDS]]
     command 'toggle'
+    command 'setIndicatorStatus', [[name:'Status*', type:'ENUM', description:'Select LED indicators status on the device', constraints:['on', 'off']]]
     
     // Commands for capability.FirmwareUpdate
     command 'updateFirmware'
@@ -63,7 +62,7 @@ metadata {
             name: 'helpInfo', type: 'hidden',
             title: '''
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E2006.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                IKEA Starkvind Air Purifier (E2006) <small>v4.1.0</small><br>
+                IKEA Starkvind Air Purifier (E2006) <small>v5.0.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#starkvind-air-purifier-e2006" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
@@ -75,12 +74,7 @@ metadata {
             name: 'logLevel', type: 'enum',
             title: 'Log verbosity',
             description: '<small>Select what type of messages appear in the "Logs" section.</small>',
-            options: [
-                '1': 'Debug - log everything',
-                '2': 'Info - log important events',
-                '3': 'Warning - log events that require attention',
-                '4': 'Error - log errors'
-            ],
+            options: ['1':'Debug - log everything', '2':'Info - log important events', '3':'Warning - log events that require attention', '4':'Error - log errors'],
             defaultValue: '1',
             required: true
         )
@@ -117,12 +111,6 @@ metadata {
             name: 'childLock', type: 'bool',
             title: 'Child lock',
             description: '<small>Lock physical controls, safeguarding against accidental operation.</small>',
-            defaultValue: false
-        )   
-        input(
-            name: 'darkMode', type: 'bool',
-            title: 'Dark mode',
-            description: '<small>Turn off LED indicators on the device, ensuring total darkness.</small>',
             defaultValue: false
         )
     }
@@ -175,13 +163,6 @@ List<String> updated(boolean auto = false) {
     log_info "🛠️ childLock = ${childLock}"
     cmds += zigbee.writeAttribute(0xFC7D, 0x0005, 0x10, childLock ? 0x01 : 0x00, [mfgCode:'0x117C'])
     
-    if (darkMode == null) {
-        darkMode = false
-        device.updateSetting 'darkMode', [value:darkMode, type:'bool']
-    }
-    log_info "🛠️ darkMode = ${darkMode}"
-    cmds += zigbee.writeAttribute(0xFC7D, 0x0003, 0x10, darkMode ? 0x01 : 0x00, [mfgCode:'0x117C'])
-    
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, 'healthCheck'
 
@@ -220,7 +201,7 @@ void configure(boolean auto = false) {
     }
 
     // Apply preferences first
-    List<String> cmds = []
+    List<String> cmds = ["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000213C00}"]
     cmds += updated true
 
     // Clear data (keep firmwareMT information though)
@@ -239,7 +220,7 @@ void configure(boolean auto = false) {
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0000 0x23 0x0000 0x0258 {0A} {117C}"  // Report FilterRunTime (uint32) at least every 10 minutes
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0001 0x20 0x0000 0x0000 {01} {117C}"  // Report ReplaceFilter (uint8)
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0002 0x23 0x0000 0x0000 {01} {117C}"  // Report FilterLifeTime (uint32)
-    //cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0003 0x10 0x0000 0x0000 {01} {117C}"  // Report DarkMode (bool)
+    //cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0003 0x10 0x0000 0x0000 {01} {117C}"  // Report IndicatorStatus (bool)
     //cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0004 0x21 0x0000 0x0258 {01} {117C}"  // Report PM25Measurement (uint16)
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0005 0x10 0x0000 0x0000 {01} {117C}"  // Report ChildLock (bool)
     cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7D 0x0006 0x20 0x0000 0x0000 {01} {117C}"  // Report FanMode (uint8)
@@ -252,17 +233,19 @@ void configure(boolean auto = false) {
     
     // Configuration for capability.PowerSource
     sendEvent name:'powerSource', value:'unknown', type:'digital', descriptionText:'Power source initialized to unknown'
-    cmds += zigbee.readAttribute(0x0000, 0x0007)  // PowerSource
+    cmds += zigbee.readAttribute(0x0000, 0x0007) // PowerSource
 
     // Query Basic cluster attributes
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
     cmds += zigbee.readAttribute(0x0000, [0x0005]) // ModelIdentifier
     cmds += zigbee.readAttribute(0x0000, [0x000A]) // ProductCode
+    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000210000}"
     utils_sendZigbeeCommands cmds
 
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -281,7 +264,7 @@ void refresh(boolean auto = false) {
     cmds += zigbee.readAttribute(0xFC7D, 0x0000, [mfgCode: '0x117C']) // FilterRunTime
     cmds += zigbee.readAttribute(0xFC7D, 0x0001, [mfgCode: '0x117C']) // ReplaceFilter
     cmds += zigbee.readAttribute(0xFC7D, 0x0002, [mfgCode: '0x117C']) // FilterLifeTime
-    cmds += zigbee.readAttribute(0xFC7D, 0x0003, [mfgCode: '0x117C']) // DarkMode
+    cmds += zigbee.readAttribute(0xFC7D, 0x0003, [mfgCode: '0x117C']) // IndicatorStatus
     cmds += zigbee.readAttribute(0xFC7D, 0x0004, [mfgCode: '0x117C']) // PM25Measurement
     cmds += zigbee.readAttribute(0xFC7D, 0x0005, [mfgCode: '0x117C']) // ChildLock
     cmds += zigbee.readAttribute(0xFC7D, 0x0006, [mfgCode: '0x117C']) // FanMode
@@ -366,6 +349,10 @@ void cycleSpeed() {
     log_debug "Cycling speed to: ${newSpeed}"
     utils_sendZigbeeCommands(zigbee.writeAttribute(0xFC7D, 0x0006, 0x20, newSpeed, [mfgCode:'0x117C']))
 }
+void setIndicatorStatus(String status) {
+    utils_sendZigbeeCommands(zigbee.writeAttribute(0xFC7D, 0x0003, 0x10, status == 'off' ? 0x01 : 0x00, [mfgCode:'0x117C']))
+    utils_sendEvent name:'indicatorStatus', value:status, descriptionText:"Indicator status turned ${status}", type:'digital'
+}
 private Integer lerp(Integer ylo, Integer yhi, BigDecimal xlo, BigDecimal xhi, Integer cur) {
     return Math.round(((cur - xlo) / (xhi - xlo)) * (yhi - ylo) + ylo)
 }
@@ -387,7 +374,6 @@ void ping() {
     log_debug 'Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
     runIn 5, 'pingExecute'
 }
-
 void pingExecute() {
     if (state.lastRx == 0) {
         log_info 'Did not sent any messages since it was last configured'
@@ -548,11 +534,11 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "FilterLifeTime=${msg.value} (${lifeTimeDays} days)"
             return
         
-        // Read Attributes: DarkMode
+        // Read Attributes: IndicatorStatus
         case { contains it, [clusterInt:0xFC7D, commandInt:0x01, attrInt:0x0003] }:
-            darkMode = msg.value == '01'
-            device.updateSetting 'darkMode', [value:darkMode, type:'bool']
-            utils_processedZclMessage 'Read Attributes Response', "DarkMode=${msg.value}"
+            String indicatorStatus = msg.value == '01' ? 'off' : 'on'
+            utils_sendEvent name:'indicatorStatus', value:status, descriptionText:"Indicator status turned ${indicatorStatus}", type:'digital'
+            utils_processedZclMessage 'Read Attributes Response', "IndicatorStatus=${indicatorStatus}"
             return
         
         // Report/Read Attributes: ChildLock
@@ -563,9 +549,11 @@ void parse(String description) {
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "ChildLock=${msg.value}"
             return
         
-        // Other events that we expect but are not usefull for devices.E2006 behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0xFC7D, commandInt:0x04] }: // Write Attribute Response (0x04)
-        case { contains it, [clusterInt:0xFC7D, commandInt:0x07] }: // Configure Reporting Response
+            return
+        case { contains it, [clusterInt:0xFC7D, commandInt:0x07] }:
+            utils_processedZclMessage 'Configure Reporting Response', "data=${msg.data}"
             return
         
         // Events for capability.HealthCheck
@@ -584,18 +572,12 @@ void parse(String description) {
         
             // PowerSource := { 0x00:Unknown, 0x01:MainsSinglePhase, 0x02:MainsThreePhase, 0x03:Battery, 0x04:DC, 0x05:EmergencyMainsConstantlyPowered, 0x06:EmergencyMainsAndTransferSwitch }
             switch (msg.value) {
-                case '01':
-                case '02':
-                case '05':
-                case '06':
-                    powerSource = 'mains'
-                    break
+                case ['01', '02', '05', '06']:
+                    powerSource = 'mains'; break
                 case '03':
-                    powerSource = 'battery'
-                    break
+                    powerSource = 'battery'; break
                 case '04':
                     powerSource = 'dc'
-                    break
             }
             utils_sendEvent name:'powerSource', value:powerSource, type:'digital', descriptionText:"Power source is ${powerSource}"
             utils_processedZclMessage 'Read Attributes Response', "PowerSource=${msg.value}"
@@ -628,7 +610,8 @@ void parse(String description) {
         case { contains it, [commandInt:0x0A, isClusterSpecific:false] }:              // ZCL: Attribute report we don't care about (configured by other driver)
         case { contains it, [commandInt:0x0B, isClusterSpecific:false] }:              // ZCL: Default Response
         case { contains it, [clusterInt:0x0003, commandInt:0x01] }:                    // ZCL: Identify Query Command
-            utils_processedZclMessage 'Ignored', "endpoint=${msg.endpoint}, cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+        case { contains it, [clusterInt:0x0003, commandInt:0x04] }:                    // ZCL: Write Attribute Response (IdentifyTime)
+            utils_processedZclMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         case { contains it, [endpointInt:0x00, clusterInt:0x8001, commandInt:0x00] }:  // ZDP: IEEE_addr_rsp
@@ -641,7 +624,7 @@ void parse(String description) {
         case { contains it, [endpointInt:0x00, clusterInt:0x8031, commandInt:0x00] }:  // ZDP: Mgmt_LQI_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8032, commandInt:0x00] }:  // ZDP: Mgmt_Rtg_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8038, commandInt:0x00] }:  // ZDP: Mgmt_NWK_Update_notify
-            utils_processedZdpMessage 'Ignored', "cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+            utils_processedZdpMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         // ---------------------------------------------------------------------------------------------------------------
@@ -681,7 +664,8 @@ private void utils_sendZigbeeCommands(List<String> cmds) {
     sendHubCommand new hubitat.device.HubMultiAction(send, hubitat.device.Protocol.ZIGBEE)
 }
 private void utils_sendEvent(Map event) {
-    if (device.currentValue(event.name, true) != event.value || event.isStateChange) {
+    boolean noInfo = event.remove('noInfo') == true
+    if (!noInfo && (device.currentValue(event.name, true) != event.value || event.isStateChange)) {
         log_info "${event.descriptionText} [${event.type}]"
     } else {
         log_debug "${event.descriptionText} [${event.type}]"
@@ -711,6 +695,9 @@ private void utils_processedZdpMessage(String type, String details) {
 }
 private String utils_payload(String value) {
     return value.replace('0x', '').split('(?<=\\G.{2})').reverse().join('')
+}
+private String utils_payload(Integer value, Integer size = 4) {
+    return utils_payload(Integer.toHexString(value).padLeft(size, '0'))
 }
 
 // switch/case syntactic sugar

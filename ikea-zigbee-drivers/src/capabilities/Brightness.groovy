@@ -1,5 +1,6 @@
 {{!--------------------------------------------------------------------------}}
 {{# @definition }}
+capability 'Light'
 capability 'ChangeLevel'
 capability 'SwitchLevel'
 {{/ @definition }}
@@ -9,32 +10,42 @@ capability 'SwitchLevel'
 // Inputs for capability.Brightness
 input(
     name: 'levelStep', type: 'enum',
-    title: 'Brightness up/down step',
-    description: '<small>Level adjust when using the levelUp/levelDown commands.</small>',
+    title: 'Brightness up/down shift',
+    description: '<small>Brightness +/- adjust for the shiftLevel() command.</small>',
+    options: ['1':'1%', '2':'2%', '5':'5%', '10':'10%', '20':'20%', '25':'25%', '33':'33%', '50':'50%'],
+    defaultValue: '25',
+    required: true
+)
+input(
+    name: 'levelChangeRate', type: 'enum',
+    title: 'Brightness change rate',
+    description: '<small>Brightness +/- adjust for the startLevelChange() command.</small>',
     options: [
-         '1': '1%',
-         '2': '2%',
-         '5': '5%',
-        '10': '10%',
-        '20': '20%',
-        '25': '25%',
-        '33': '33%'
+         '10': '10% / sec - from 0% to 100% in 10 seconds',
+         '20': '20% / sec - from 0% to 100% in 5 seconds',
+         '33': '33% / sec - from 0% to 100% in 3 seconds',
+         '50': '50% / secs - from 0% to 100% in 2 seconds',
+        '100': '100% / sec - from 0% to 100% in 1 seconds',
     ],
     defaultValue: '20',
     required: true
 )
 input(
-    name: 'startLevelChangeRate', type: 'enum',
-    title: 'Brightness change rate',
-    description: '<small>The rate of brightness change when using the startLevelChange() command.</small>',
+    name: 'levelTransitionTime', type: 'enum',
+    title: 'Brightness transition time',
+    description: '<small>Time taken to move to/from the target brightness when device is turned On/Off.</small>',
     options: [
-         '10': '10% / second : from 0% to 100% in 10 seconds',
-         '20': '20% / second : from 0% to 100% in 5 seconds',
-         '33': '33% / second : from 0% to 100% in 3 seconds',
-         '50': '50% / seconds : from 0% to 100% in 2 seconds',
-        '100': '100% / second : from 0% to 100% in 1 seconds',
+         '0': 'Instant',
+         '5': '0.5 seconds',
+        '10': '1 second',
+        '15': '1.5 seconds',
+        '20': '2 seconds',
+        '30': '3 seconds',
+        '40': '4 seconds',
+        '50': '5 seconds',
+       '100': '10 seconds'
     ],
-    defaultValue: '20',
+    defaultValue: '5',
     required: true
 )
 input(
@@ -60,27 +71,9 @@ if (turnOnBehavior == 'FIXED_VALUE') {
     )
 }
 input(
-    name: 'transitionTime', type: 'enum',
-    title: 'On/Off transition time',
-    description: '<small>Time taken to move to/from the target brightness when device is turned On/Off.</small>',
-    options: [
-         '0': 'Instant',
-         '5': '0.5 seconds',
-        '10': '1 second',
-        '15': '1.5 seconds',
-        '20': '2 seconds',
-        '30': '3 seconds',
-        '40': '4 seconds',
-        '50': '5 seconds',
-       '100': '10 seconds'
-    ],
-    defaultValue: '5',
-    required: true
-)
-input(
     name: 'prestaging', type: 'bool',
     title: 'Pre-staging',
-    description: '<small>Set the brightness level without turning On the device (for later use).</small>',
+    description: '<small>Set brightness level without turning On the device (for later use).</small>',
     defaultValue: false,
     required: true
 )
@@ -89,77 +82,38 @@ input(
 {{# @commands }}
 
 // Commands for capability.Brightness
-command 'levelUp'
-command 'levelDown'
+command 'shiftLevel', [[name:'Direction*', type:'ENUM', constraints: ['up', 'down']]]
 {{/ @commands }}
 {{!--------------------------------------------------------------------------}}
 {{# @implementation }}
 
 // Implementation for capability.Brightness
+void setLevel(BigDecimal level, BigDecimal duration = 0) {
+    Integer newLevel = level > 100 ? 100 : (level < 0 ? 0 : level)
+    log_debug "Setting brightness level to ${newLevel}% during ${duration} seconds"
+    Integer lvl = newLevel * 2.54
+    Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10 // Max transition time = 30 min
+    String command = prestaging == false ? '04' : '00'
+    String payload = "${utils_payload lvl, 2} ${utils_payload dur, 4}"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {1143${command} ${payload}}"])
+}
 void startLevelChange(String direction) {
-    log_debug "Starting brightness change ${direction}wards with a rate of ${startLevelChangeRate}% / second"
-
+    log_debug "Starting brightness level change ${direction}wards with a rate of ${levelChangeRate}% / second"
     Integer mode = direction == 'up' ? 0x00 : 0x01
-    Integer rate = Integer.parseInt(startLevelChangeRate) * 2.54
-    String payload = "${zigbee.convertToHexString(mode, 2)} ${zigbee.convertToHexString(rate, 2)}"
+    Integer rate = Integer.parseInt(levelChangeRate) * 2.54
+    String payload = "${utils_payload mode, 2} ${utils_payload rate, 2}"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114301 ${payload}}"])
 }
 void stopLevelChange() {
-    log_debug 'Stopping brightness change'
+    log_debug 'Stopping brightness level change'
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114303}"])
 }
-void levelUp() {
-    log_debug "Moving brightness up by ${levelStep}%"
-
+void shiftLevel(String direction) {
+    log_debug "Shifting brightness level ${direction} by ${levelStep}%"
+    Integer mode = direction == 'up' ? 0x00 : 0x01
     Integer stepSize = Integer.parseInt(levelStep) * 2.54
-    Integer dur = 0
-
-    String payload = "${zigbee.convertToHexString(0x00, 2)} ${zigbee.convertToHexString(stepSize, 2)} ${zigbee.swapOctets(zigbee.convertToHexString(dur, 4))}"
+    String payload = "${utils_payload mode, 2} ${utils_payload stepSize, 2} 0000"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114302 ${payload}}"])
-}
-void levelDown() {
-    log_debug "Moving brightness down by ${levelStep}%"
-
-    Integer stepSize = Integer.parseInt(levelStep) * 2.54
-    Integer dur = 0
-
-    String payload = "${zigbee.convertToHexString(0x01, 2)} ${zigbee.convertToHexString(stepSize, 2)} ${zigbee.swapOctets(zigbee.convertToHexString(dur, 4))}"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114302 ${payload}}"])
-}
-void setLevel(BigDecimal level, BigDecimal duration = 0) {
-    Integer newLevel = level > 100 ? 100 : (level < 0 ? 0 : level)
-    log_debug "Setting brightness to ${newLevel}% during ${duration} seconds"
-
-    // Device is On: use the Move To Level command
-    if (device.currentValue('switch', true) == 'on' || prestaging == false) {
-        Integer lvl = newLevel * 2.54
-        Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10   // Max transition time = 30 min
-        String command = prestaging == false ? '04' : '00'
-        String payload = "${zigbee.convertToHexString(lvl, 2)} ${zigbee.swapOctets(zigbee.convertToHexString(dur, 4))}"
-        utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {1143${command} ${payload}}"])
-        return
-    }
-
-    // Device is Off and onLevel is set to a fixed value: ignore command
-    if (turnOnBehavior == 'FIXED_VALUE') {
-        log_info 'Ignoring Set Level command because the device is turned Off and "Turn On behavior" preference is set to "Always start with the same fixed brightness"'
-        return
-    }
-
-    // Device is Off: keep the device turned Off, use the OnLevel attribute
-    log_debug('Device is turned Off so we pre-stage brightness level for when the device will be turned On')
-    applyOnLevel newLevel
-    utils_sendEvent(name:'level', value:newLevel, descriptionText:"Brightness is ${newLevel}%", type:'digital', isStateChange:true)
-}
-void applyOnLevel(Integer level) {
-    Integer newLevel = level > 100 ? 100 : (level < 0 ? 0 : level)
-    log_debug "Setting Turn On brightness to ${newLevel}%"
-    Integer lvl = newLevel * 2.54
-    utils_sendZigbeeCommands zigbee.writeAttribute(0x0008, 0x0011, 0x20, lvl)
-}
-private void turnOnCallback(String switchState) {
-    // Device was just turned on: Read the value of the OnLevel attribute to sync/update its value
-    if (switchState == 'on') utils_sendZigbeeCommands zigbee.readAttribute(0x0008, 0x0011)
 }
 {{/ @implementation }}
 {{!--------------------------------------------------------------------------}}
@@ -172,11 +126,11 @@ if (levelStep == null) {
 }
 log_info "🛠️ levelStep = ${levelStep}%"
 
-if (startLevelChangeRate == null) {
-    startLevelChangeRate = '20'
-    device.updateSetting 'startLevelChangeRate', [value:startLevelChangeRate, type:'enum']
+if (levelChangeRate == null) {
+    levelChangeRate = '20'
+    device.updateSetting 'levelChangeRate', [value:levelChangeRate, type:'enum']
 }
-log_info "🛠️ startLevelChangeRate = ${startLevelChangeRate}% / second"
+log_info "🛠️ levelChangeRate = ${levelChangeRate}% / second"
 
 if (turnOnBehavior == null) {
     turnOnBehavior = 'RESTORE_PREVIOUS_LEVEL'
@@ -184,35 +138,38 @@ if (turnOnBehavior == null) {
 }
 log_info "🛠️ turnOnBehavior = ${turnOnBehavior}"
 if (turnOnBehavior == 'FIXED_VALUE') {
-    Integer lvl = onLevelValue == null ? 50 : onLevelValue.intValue()
-    device.updateSetting 'onLevelValue', [value:lvl, type:'number']
-    log_info "🛠️ onLevelValue = ${lvl}%"
-    applyOnLevel(lvl)
+    Integer onLevelValue = onLevelValue == null ? 50 : onLevelValue.intValue()
+    device.updateSetting 'onLevelValue', [value:onLevelValue, type:'number']
+    log_info "🛠️ onLevelValue = ${onLevelValue}%"
+    Integer lvl = onLevelValue * 2.54
+    utils_sendZigbeeCommands zigbee.writeAttribute(0x0008, 0x0011, 0x20, lvl)
 } else {
     log_debug 'Disabling OnLevel (0xFF)'
     cmds += zigbee.writeAttribute(0x0008, 0x0011, 0x20, 0xFF)
 }
 
-if (transitionTime == null) {
-    transitionTime = '5'
-    device.updateSetting 'transitionTime', [value:transitionTime, type:'enum']
+if (levelTransitionTime == null) {
+    levelTransitionTime = '5'
+    device.updateSetting 'levelTransitionTime', [value:levelTransitionTime, type:'enum']
 }
-log_info "🛠️ transitionTime = ${Integer.parseInt(transitionTime) / 10} second(s)"
-cmds += zigbee.writeAttribute(0x0008, 0x0010, 0x21, Integer.parseInt(transitionTime))
+log_info "🛠️ levelTransitionTime = ${Integer.parseInt(levelTransitionTime) / 10} second(s)"
+cmds += zigbee.writeAttribute(0x0008, 0x0010, 0x21, Integer.parseInt(levelTransitionTime))
 
 if (prestaging == null) {
     prestaging = false
     device.updateSetting 'prestaging', [value:prestaging, type:'bool']
 }
 log_info "🛠️ prestaging = ${prestaging}"
+
+// If prestaging is true, enable update of brightness without the need for the device to be turned On
+cmds += zigbee.writeAttribute(0x0008, 0x000F, 0x18, prestaging ? 0x01 : 0x00)
 {{/ @updated }}
 {{!--------------------------------------------------------------------------}}
 {{# @configure }}
 
 // Configuration for capability.Brightness
-sendEvent name:'level', value:'100', type:'digital', descriptionText:'Brightness initialized to 100%'
 cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0008 {${device.zigbeeId}} {}" // Level Control cluster
-cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0008 0x0000 0x20 0x0000 0x0258 {01} {}" // Report CurrentLevel (uint8) at least every 10 minutes (Δ = 1)
+cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0008 0x0000 0x20 0x0001 0x0258 {01} {}" // Report CurrentLevel (uint8) at least every 10 minutes (Δ = 1)
 {{/ @configure }}
 {{!--------------------------------------------------------------------------}}
 {{# @refresh }}
@@ -229,35 +186,16 @@ cmds += zigbee.readAttribute(0x0008, 0x0000) // CurrentLevel
 // Report/Read Attributes Reponse: CurrentLevel
 case { contains it, [clusterInt:0x0008, commandInt:0x0A, attrInt:0x0000] }:
 case { contains it, [clusterInt:0x0008, commandInt:0x01, attrInt:0x0000] }:
-    Integer newLevel = msg.value == '00' ? 0 : Math.ceil(Integer.parseInt(msg.value, 16) * 100 / 254)
-    utils_sendEvent name:'level', value:newLevel, descriptionText:"Brightness is ${newLevel}%", type:'digital'
-    utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "CurrentLevel=${msg.value}"
+    Integer level = msg.value == '00' ? 0 : Math.ceil(Integer.parseInt(msg.value, 16) / 2.54)
+    utils_sendEvent name:'level', value:level, descriptionText:"Brightness is ${level}%", type:'digital'
+    utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "CurrentLevel=${msg.value} (${level}%)"
     return
 
-// Read Attributes Reponse: OnLevel
-// This value is read immediately after the device is turned On
-// @see turnOnCallback()
-case { contains it, [clusterInt:0x0008, commandInt:0x01, attrInt:0x0011] }:
-    Integer onLevel = msg.value == '00' ? 0 : Integer.parseInt(msg.value, 16) * 100 / 254
-
-    // Clear OnLevel attribute value (if previously set)
-    if (turnOnBehavior != 'FIXED_VALUE' && msg.value != 'FF') {
-        setLevel device.currentValue('level', true)
-        log_debug 'Disabling OnLevel (0xFF)'
-        utils_sendZigbeeCommands zigbee.writeAttribute(0x0008, 0x0011, 0x20, 0xFF)
-        return
-    }
-
-    // Set current level to OnLevel
-    if (turnOnBehavior == 'FIXED_VALUE') setLevel(onLevel)
-    utils_processedZclMessage 'Read Attributes Response', "OnLevel=${msg.value}"
-    return
-
-// Other events that we expect but are not usefull for capability.Brightness behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0x0008, commandInt:0x07] }:
-    utils_processedZclMessage 'Configure Reporting Response', "attribute=level, data=${msg.data}"
+    utils_processedZclMessage 'Configure Reporting Response', "attribute=CurrentLevel, data=${msg.data}"
     return
-case { contains it, [clusterInt:0x0008, commandInt:0x04] }:  // Write Attribute Response (0x04)
+case { contains it, [clusterInt:0x0008, commandInt:0x04] }: // Write Attribute Response (0x04)
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

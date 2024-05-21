@@ -16,8 +16,6 @@ device:
     - name: Sensor
     - file: src/devices/Ikea_E1745/E1745.groovy
     - file: src/capabilities/Battery.groovy
-      params:
-        half: true
     - file: src/capabilities/HealthCheck.groovy
       params:
         schedule: 0 0 0/1 ? * * *

@@ -17,8 +17,6 @@ device:
   capabilities:
     - file: src/devices/Ikea_E2002/E2002.groovy
     - file: src/capabilities/Battery.groovy
-      params:
-        half: true
     - file: src/capabilities/HealthCheck.groovy
       params:
         schedule: 0 0 0/1 ? * * *
@@ -36,5 +34,5 @@ device:
     - file: src/capabilities/ReleasableButton.groovy
     - file: src/capabilities/ZigbeeBindings.groovy
       params:
-        clusters: ['0x0006', '0x0008']
+        clusters: ['0x0005', '0x0006', '0x0008']
     - file: src/capabilities/FirmwareUpdate.groovy

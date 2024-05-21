@@ -1,13 +1,16 @@
 /**
- * IKEA Tradfri LED Driver (ICPSHC24)
+ * IKEA Knycklan Water Valve Receiver (E1842)
  *
  * @see https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/
  */
 import groovy.transform.CompileStatic
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = 'IKEA Tradfri LED Driver (ICPSHC24)'
-@Field static final String DRIVER_VERSION = '4.1.0'
+@Field static final String DRIVER_NAME = 'IKEA Knycklan Water Valve Receiver (E1842)'
+@Field static final String DRIVER_VERSION = '5.0.0'
+
+// Fields for capability.IAS
+import hubitat.zigbee.clusters.iaszone.ZoneStatus
 
 // Fields for capability.HealthCheck
 import groovy.time.TimeCategory
@@ -23,27 +26,21 @@ import groovy.time.TimeCategory
 ]
 
 metadata {
-    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_ICPSHC24.groovy') {
+    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E1842.groovy') {
         capability 'Configuration'
         capability 'Refresh'
+        capability 'RelaySwitch'
+        capability 'Sensor'
+        capability 'WaterSensor'
         capability 'Actuator'
         capability 'Switch'
-        capability 'ChangeLevel'
-        capability 'SwitchLevel'
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        // For firmware: 10EU-IL-1/1.2.245 (117C-4101-12245572)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,0B05,1000', outClusters:'0005,0019,0020,1000', model:'TRADFRI Driver 10W', manufacturer:'IKEA of Sweden'
-
-        // For firmware: 10EU-IL-1/2.3.086 (117C-4101-23086631)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC7C', outClusters:'0005,0019,0020,1000', model:'TRADFRI Driver 10W', manufacturer:'IKEA of Sweden'
-
-        // For firmware: 30EU-IL-2/1.0.002 (117C-4109-00010002)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'TRADFRI Driver 30W', manufacturer:'IKEA of Sweden'
-
-        // For firmware: 30-IL44-1/1.0.021 (117C-4104-00010021)
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0008,1000,FC57', outClusters:'0019', model:'SILVERGLANS IP44 LED driver', manufacturer:'IKEA of Sweden'
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,1000', outClusters:'0019,0020,1000', model:'KNYCKLAN receiver', manufacturer:'IKEA of Sweden' // Firmware: 2.3.024 (117C-1103-23024631)
+        
+        // Attributes for capability.IAS
+        attribute 'ias', 'enum', ['enrolled', 'not enrolled']
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
@@ -51,11 +48,7 @@ metadata {
     
     // Commands for capability.Switch
     command 'toggle'
-    command 'onWithTimedOff', [[name:'On time*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
-    
-    // Commands for capability.Brightness
-    command 'levelUp'
-    command 'levelDown'
+    command 'onWithTimedOff', [[name:'On duration*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
     
     // Commands for capability.FirmwareUpdate
     command 'updateFirmware'
@@ -64,10 +57,10 @@ metadata {
         input(
             name: 'helpInfo', type: 'hidden',
             title: '''
-            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_ICPSHC24.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                IKEA Tradfri LED Driver (ICPSHC24) <small>v4.1.0</small><br>
+            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E1842.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
+                IKEA Knycklan Water Valve Receiver (E1842) <small>v5.0.0</small><br>
                 <small><div>
-                • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#led-driver-icpshc24" target="_blank">device details</a><br>
+                • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#knycklan-water-valve-receiver-e1842" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
                 </div></small>
             </div>
@@ -77,12 +70,7 @@ metadata {
             name: 'logLevel', type: 'enum',
             title: 'Log verbosity',
             description: '<small>Select what type of messages appear in the "Logs" section.</small>',
-            options: [
-                '1': 'Debug - log everything',
-                '2': 'Info - log important events',
-                '3': 'Warning - log events that require attention',
-                '4': 'Error - log errors'
-            ],
+            options: ['1':'Debug - log everything', '2':'Info - log important events', '3':'Warning - log events that require attention', '4':'Error - log errors'],
             defaultValue: '1',
             required: true
         )
@@ -93,91 +81,8 @@ metadata {
             type: 'enum',
             title: 'Power On behaviour',
             description: '<small>Select what happens after a power outage.</small>',
-            options: [
-                'TURN_POWER_ON': 'Turn power On',
-                'TURN_POWER_OFF': 'Turn power Off',
-                'RESTORE_PREVIOUS_STATE': 'Restore previous state'
-            ],
+            options: ['TURN_POWER_ON':'Turn power On', 'TURN_POWER_OFF':'Turn power Off', 'RESTORE_PREVIOUS_STATE':'Restore previous state'],
             defaultValue: 'RESTORE_PREVIOUS_STATE',
-            required: true
-        )
-        
-        // Inputs for capability.Brightness
-        input(
-            name: 'levelStep', type: 'enum',
-            title: 'Brightness up/down step',
-            description: '<small>Level adjust when using the levelUp/levelDown commands.</small>',
-            options: [
-                 '1': '1%',
-                 '2': '2%',
-                 '5': '5%',
-                '10': '10%',
-                '20': '20%',
-                '25': '25%',
-                '33': '33%'
-            ],
-            defaultValue: '20',
-            required: true
-        )
-        input(
-            name: 'startLevelChangeRate', type: 'enum',
-            title: 'Brightness change rate',
-            description: '<small>The rate of brightness change when using the startLevelChange() command.</small>',
-            options: [
-                 '10': '10% / second : from 0% to 100% in 10 seconds',
-                 '20': '20% / second : from 0% to 100% in 5 seconds',
-                 '33': '33% / second : from 0% to 100% in 3 seconds',
-                 '50': '50% / seconds : from 0% to 100% in 2 seconds',
-                '100': '100% / second : from 0% to 100% in 1 seconds',
-            ],
-            defaultValue: '20',
-            required: true
-        )
-        input(
-            name: 'turnOnBehavior', type: 'enum',
-            title: 'Turn On behavior',
-            description: '<small>Select what happens when the device is turned On.</small>',
-            options: [
-                'RESTORE_PREVIOUS_LEVEL': 'Restore previous brightness',
-                'FIXED_VALUE': 'Always start with the same fixed brightness'
-            ],
-            defaultValue: 'RESTORE_PREVIOUS_LEVEL',
-            required: true
-        )
-        if (turnOnBehavior == 'FIXED_VALUE') {
-            input(
-                name: 'onLevelValue',
-                type: 'number',
-                title: 'Fixed brightness value',
-                description: '<small>Range 1..100</small>',
-                defaultValue: 50,
-                range: '1..100',
-                required: true
-            )
-        }
-        input(
-            name: 'transitionTime', type: 'enum',
-            title: 'On/Off transition time',
-            description: '<small>Time taken to move to/from the target brightness when device is turned On/Off.</small>',
-            options: [
-                 '0': 'Instant',
-                 '5': '0.5 seconds',
-                '10': '1 second',
-                '15': '1.5 seconds',
-                '20': '2 seconds',
-                '30': '3 seconds',
-                '40': '4 seconds',
-                '50': '5 seconds',
-               '100': '10 seconds'
-            ],
-            defaultValue: '5',
-            required: true
-        )
-        input(
-            name: 'prestaging', type: 'bool',
-            title: 'Pre-staging',
-            description: '<small>Set the brightness level without turning On the device (for later use).</small>',
-            defaultValue: false,
             required: true
         )
         
@@ -225,47 +130,6 @@ List<String> updated(boolean auto = false) {
     log_info "🛠️ powerOnBehavior = ${powerOnBehavior}"
     cmds += zigbee.writeAttribute(0x0006, 0x4003, 0x30, powerOnBehavior == 'TURN_POWER_OFF' ? 0x00 : (powerOnBehavior == 'TURN_POWER_ON' ? 0x01 : 0xFF))
     
-    // Preferences for capability.Brightness
-    if (levelStep == null) {
-        levelStep = '20'
-        device.updateSetting 'levelStep', [value:levelStep, type:'enum']
-    }
-    log_info "🛠️ levelStep = ${levelStep}%"
-    
-    if (startLevelChangeRate == null) {
-        startLevelChangeRate = '20'
-        device.updateSetting 'startLevelChangeRate', [value:startLevelChangeRate, type:'enum']
-    }
-    log_info "🛠️ startLevelChangeRate = ${startLevelChangeRate}% / second"
-    
-    if (turnOnBehavior == null) {
-        turnOnBehavior = 'RESTORE_PREVIOUS_LEVEL'
-        device.updateSetting 'turnOnBehavior', [value:turnOnBehavior, type:'enum']
-    }
-    log_info "🛠️ turnOnBehavior = ${turnOnBehavior}"
-    if (turnOnBehavior == 'FIXED_VALUE') {
-        Integer lvl = onLevelValue == null ? 50 : onLevelValue.intValue()
-        device.updateSetting 'onLevelValue', [value:lvl, type:'number']
-        log_info "🛠️ onLevelValue = ${lvl}%"
-        applyOnLevel(lvl)
-    } else {
-        log_debug 'Disabling OnLevel (0xFF)'
-        cmds += zigbee.writeAttribute(0x0008, 0x0011, 0x20, 0xFF)
-    }
-    
-    if (transitionTime == null) {
-        transitionTime = '5'
-        device.updateSetting 'transitionTime', [value:transitionTime, type:'enum']
-    }
-    log_info "🛠️ transitionTime = ${Integer.parseInt(transitionTime) / 10} second(s)"
-    cmds += zigbee.writeAttribute(0x0008, 0x0010, 0x21, Integer.parseInt(transitionTime))
-    
-    if (prestaging == null) {
-        prestaging = false
-        device.updateSetting 'prestaging', [value:prestaging, type:'bool']
-    }
-    log_info "🛠️ prestaging = ${prestaging}"
-    
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, 'healthCheck'
     
@@ -273,15 +137,14 @@ List<String> updated(boolean auto = false) {
     if (joinGroup != null && joinGroup != '----') {
         if (joinGroup == '0000') {
             log_info '🛠️ Leaving all Zigbee groups'
-            cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 04}"  // Leave all groups
+            cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 04}" // Leave all groups
         } else {
             String groupName = GROUPS.getOrDefault(joinGroup, 'Unknown')
             log_info "🛠️ Joining group: ${joinGroup} (${groupName})"
             cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 00 ${utils_payload joinGroup} ${Integer.toHexString(groupName.length()).padLeft(2, '0')}${groupName.bytes.encodeHex()}}"  // Join group
         }
-    
         device.updateSetting 'joinGroup', [value:'----', type:'enum']
-        cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}"  // Get groups membership
+        cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}" // Get groups membership
     }
 
     if (auto) return cmds
@@ -319,7 +182,7 @@ void configure(boolean auto = false) {
     }
 
     // Apply preferences first
-    List<String> cmds = []
+    List<String> cmds = ["he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000213C00}"]
     cmds += updated true
 
     // Clear data (keep firmwareMT information though)
@@ -331,14 +194,16 @@ void configure(boolean auto = false) {
     state.lastRx = 0
     state.lastCx = DRIVER_VERSION
     
+    // Configuration for capability.IAS
+    Integer ep0500 = 0x01
+    cmds += "he wattr 0x${device.deviceNetworkId} ${ep0500} 0x0500 0x0010 0xF0 {${utils_payload "${location.hub.zigbeeEui}"}}"
+    cmds += "he raw 0x${device.deviceNetworkId} 0x01 ${ep0500} 0x0500 {01 23 00 00 00}" // Zone Enroll Response (0x00): status=Success, zoneId=0x00
+    cmds += "zdo bind 0x${device.deviceNetworkId} ${ep0500} 0x01 0x0500 {${device.zigbeeId}} {}" // IAS Zone cluster
+    cmds += "he cr 0x${device.deviceNetworkId} ${ep0500} 0x0500 0x0002 0x19 0x0000 0x4650 {00} {}" // Report ZoneStatus (map16) at least every 5 hours (Δ = 0)
+    
     // Configuration for capability.Switch
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
     cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes
-    
-    // Configuration for capability.Brightness
-    sendEvent name:'level', value:'100', type:'digital', descriptionText:'Brightness initialized to 100%'
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0008 {${device.zigbeeId}} {}" // Level Control cluster
-    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0008 0x0000 0x20 0x0000 0x0258 {01} {}" // Report CurrentLevel (uint8) at least every 10 minutes (Δ = 1)
     
     // Configuration for capability.HealthCheck
     sendEvent name:'healthStatus', value:'online', descriptionText:'Health status initialized to online'
@@ -346,17 +211,19 @@ void configure(boolean auto = false) {
     
     // Configuration for capability.PowerSource
     sendEvent name:'powerSource', value:'unknown', type:'digital', descriptionText:'Power source initialized to unknown'
-    cmds += zigbee.readAttribute(0x0000, 0x0007)  // PowerSource
+    cmds += zigbee.readAttribute(0x0000, 0x0007) // PowerSource
 
     // Query Basic cluster attributes
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
     cmds += zigbee.readAttribute(0x0000, [0x0005]) // ModelIdentifier
     cmds += zigbee.readAttribute(0x0000, [0x000A]) // ProductCode
+    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {100002 0000210000}"
     utils_sendZigbeeCommands cmds
 
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
     runIn 7, 'refresh', [data:true]
 }
+/* groovylint-disable-next-line UnusedPrivateMethod */
 private void autoConfigure() {
     log_warn "Detected that this device is not properly configured for this driver version (lastCx != ${DRIVER_VERSION})"
     configure true
@@ -371,15 +238,18 @@ void refresh(boolean auto = false) {
 
     List<String> cmds = []
     
+    // Refresh for capability.IAS
+    Integer ep0500 = 0x01
+    cmds += zigbee.readAttribute(0x0500, 0x0000, [destEndpoint: ep0500]) // IAS ZoneState
+    cmds += zigbee.readAttribute(0x0500, 0x0001, [destEndpoint: ep0500]) // IAS ZoneType
+    cmds += zigbee.readAttribute(0x0500, 0x0002, [destEndpoint: ep0500]) // IAS ZoneStatus
+    
     // Refresh for capability.Switch
     cmds += zigbee.readAttribute(0x0006, 0x0000) // OnOff
     cmds += zigbee.readAttribute(0x0006, 0x4003) // PowerOnBehavior
     
-    // Refresh for capability.Brightness
-    cmds += zigbee.readAttribute(0x0008, 0x0000) // CurrentLevel
-    
     // Refresh for capability.ZigbeeGroups
-    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}"  // Get groups membership
+    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}" // Get groups membership
     utils_sendZigbeeCommands cmds
 }
 
@@ -401,76 +271,9 @@ void toggle() {
 void onWithTimedOff(BigDecimal onTime = 1) {
     Integer delay = onTime < 1 ? 1 : (onTime > 6500 ? 6500 : onTime)
     log_debug 'Sending OnWithTimedOff command'
-
-    String payload = "00 ${zigbee.swapOctets(zigbee.convertToHexString(delay * 10, 4))} 0000"
+    Integer dur = delay * 10
+    String payload = "00 ${utils_payload dur, 4} 0000"
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114342 ${payload}}"])
-}
-
-// Implementation for capability.Brightness
-void startLevelChange(String direction) {
-    log_debug "Starting brightness change ${direction}wards with a rate of ${startLevelChangeRate}% / second"
-
-    Integer mode = direction == 'up' ? 0x00 : 0x01
-    Integer rate = Integer.parseInt(startLevelChangeRate) * 2.54
-    String payload = "${zigbee.convertToHexString(mode, 2)} ${zigbee.convertToHexString(rate, 2)}"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114301 ${payload}}"])
-}
-void stopLevelChange() {
-    log_debug 'Stopping brightness change'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114303}"])
-}
-void levelUp() {
-    log_debug "Moving brightness up by ${levelStep}%"
-
-    Integer stepSize = Integer.parseInt(levelStep) * 2.54
-    Integer dur = 0
-
-    String payload = "${zigbee.convertToHexString(0x00, 2)} ${zigbee.convertToHexString(stepSize, 2)} ${zigbee.swapOctets(zigbee.convertToHexString(dur, 4))}"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114302 ${payload}}"])
-}
-void levelDown() {
-    log_debug "Moving brightness down by ${levelStep}%"
-
-    Integer stepSize = Integer.parseInt(levelStep) * 2.54
-    Integer dur = 0
-
-    String payload = "${zigbee.convertToHexString(0x01, 2)} ${zigbee.convertToHexString(stepSize, 2)} ${zigbee.swapOctets(zigbee.convertToHexString(dur, 4))}"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {114302 ${payload}}"])
-}
-void setLevel(BigDecimal level, BigDecimal duration = 0) {
-    Integer newLevel = level > 100 ? 100 : (level < 0 ? 0 : level)
-    log_debug "Setting brightness to ${newLevel}% during ${duration} seconds"
-
-    // Device is On: use the Move To Level command
-    if (device.currentValue('switch', true) == 'on' || prestaging == false) {
-        Integer lvl = newLevel * 2.54
-        Integer dur = (duration > 1800 ? 1800 : (duration < 0 ? 0 : duration)) * 10   // Max transition time = 30 min
-        String command = prestaging == false ? '04' : '00'
-        String payload = "${zigbee.convertToHexString(lvl, 2)} ${zigbee.swapOctets(zigbee.convertToHexString(dur, 4))}"
-        utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0008 {1143${command} ${payload}}"])
-        return
-    }
-
-    // Device is Off and onLevel is set to a fixed value: ignore command
-    if (turnOnBehavior == 'FIXED_VALUE') {
-        log_info 'Ignoring Set Level command because the device is turned Off and "Turn On behavior" preference is set to "Always start with the same fixed brightness"'
-        return
-    }
-
-    // Device is Off: keep the device turned Off, use the OnLevel attribute
-    log_debug('Device is turned Off so we pre-stage brightness level for when the device will be turned On')
-    applyOnLevel newLevel
-    utils_sendEvent(name:'level', value:newLevel, descriptionText:"Brightness is ${newLevel}%", type:'digital', isStateChange:true)
-}
-void applyOnLevel(Integer level) {
-    Integer newLevel = level > 100 ? 100 : (level < 0 ? 0 : level)
-    log_debug "Setting Turn On brightness to ${newLevel}%"
-    Integer lvl = newLevel * 2.54
-    utils_sendZigbeeCommands zigbee.writeAttribute(0x0008, 0x0011, 0x20, lvl)
-}
-private void turnOnCallback(String switchState) {
-    // Device was just turned on: Read the value of the OnLevel attribute to sync/update its value
-    if (switchState == 'on') utils_sendZigbeeCommands zigbee.readAttribute(0x0008, 0x0011)
 }
 
 // Implementation for capability.HealthCheck
@@ -480,7 +283,6 @@ void ping() {
     log_debug 'Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
     runIn 5, 'pingExecute'
 }
-
 void pingExecute() {
     if (state.lastRx == 0) {
         log_info 'Did not sent any messages since it was last configured'
@@ -547,6 +349,68 @@ void parse(String description) {
 
     switch (msg) {
         
+        // Events for devices.Ikea_E1842
+        // ===================================================================================================================
+        
+        // Report/Read Attributes Reponse: ZoneStatus
+        case { contains it, [clusterInt:0x0500, commandInt:0x0A, attrInt:0x0002] }:
+        case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0002] }:
+            String water = msg.value[-1] == '1' ? 'wet' : 'dry'
+            utils_sendEvent name:'water', value:water, descriptionText:"Is ${water}", type:type
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "ZoneStatus=${msg.value}"
+            return
+        
+        // Ignore Configure Reporting Response for attribute ZoneStatus
+        case { contains it, [clusterInt:0x0500, commandInt:0x07] }:
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=ZoneStatus, data=${msg.data}"
+            return
+        
+        // Events for capability.IAS
+        // ===================================================================================================================
+        
+        // Zone Status Change Notification
+        case { contains it, [clusterInt:0x500, commandInt:0x00, isClusterSpecific:true] }:
+            ZoneStatus zs = zigbee.parseZoneStatus(description)
+            boolean alarm1             = zs.alarm1Set
+            boolean alarm2             = zs.alarm2Set
+            boolean tamper             = zs.tamperSet
+            boolean lowBattery         = zs.batterySet
+            boolean supervisionReports = zs.supervisionReportsSet
+            boolean restoreReports     = zs.restoreReportsSet
+            boolean trouble            = zs.troubleSet
+            boolean mainsFault         = zs.acSet
+            boolean testMode           = zs.testSet
+            boolean batteryDefect      = zs.batteryDefectSet
+            utils_processedZclMessage 'Zone Status Change Notification', "alarm1=${alarm1} alarm2=${alarm2} tamper=${tamper} lowBattery=${lowBattery} supervisionReports=${supervisionReports} restoreReports=${restoreReports} trouble=${trouble} mainsFault=${mainsFault} testMode=${testMode} batteryDefect=${batteryDefect}"
+            return
+        
+        // Enroll Request
+        case { contains it, [clusterInt:0x500, commandInt:0x01, isClusterSpecific:true] }:
+            Integer ep0500 = 0x01
+            utils_sendZigbeeCommands([
+                "he raw 0x${device.deviceNetworkId} 0x01 ${ep0500} 0x0500 {01 23 00 00 00}", // Zone Enroll Response (0x00): status=Success, zoneId=0x00
+                "he raw 0x${device.deviceNetworkId} 0x01 ${ep0500} 0x0500 {01 23 01}", // Initiate Normal Operation Mode (0x01): no_payload
+            ])
+            utils_processedZclMessage 'Enroll Request', "description=${description}"
+            return
+        
+        // Read Attributes: ZoneState
+        case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0000] }:
+            String status = msg.value == '01' ? 'enrolled' : 'not enrolled'
+            utils_sendEvent name:'ias', value:status, descriptionText:"Device IAS status is ${status}", type:'digital'
+            utils_processedZclMessage 'Read Attributes Response', "ZoneState=${msg.value == '01' ? 'enrolled' : 'not_enrolled'}"
+            return
+        
+        // Read Attributes: ZoneType
+        case { contains it, [clusterInt:0x0500, commandInt:0x01, attrInt:0x0001] }:
+            utils_processedZclMessage 'Read Attributes Response', "ZoneType=${msg.value}"
+            return
+        
+        // Other events that we expect but are not usefull
+        case { contains it, [clusterInt:0x0500, commandInt:0x04, isClusterSpecific:false] }:
+            utils_processedZclMessage 'Write Attribute Response', "attribute=IAS_CIE_Address, ZoneType=${msg.data}"
+            return
+        
         // Events for capability.Switch
         // ===================================================================================================================
         
@@ -556,10 +420,6 @@ void parse(String description) {
             String newState = msg.value == '00' ? 'off' : 'on'
             utils_sendEvent name:'switch', value:newState, descriptionText:"Was turned ${newState}", type:type
         
-            // Execute the configured callback: turnOnCallback
-            if (device.currentValue('switch', true) != newState) {
-                turnOnCallback(newState)
-            }
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "OnOff=${newState}"
             return
         
@@ -577,49 +437,12 @@ void parse(String description) {
             utils_processedZclMessage 'Read Attributes Response', "PowerOnBehavior=${newValue}"
             return
         
-        // Other events that we expect but are not usefull for capability.Switch behavior
+        // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
             return
         case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attribute Response
         case { contains it, [clusterInt:0x0006, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Command
-            return
-        
-        // Events for capability.Brightness
-        // ===================================================================================================================
-        
-        // Report/Read Attributes Reponse: CurrentLevel
-        case { contains it, [clusterInt:0x0008, commandInt:0x0A, attrInt:0x0000] }:
-        case { contains it, [clusterInt:0x0008, commandInt:0x01, attrInt:0x0000] }:
-            Integer newLevel = msg.value == '00' ? 0 : Math.ceil(Integer.parseInt(msg.value, 16) * 100 / 254)
-            utils_sendEvent name:'level', value:newLevel, descriptionText:"Brightness is ${newLevel}%", type:'digital'
-            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "CurrentLevel=${msg.value}"
-            return
-        
-        // Read Attributes Reponse: OnLevel
-        // This value is read immediately after the device is turned On
-        // @see turnOnCallback()
-        case { contains it, [clusterInt:0x0008, commandInt:0x01, attrInt:0x0011] }:
-            Integer onLevel = msg.value == '00' ? 0 : Integer.parseInt(msg.value, 16) * 100 / 254
-        
-            // Clear OnLevel attribute value (if previously set)
-            if (turnOnBehavior != 'FIXED_VALUE' && msg.value != 'FF') {
-                setLevel device.currentValue('level', true)
-                log_debug 'Disabling OnLevel (0xFF)'
-                utils_sendZigbeeCommands zigbee.writeAttribute(0x0008, 0x0011, 0x20, 0xFF)
-                return
-            }
-        
-            // Set current level to OnLevel
-            if (turnOnBehavior == 'FIXED_VALUE') setLevel(onLevel)
-            utils_processedZclMessage 'Read Attributes Response', "OnLevel=${msg.value}"
-            return
-        
-        // Other events that we expect but are not usefull for capability.Brightness behavior
-        case { contains it, [clusterInt:0x0008, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=level, data=${msg.data}"
-            return
-        case { contains it, [clusterInt:0x0008, commandInt:0x04] }:  // Write Attribute Response (0x04)
             return
         
         // Events for capability.HealthCheck
@@ -638,18 +461,12 @@ void parse(String description) {
         
             // PowerSource := { 0x00:Unknown, 0x01:MainsSinglePhase, 0x02:MainsThreePhase, 0x03:Battery, 0x04:DC, 0x05:EmergencyMainsConstantlyPowered, 0x06:EmergencyMainsAndTransferSwitch }
             switch (msg.value) {
-                case '01':
-                case '02':
-                case '05':
-                case '06':
-                    powerSource = 'mains'
-                    break
+                case ['01', '02', '05', '06']:
+                    powerSource = 'mains'; break
                 case '03':
-                    powerSource = 'battery'
-                    break
+                    powerSource = 'battery'; break
                 case '04':
                     powerSource = 'dc'
-                    break
             }
             utils_sendEvent name:'powerSource', value:powerSource, type:'digital', descriptionText:"Power source is ${powerSource}"
             utils_processedZclMessage 'Read Attributes Response', "PowerSource=${msg.value}"
@@ -664,11 +481,11 @@ void parse(String description) {
             Set<String> groupNames = []
             for (int pos = 0; pos < count; pos++) {
                 String groupId = "${msg.data[pos * 2 + 3]}${msg.data[pos * 2 + 2]}"
-                String groupName = GROUPS.getOrDefault(groupId, "Unknown (${groupId})")
+                String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
                 log_debug "Found group membership: ${groupName}"
                 groupNames.add groupName
             }
-            state.joinGrp = groupNames.findAll { !it.startsWith('Unknown') }
+            state.joinGrp = groupNames
             if (state.joinGrp.size() == 0) state.remove 'joinGrp'
             log_info "Current group membership: ${groupNames ?: 'None'}"
             return
@@ -677,7 +494,7 @@ void parse(String description) {
         case { contains it, [clusterInt:0x0004, commandInt:0x00, direction:'01'] }:
             String status = msg.data[0] == '00' ? 'SUCCESS' : (msg.data[0] == '8A' ? 'ALREADY_MEMBER' : 'FAILED')
             String groupId = "${msg.data[2]}${msg.data[1]}"
-            String groupName = GROUPS.getOrDefault(groupId, "Unknown (${groupId})")
+            String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
             utils_processedZclMessage 'Add Group Response', "Status=${status}, groupId=${groupId}, groupName=${groupName}"
             return
         
@@ -685,7 +502,7 @@ void parse(String description) {
         case { contains it, [clusterInt:0x0004, commandInt:0x03, direction:'01'] }:
             String status = msg.data[0] == '00' ? 'SUCCESS' : (msg.data[0] == '8B' ? 'NOT_A_MEMBER' : 'FAILED')
             String groupId = "${msg.data[2]}${msg.data[1]}"
-            String groupName = GROUPS.getOrDefault(groupId, "Unknown (${groupId})")
+            String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
             utils_processedZclMessage 'Left Group Response', "Status=${status}, groupId=${groupId}, groupName=${groupName}"
             return
 
@@ -716,7 +533,8 @@ void parse(String description) {
         case { contains it, [commandInt:0x0A, isClusterSpecific:false] }:              // ZCL: Attribute report we don't care about (configured by other driver)
         case { contains it, [commandInt:0x0B, isClusterSpecific:false] }:              // ZCL: Default Response
         case { contains it, [clusterInt:0x0003, commandInt:0x01] }:                    // ZCL: Identify Query Command
-            utils_processedZclMessage 'Ignored', "endpoint=${msg.endpoint}, cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+        case { contains it, [clusterInt:0x0003, commandInt:0x04] }:                    // ZCL: Write Attribute Response (IdentifyTime)
+            utils_processedZclMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         case { contains it, [endpointInt:0x00, clusterInt:0x8001, commandInt:0x00] }:  // ZDP: IEEE_addr_rsp
@@ -729,7 +547,7 @@ void parse(String description) {
         case { contains it, [endpointInt:0x00, clusterInt:0x8031, commandInt:0x00] }:  // ZDP: Mgmt_LQI_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8032, commandInt:0x00] }:  // ZDP: Mgmt_Rtg_rsp
         case { contains it, [endpointInt:0x00, clusterInt:0x8038, commandInt:0x00] }:  // ZDP: Mgmt_NWK_Update_notify
-            utils_processedZdpMessage 'Ignored', "cluster=0x${msg.clusterId}, command=0x${msg.command}, data=${msg.data}"
+            utils_processedZdpMessage 'Ignored', "endpoint=0x${msg.sourceEndpoint ?: msg.endpoint}, manufacturer=0x${msg.manufacturerId ?: '0000'}, cluster=0x${msg.clusterId ?: msg.cluster}, command=0x${msg.command}, data=${msg.data}"
             return
 
         // ---------------------------------------------------------------------------------------------------------------
@@ -769,7 +587,8 @@ private void utils_sendZigbeeCommands(List<String> cmds) {
     sendHubCommand new hubitat.device.HubMultiAction(send, hubitat.device.Protocol.ZIGBEE)
 }
 private void utils_sendEvent(Map event) {
-    if (device.currentValue(event.name, true) != event.value || event.isStateChange) {
+    boolean noInfo = event.remove('noInfo') == true
+    if (!noInfo && (device.currentValue(event.name, true) != event.value || event.isStateChange)) {
         log_info "${event.descriptionText} [${event.type}]"
     } else {
         log_debug "${event.descriptionText} [${event.type}]"
@@ -799,6 +618,9 @@ private void utils_processedZdpMessage(String type, String details) {
 }
 private String utils_payload(String value) {
     return value.replace('0x', '').split('(?<=\\G.{2})').reverse().join('')
+}
+private String utils_payload(Integer value, Integer size = 4) {
+    return utils_payload(Integer.toHexString(value).padLeft(size, '0'))
 }
 
 // switch/case syntactic sugar

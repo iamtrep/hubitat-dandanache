@@ -7,6 +7,7 @@ capability 'Actuator'
 
 // Fields for capability.MultiRelay
 import com.hubitat.app.ChildDeviceWrapper
+import com.hubitat.app.DeviceWrapper
 {{/ @fields }}
 {{!--------------------------------------------------------------------------}}
 {{# @implementation }}
@@ -17,19 +18,19 @@ private ChildDeviceWrapper fetchChildDevice(Integer moduleNumber) {
     return childDevice ?: addChildDevice('hubitat', 'Generic Component Switch', "${device.deviceNetworkId}-${moduleNumber}", [name:"${device.displayName} - Relay L${moduleNumber}", label:"Relay L${moduleNumber}", isComponent:true])
 }
 
-void componentOff(ChildDeviceWrapper childDevice) {
+void componentOff(DeviceWrapper childDevice) {
     log_debug "▲ Received Off request from ${childDevice.displayName}"
     Integer endpointInt = Integer.parseInt(childDevice.deviceNetworkId.split('-')[1])
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x0${endpointInt} 0x0006 {014300}"])
 }
 
-void componentOn(ChildDeviceWrapper childDevice) {
+void componentOn(DeviceWrapper childDevice) {
     log_debug "▲ Received On request from ${childDevice.displayName}"
     Integer endpointInt = Integer.parseInt(childDevice.deviceNetworkId.split('-')[1])
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x0${endpointInt} 0x0006 {014301}"])
 }
 
-void componentRefresh(ChildDeviceWrapper childDevice) {
+void componentRefresh(DeviceWrapper childDevice) {
     log_debug "▲ Received Refresh request from ${childDevice.displayName}"
     refresh()
 }
@@ -72,12 +73,12 @@ case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x0000] }:
         childDevice.parse([[name:'switch', value:newState, descriptionText:"${childDevice.displayName} was turned ${newState}", type:type]])
     }
 
-    utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Module=${moduleNumber}, Switch=${newState}"
+    utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Relay=${moduleNumber}, Switch=${newState}"
     return
 
-// Other events that we expect but are not usefull for capability.MultiRelay behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
-    utils_processedZclMessage 'Configure Reporting Response', "attribute=switch, data=${msg.data}"
+    utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}

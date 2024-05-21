@@ -7,8 +7,8 @@ input(
     title: 'LED mode',
     description: '<small>Select how the LED indicator behaves.</small>',
     options: [
-            'ALWAYS_ON': 'Always On - LED remains lit at all times, making it easy to find in the dark',
-           'ALWAYS_OFF': 'Always Off - LED remains off, ensuring total darkness',
+        'ALWAYS_ON': 'Always On - LED remains lit at all times, making it easy to find in the dark',
+        'ALWAYS_OFF': 'Always Off - LED remains off, ensuring total darkness',
         'OUTLET_STATUS': 'Outlet status - LED indicates the power state of the outlet'
     ],
     defaultValue: 'OUTLET_STATUS',
@@ -26,16 +26,16 @@ if (ledMode == null) {
 log_info "🛠️ ledMode = ${ledMode}"
 switch (ledMode) {
     case 'ALWAYS_ON':
-        cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x01, [mfgCode: '0x1021']) // Write LED Mode attribute
-        cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x01, [mfgCode: '0x1021']) // Write LED Mode attributes
+        cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x01, [mfgCode: '0x1021'])
+        cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x01, [mfgCode: '0x1021'])
         break
     case 'ALWAYS_OFF':
-        cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x00, [mfgCode: '0x1021']) // Write LED Mode attribute
-        cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x00, [mfgCode: '0x1021']) // Write LED Mode attributes
+        cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x00, [mfgCode: '0x1021'])
+        cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x00, [mfgCode: '0x1021'])
         break
     default:
-        cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x01, [mfgCode: '0x1021']) // Write LED Mode attribute
-        cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x00, [mfgCode: '0x1021']) // Write LED Mode attributes
+        cmds += zigbee.writeAttribute(0xFC01, 0x0001, 0x10, 0x00, [mfgCode: '0x1021'])
+        cmds += zigbee.writeAttribute(0xFC01, 0x0002, 0x10, 0x01, [mfgCode: '0x1021'])
 }
 {{/ @updated }}
 {{!--------------------------------------------------------------------------}}

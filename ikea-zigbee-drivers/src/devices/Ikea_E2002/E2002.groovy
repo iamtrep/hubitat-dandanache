@@ -38,7 +38,6 @@ case { contains it, [clusterInt:0x0005, commandInt:0x07] }:
     List<String> button = msg.data[0] == '00' ? BUTTONS.NEXT : BUTTONS.PREV
     utils_sendEvent name:'pushed', value:button[0], type:'physical', isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed"
     return
-
 /*
 Holding the PREV and NEXT buttons works in a weird way:
 

@@ -43,7 +43,7 @@ case { contains it, [clusterInt:0x0702, commandInt:0x01, attrInt:0x0302] }:
     utils_processedZclMessage 'Read Attributes Response', "EnergyDivisor=${msg.value}"
     return
 
-// Other events that we expect but are not usefull for capability.PowerMeter behavior
+// Other events that we expect but are not usefull
 case { contains it, [clusterInt:0x0702, commandInt:0x07] }:
     utils_processedZclMessage 'Configure Reporting Response', "attribute=CurrentSummation, data=${msg.data}"
     return
