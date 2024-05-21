@@ -99,6 +99,7 @@ Also includes the 10W and 30W LED drivers.
 * **Zigbee Group Membership**: The device can be a member of Zigbee groups. This allows for efficient management of multiple devices.
 
 #### Tested devices
+
 | Type           | Name                            |
 |----------------|---------------------------------|
 | LED2103G5      | Tradfri Bulb E27 WW Globe 806lm |
