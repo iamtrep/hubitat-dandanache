@@ -3,6 +3,12 @@
 capability 'Battery'
 {{/ @definition }}
 {{!--------------------------------------------------------------------------}}
+{{# @attributes }}
+
+// Attributes for capability.Battery
+attribute 'lastBattery', 'date'
+{{/ @attributes }}
+{{!--------------------------------------------------------------------------}}
 {{# @configure }}
 
 // Configuration for capability.Battery
@@ -36,11 +42,10 @@ case { contains it, [clusterInt:0x0001, commandInt:0x01] }:
         return
     }
 
-    Integer percentage = Integer.parseInt(msg.value, 16)
-    {{# params.half }}
-    percentage =  percentage / 2
-    {{/ params.half }}
+    Integer percentage = Integer.parseInt(msg.value, 16) / 2
+    Date lastBattery = new Date()
     utils_sendEvent name:'battery', value:percentage, unit:'%', descriptionText:"Battery is ${percentage}% full", type:type
+    utils_sendEvent name:'lastBattery', value:lastBattery, descriptionText:"Last battery report time is ${lastBattery}", type:type
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "BatteryPercentage=${percentage}%"
     return
 

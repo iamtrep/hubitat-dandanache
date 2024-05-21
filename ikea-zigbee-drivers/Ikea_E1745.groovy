@@ -38,6 +38,9 @@ metadata {
         attribute 'requestedBrightness', 'number'            // Syncs with the brightness option on device (◐/⭘)
         attribute 'illumination', 'enum', ['dim', 'bright']  // Works only in night mode 🌙
         
+        // Attributes for capability.Battery
+        attribute 'lastBattery', 'date'
+        
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
     }
@@ -417,9 +420,10 @@ void parse(String description) {
                 return
             }
         
-            Integer percentage = Integer.parseInt(msg.value, 16)
-            percentage =  percentage / 2
+            Integer percentage = Integer.parseInt(msg.value, 16) / 2
+            Date lastBattery = new Date()
             utils_sendEvent name:'battery', value:percentage, unit:'%', descriptionText:"Battery is ${percentage}% full", type:type
+            utils_sendEvent name:'lastBattery', value:lastBattery, descriptionText:"Last battery report time is ${lastBattery}", type:type
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "BatteryPercentage=${percentage}%"
             return
         

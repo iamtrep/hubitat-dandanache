@@ -41,6 +41,9 @@ metadata {
 
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,0020,1000,FC7C', outClusters:'0003,0004,0006,0008,0019,1000', model:'RODRET Dimmer', manufacturer:'IKEA of Sweden' // Firmware: 1.0.47 (117C-11CD-01000047)
         
+        // Attributes for capability.Battery
+        attribute 'lastBattery', 'date'
+        
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
     }
@@ -408,9 +411,10 @@ void parse(String description) {
                 return
             }
         
-            Integer percentage = Integer.parseInt(msg.value, 16)
-            percentage =  percentage / 2
+            Integer percentage = Integer.parseInt(msg.value, 16) / 2
+            Date lastBattery = new Date()
             utils_sendEvent name:'battery', value:percentage, unit:'%', descriptionText:"Battery is ${percentage}% full", type:type
+            utils_sendEvent name:'lastBattery', value:lastBattery, descriptionText:"Last battery report time is ${lastBattery}", type:type
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "BatteryPercentage=${percentage}%"
             return
         

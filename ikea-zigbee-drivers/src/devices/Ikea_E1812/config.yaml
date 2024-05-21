@@ -17,8 +17,6 @@ device:
   capabilities:
     - file: src/devices/Ikea_E1812/E1812.groovy
     - file: src/capabilities/Battery.groovy
-      params:
-        half: true
     - file: src/capabilities/DoubleTapableButton.groovy
     - file: src/capabilities/HealthCheck.groovy
       params:

@@ -43,6 +43,9 @@ metadata {
 
         fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0003,FC00,1000', outClusters:'0019,0000,0003,0004,0006,0008,0005,1000', model:'RWL022', manufacturer:'Signify Netherlands B.V.' // Firmware: 2.45.2_hF4400CA (100B-0119-02002D02)
         
+        // Attributes for capability.Battery
+        attribute 'lastBattery', 'date'
+        
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
     }
@@ -415,9 +418,10 @@ void parse(String description) {
                 return
             }
         
-            Integer percentage = Integer.parseInt(msg.value, 16)
-            percentage =  percentage / 2
+            Integer percentage = Integer.parseInt(msg.value, 16) / 2
+            Date lastBattery = new Date()
             utils_sendEvent name:'battery', value:percentage, unit:'%', descriptionText:"Battery is ${percentage}% full", type:type
+            utils_sendEvent name:'lastBattery', value:lastBattery, descriptionText:"Last battery report time is ${lastBattery}", type:type
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "BatteryPercentage=${percentage}%"
             return
         
