@@ -33,7 +33,7 @@
             "name": "IKEA Dimmable Light",
             "description": "Zigbee driver for IKEA Dimmable Lights",
             "namespace": "dandanache",
-            "location": "https://raw.githubusercontent.com/dan-danache/hubitat/ikea-zigbee-drivers_5.0.0/ikea-zigbee-drivers/Ikea_DIM-Lights.groovy",
+            "location": "https://raw.githubusercontent.com/dan-danache/hubitat/ikea-zigbee-drivers_5.0.0/ikea-zigbee-drivers/Ikea_DIM-Light.groovy",
             "required": false
         },
         {
