@@ -49,7 +49,7 @@ sendEvent name:'checkInterval', value:{{ params.checkInterval }}, unit:'second',
 void ping() {
     log_warn 'ping ...'
     utils_sendZigbeeCommands(zigbee.readAttribute(0x0000, 0x0000))
-    log_debug 'Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
+    log_debug '🎬 Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
     runIn 5, 'pingExecute'
 }
 void pingExecute() {

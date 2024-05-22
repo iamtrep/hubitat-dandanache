@@ -128,7 +128,7 @@ void installed() {
 
 // Called when the "Save Preferences" button is clicked
 List<String> updated(boolean auto = false) {
-    log_info "Saving preferences${auto ? ' (auto)' : ''} ..."
+    log_info "🎬 Saving preferences${auto ? ' (auto)' : ''} ..."
     List<String> cmds = []
 
     unschedule()
@@ -195,7 +195,7 @@ void healthCheck() {
 // capability.Configuration
 // Note: This method is also called when the device is initially installed
 void configure(boolean auto = false) {
-    log_warn "Configuring device${auto ? ' (auto)' : ''} ..."
+    log_warn "🎬 Configuring device${auto ? ' (auto)' : ''} ..."
     if (!auto && device.currentValue('powerSource', true) == 'battery') {
         log_warn '[IMPORTANT] Click the "Configure" button immediately after pushing any button on the device in order to first wake it up!'
     }
@@ -253,7 +253,7 @@ private void autoConfigure() {
 
 // capability.Refresh
 void refresh(boolean auto = false) {
-    log_warn "Refreshing device state${auto ? ' (auto)' : ''} ..."
+    log_warn "🎬 Refreshing device state${auto ? ' (auto)' : ''} ..."
     if (!auto && device.currentValue('powerSource', true) == 'battery') {
         log_warn '[IMPORTANT] Click the "Refresh" button immediately after pushing any button on the device in order to first wake it up!'
     }
@@ -274,11 +274,11 @@ void refresh(boolean auto = false) {
 // Implementation for devices.Ikea_E2006
 void on() {
     if (device.currentValue('switch', true) == 'on') return
-    log_debug 'Sending On command'
+    log_debug '🎬 Sending On command'
     utils_sendZigbeeCommands(zigbee.writeAttribute(0xFC7D, 0x0006, 0x20, 0x01, [mfgCode:'0x117C']))
 }
 void off() {
-    log_debug 'Sending Off command'
+    log_debug '🎬 Sending Off command'
     utils_sendZigbeeCommands(zigbee.writeAttribute(0xFC7D, 0x0006, 0x20, 0x00, [mfgCode:'0x117C']))
     utils_sendEvent name:'switch', value:'off', descriptionText:'Was turned off', type:'digital'
     utils_sendEvent name:'auto', value:'disabled', descriptionText:'Auto mode is disabled', type:'digital'
@@ -289,7 +289,7 @@ void toggle() {
     else { on() }
 }
 void setSpeed(String speed) {
-    log_debug "Setting speed to: ${speed}"
+    log_debug "🎬 Setting speed to: ${speed}"
     Integer newSpeed = 0x00
     switch (speed) {
         case 'on':
@@ -346,10 +346,11 @@ void cycleSpeed() {
             return
     }
 
-    log_debug "Cycling speed to: ${newSpeed}"
+    log_debug "🎬 Cycling speed to: ${newSpeed}"
     utils_sendZigbeeCommands(zigbee.writeAttribute(0xFC7D, 0x0006, 0x20, newSpeed, [mfgCode:'0x117C']))
 }
 void setIndicatorStatus(String status) {
+    log_debug "🎬 Setting status indicator to: ${status}"
     utils_sendZigbeeCommands(zigbee.writeAttribute(0xFC7D, 0x0003, 0x10, status == 'off' ? 0x01 : 0x00, [mfgCode:'0x117C']))
     utils_sendEvent name:'indicatorStatus', value:status, descriptionText:"Indicator status turned ${status}", type:'digital'
 }
@@ -371,7 +372,7 @@ private List pm25Aqi(Integer pm25) { // See: https://en.wikipedia.org/wiki/Air_q
 void ping() {
     log_warn 'ping ...'
     utils_sendZigbeeCommands(zigbee.readAttribute(0x0000, 0x0000))
-    log_debug 'Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
+    log_debug '🎬 Ping command sent to the device; we\'ll wait 5 seconds for a reply ...'
     runIn 5, 'pingExecute'
 }
 void pingExecute() {
