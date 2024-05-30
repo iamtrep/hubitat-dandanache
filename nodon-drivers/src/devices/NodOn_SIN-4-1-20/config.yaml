@@ -1,7 +1,7 @@
 device:
   model: NodOn Multifunction Relay Switch (SIN-4-1-20)
   importUrl: https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-1-20.groovy
-  image: https://dan-danache.github.io/hubitat/nodon-drivers/img/NodOn_SIN-4-1-20.groovy.webp
+  image: https://dan-danache.github.io/hubitat/nodon-drivers/img/NodOn_SIN-4-1-20.webp
   links:
   - name: device details
     url: https://dan-danache.github.io/hubitat/nodon-drivers/#nodon-multifunction-relay-switch-sin-4-1-20

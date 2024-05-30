@@ -62,7 +62,7 @@ metadata {
         input(
             name: 'helpInfo', type: 'hidden',
             title: '''
-            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/nodon-drivers/img/NodOn_SIN-4-1-20.groovy.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
+            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/nodon-drivers/img/NodOn_SIN-4-1-20.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
                 NodOn Multifunction Relay Switch (SIN-4-1-20) <small>v1.0.0</small><br>
                 <small><div>
                 • <a href="https://dan-danache.github.io/hubitat/nodon-drivers/#nodon-multifunction-relay-switch-sin-4-1-20" target="_blank">device details</a><br>
