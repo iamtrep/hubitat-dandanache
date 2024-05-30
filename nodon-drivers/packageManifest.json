@@ -1,0 +1,24 @@
+{
+    "packageName": "Hubitat drivers for NodOn smart devices",
+    "version": "1.0.0",
+    "releaseNotes": "v1.0.0\n - Add driver for NodOn Multifunction Relay (SIN-4-1-20)",
+    "minimumHEVersion": "2.1.9",
+    "author": "Dan Danache (@dandanache)",
+    "dateReleased": "2024-05-30",
+    "documentationLink": "https://dan-danache.github.io/hubitat/nodon-drivers/",
+    "communityLink": "https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853",
+    "payPalUrl": "https://www.buymeacoffee.com/dandanache",
+    "licenseFile": "https://raw.githubusercontent.com/dan-danache/hubitat/master/LICENSE",
+    "category": "Control",
+    "tags": [ "Zigbee", "Buttons", "Lights & Switches" ],
+    "drivers" : [
+        {
+            "id" : "36286334-32da-4d82-a2e7-c4b70cc7d10f",
+            "name": "NodOn Multifunction Relay Switch (SIN-4-1-20)",
+            "description": "Hubitat driver for NodOn Zigbee Multifunction Relay Switch (SIN-4-1-20)",
+            "namespace": "dandanache",
+            "location": "https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-1-20.groovy",
+            "required": false
+        }
+    ]
+}
