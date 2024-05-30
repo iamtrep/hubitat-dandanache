@@ -96,13 +96,6 @@ case { contains it, [clusterInt:0x0006, commandInt:0x0A, attrInt:0x0000] }:
 case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x0000] }:
     String newState = msg.value == '00' ? 'off' : 'on'
     utils_sendEvent name:'switch', value:newState, descriptionText:"Was turned ${newState}", type:type
-
-    {{# params.callback}}
-    // Execute the configured callback: {{ params.callback }}
-    if (device.currentValue('switch', true) != newState) {
-        {{ params.callback }}(newState)
-    }
-    {{/ params.callback}}
     utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "OnOff=${newState}"
     return
 {{# params.powerOnBehavior }}

@@ -328,9 +328,6 @@ void parse(String description) {
 
     // Extract msg
     Map msg = [:]
-    if (description.startsWith('zone status')) msg += [clusterInt:0x500, commandInt:0x00, isClusterSpecific:true]
-    if (description.startsWith('enroll request')) msg += [clusterInt:0x500, commandInt:0x01, isClusterSpecific:true]
-
     msg += zigbee.parseDescriptionAsMap description
     if (msg.containsKey('endpoint')) msg.endpointInt = Integer.parseInt(msg.endpoint, 16)
     if (msg.containsKey('sourceEndpoint')) msg.endpointInt = Integer.parseInt(msg.sourceEndpoint, 16)
@@ -359,7 +356,6 @@ void parse(String description) {
         case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x0000] }:
             String newState = msg.value == '00' ? 'off' : 'on'
             utils_sendEvent name:'switch', value:newState, descriptionText:"Was turned ${newState}", type:type
-        
             utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "OnOff=${newState}"
             return
         
