@@ -9,10 +9,7 @@ command 'updateFirmware'
 
 // Implementation for capability.FirmwareUpdate
 void updateFirmware() {
-    log_info 'Looking for firmware updates ...'
-    if (device.currentValue('powerSource', true) == 'battery') {
-        log_warn '[IMPORTANT] Click the "Update Firmware" button immediately after pushing any button on the device in order to first wake it up!'
-    }
+    log_info 'Instructing device to check for firmware updates ...'
     utils_sendZigbeeCommands zigbee.updateFirmware()
 }
 {{/ @implementation }}

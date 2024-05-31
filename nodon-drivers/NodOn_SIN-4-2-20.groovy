@@ -1,27 +1,22 @@
 /**
- * NodOn Multifunction Relay Switch (SIN-4-1-20)
+ * NodOn Lighting Relay Switch (SIN-4-2-20)
  *
  * @see https://dan-danache.github.io/hubitat/nodon-drivers/
  */
 import groovy.transform.CompileStatic
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = 'NodOn Multifunction Relay Switch (SIN-4-1-20)'
+@Field static final String DRIVER_NAME = 'NodOn Lighting Relay Switch (SIN-4-2-20)'
 @Field static final String DRIVER_VERSION = '1.0.0'
 
-// Fields for devices.NodOn_SIN-4-1-20
-@Field static final Map<Integer, String> PULSE_DURATIONS = [
-       '0':'Disable Impulse Mode',
-     '100':'100 miliseconds',
-     '300':'300 miliseconds',
-     '500':'500 miliseconds',
-    '1000':'1 second',
-    '2000':'2 seconds',
-]
+// Fields for capability.MultiRelay
+import com.hubitat.app.ChildDeviceWrapper
+import com.hubitat.app.DeviceWrapper
 
 // Fields for capability.PushableButton
 @Field static final Map<String, List<String>> BUTTONS = [
     'SWITCH_1': ['1', 'Switch 1'],
+    'SWITCH_2': ['2', 'Switch 2'],
 ]
 
 // Fields for capability.HealthCheck
@@ -32,34 +27,20 @@ import groovy.time.TimeCategory
     'thereshold': '3600' // When checking, mark the device as offline if no Zigbee message was received in the last 3600 seconds
 ]
 
-// Fields for capability.ZigbeeGroups
-@Field static final Map<String, String> GROUPS = [
-    '9900':'Alfa', '9901':'Bravo', '9902':'Charlie', '9903':'Delta', '9904':'Echo', '9905':'Foxtrot', '9906':'Golf', '9907':'Hotel', '9908':'India', '9909':'Juliett', '990A':'Kilo', '990B':'Lima', '990C':'Mike', '990D':'November', '990E':'Oscar', '990F':'Papa', '9910':'Quebec', '9911':'Romeo', '9912':'Sierra', '9913':'Tango', '9914':'Uniform', '9915':'Victor', '9916':'Whiskey', '9917':'Xray', '9918':'Yankee', '9919':'Zulu'
-]
-
 metadata {
-    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-1-20.groovy') {
+    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-2-20.groovy') {
         capability 'Configuration'
         capability 'Refresh'
-        capability 'RelaySwitch'
         capability 'Actuator'
-        capability 'Switch'
         capability 'PushableButton'
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0007,1000,FC57', outClusters:'0003,0006,0019', model:'SIN-4-1-20', manufacturer:'NodOn', controllerType:'ZGB' // Firmware: 3.0.0-1.4.4 (128B-000A-00000300)
-        
-        // Attributes for devices.NodOn_SIN-4-1-20
-        attribute 'switchType', 'enum', ['toggle', 'momentary']
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0007,0008,1000,FC57', outClusters:'0003,0006,0019', model:'SIN-4-2-20', manufacturer:'NodOn', controllerType:'ZGB' // Firmware: 128B-0102-00010102
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
     }
-    
-    // Commands for capability.Switch
-    command 'toggle'
-    command 'onWithTimedOff', [[name:'On duration*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
     
     // Commands for capability.FirmwareUpdate
     command 'updateFirmware'
@@ -68,10 +49,10 @@ metadata {
         input(
             name: 'helpInfo', type: 'hidden',
             title: '''
-            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/nodon-drivers/img/NodOn_SIN-4-1-20.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                NodOn Multifunction Relay Switch (SIN-4-1-20) <small>v1.0.0</small><br>
+            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/nodon-drivers/img/NodOn_SIN-4-2-20.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
+                NodOn Lighting Relay Switch (SIN-4-2-20) <small>v1.0.0</small><br>
                 <small><div>
-                • <a href="https://dan-danache.github.io/hubitat/nodon-drivers/#nodon-multifunction-relay-switch-sin-4-1-20" target="_blank">device details</a><br>
+                • <a href="https://dan-danache.github.io/hubitat/nodon-drivers/#nodon-lighting-relay-switch-sin-4-2-20" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-nodon-drivers/123853" target="_blank">community page</a><br>
                 </div></small>
             </div>
@@ -84,35 +65,6 @@ metadata {
             options: ['1':'Debug - log everything', '2':'Info - log important events', '3':'Warning - log events that require attention', '4':'Error - log errors'],
             defaultValue: '1',
             required: true
-        )
-        
-        // Inputs for capability.Switch
-        input(
-            name: 'powerOnBehavior',
-            type: 'enum',
-            title: 'Power On behaviour',
-            description: '<small>Select what happens after a power outage.</small>',
-            options: ['TURN_POWER_ON':'Turn power On', 'TURN_POWER_OFF':'Turn power Off', 'RESTORE_PREVIOUS_STATE':'Restore previous state'],
-            defaultValue: 'RESTORE_PREVIOUS_STATE',
-            required: true
-        )
-        input(
-            name: 'pulseDuration', type: 'enum',
-            title: 'Relay Impulse Mode',
-            description: '<small>Disable Inpulse Mode or configure relay pulse duration.</small>',
-            options: PULSE_DURATIONS,
-            defaultValue: '0',
-            required: true
-        )
-        
-        // Inputs for capability.ZigbeeBindings
-        input(
-            name: 'joinGroup', type: 'enum',
-            title: 'Join a Zigbee group',
-            description: '<small>Select a Zigbee group you want to join.</small>',
-            options: ['0000':'❌ Leave all Zigbee groups', '----':'- - - -'] + GROUPS,
-            defaultValue: '----',
-            required: false
         )
     }
 }
@@ -140,36 +92,8 @@ List<String> updated(boolean auto = false) {
     if (logLevel == '1') runIn 1800, 'logsOff'
     log_info "🛠️ logLevel = ${['1':'Debug', '2':'Info', '3':'Warning', '4':'Error'].get(logLevel)}"
     
-    // Preferences for capability.Switch
-    if (powerOnBehavior == null) {
-        powerOnBehavior = 'RESTORE_PREVIOUS_STATE'
-        device.updateSetting 'powerOnBehavior', [value:powerOnBehavior, type:'enum']
-    }
-    log_info "🛠️ powerOnBehavior = ${powerOnBehavior}"
-    cmds += zigbee.writeAttribute(0x0006, 0x4003, 0x30, powerOnBehavior == 'TURN_POWER_OFF' ? 0x00 : (powerOnBehavior == 'TURN_POWER_ON' ? 0x01 : 0xFF))
-    if (pulseDuration == null) {
-        pulseDuration = '0'
-        device.updateSetting 'pulseDuration', [value:pulseDuration, type:'enum']
-    }
-    log_info "🛠️ pulseDuration = ${pulseDuration}ms"
-    cmds += zigbee.writeAttribute(0x0006, 0x0001, 0x21, Integer.parseInt(pulseDuration), [mfgCode:'0x128B', destEndpoint:0x01])
-    
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, 'healthCheck'
-    
-    // Preferences for capability.ZigbeeGroups
-    if (joinGroup != null && joinGroup != '----') {
-        if (joinGroup == '0000') {
-            log_info '🛠️ Leaving all Zigbee groups'
-            cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 04}" // Leave all groups
-        } else {
-            String groupName = GROUPS.getOrDefault(joinGroup, 'Unknown')
-            log_info "🛠️ Joining group: ${joinGroup} (${groupName})"
-            cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 00 ${utils_payload joinGroup} ${Integer.toHexString(groupName.length()).padLeft(2, '0')}${groupName.bytes.encodeHex()}}"  // Join group
-        }
-        device.updateSetting 'joinGroup', [value:'----', type:'enum']
-        cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}" // Get groups membership
-    }
 
     if (auto) return cmds
     utils_sendZigbeeCommands cmds
@@ -215,9 +139,12 @@ void configure(boolean auto = false) {
     state.lastRx = 0
     state.lastCx = DRIVER_VERSION
     
-    // Configuration for capability.Switch
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
-    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes
+    // Configuration for capability.MultiRelay
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster (ep 0x01)
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x02 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster (ep 0x02)
+    
+    cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes (ep 0x01)
+    cmds += "he cr 0x${device.deviceNetworkId} 0x02 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes (ep 0x02)
     
     // Configuration for capability.PushableButton
     Integer numberOfButtons = BUTTONS.count { true }
@@ -252,40 +179,62 @@ void refresh(boolean auto = false) {
 
     List<String> cmds = []
     
-    // Refresh for capability.Switch
-    cmds += zigbee.readAttribute(0x0006, 0x0000) // OnOff
-    cmds += zigbee.readAttribute(0x0006, 0x4003) // PowerOnBehavior
-    
-    // Refresh for devices.NodOn_SIN-4-1-20
-    cmds += zigbee.readAttribute(0x0006, 0x0001, [mfgCode: '0x128B']) // TransitionTime
-    cmds += zigbee.readAttribute(0x0007, 0x0000) // SwitchType
-    
-    // Refresh for capability.ZigbeeGroups
-    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}" // Get groups membership
+    // Refresh for capability.MultiRelay
+    cmds += zigbee.readAttribute(0x0006, 0x0000, [destEndpoint:0x01]) // OnOff (ep 0x01)
+    cmds += zigbee.readAttribute(0x0006, 0x0000, [destEndpoint:0x02]) // OnOff (ep 0x02)
     utils_sendZigbeeCommands cmds
 }
 
-// Implementation for capability.Switch
-void on() {
-    log_debug '🎬 Sending On command'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114301}"])
-}
-void off() {
-    log_debug '🎬 Sending Off command'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114300}"])
+// Implementation for capability.MultiRelay
+private ChildDeviceWrapper fetchChildDevice(Integer relayNumber) {
+    ChildDeviceWrapper childDevice = getChildDevice("${device.deviceNetworkId}-${relayNumber}")
+    return childDevice ?: addChildDevice('dandanache', 'NodOn Component Relay Switch', "${device.deviceNetworkId}-${relayNumber}", [name:"Component Relay Switch", label:"Relay #${relayNumber}", isComponent:true])
 }
 
-void toggle() {
-    log_debug '🎬 Sending Toggle command'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114302}"])
+void componentOff(DeviceWrapper childDevice) {
+    log_debug "▲ Received Off request from ${childDevice.displayName}"
+    Integer endpointInt = Integer.parseInt(childDevice.deviceNetworkId.split('-')[1])
+    log_debug "🎬 Sending Off command for ${childDevice.displayName}"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x0${endpointInt} 0x0006 {014100}"])
 }
 
-void onWithTimedOff(BigDecimal onTime = 1) {
+void componentOn(DeviceWrapper childDevice) {
+    log_debug "▲ Received On request from ${childDevice.displayName}"
+    Integer endpointInt = Integer.parseInt(childDevice.deviceNetworkId.split('-')[1])
+    log_debug "🎬 Sending On command for ${childDevice.displayName}"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x0${endpointInt} 0x0006 {014201}"])
+}
+
+void componentToggle(DeviceWrapper childDevice) {
+    log_debug "▲ Received Toggle request from ${childDevice.displayName}"
+    Integer endpointInt = Integer.parseInt(childDevice.deviceNetworkId.split('-')[1])
+    log_debug "🎬 Sending Toggle command for ${childDevice.displayName}"
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x0${endpointInt} 0x0006 {014302}"])
+}
+
+void componentOnWithTimedOff(DeviceWrapper childDevice, BigDecimal onTime = 1) {
+    log_debug "▲ Received OnWithTimedOff request from ${childDevice.displayName}"
+    Integer endpointInt = Integer.parseInt(childDevice.deviceNetworkId.split('-')[1])
+    log_debug "🎬 Sending OnWithTimedOff command for ${childDevice.displayName}"
     Integer delay = onTime < 1 ? 1 : (onTime > 6500 ? 6500 : onTime)
-    log_debug '🎬 Sending OnWithTimedOff command'
     Integer dur = delay * 10
     String payload = "00 ${utils_payload dur, 4} 0000"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114342 ${payload}}"])
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114442 ${payload}}"])
+}
+
+void componentRefresh(DeviceWrapper childDevice) {
+    log_debug "▲ Received Refresh request from ${childDevice.displayName}"
+    refresh()
+}
+
+void componentUpdatePowerOnBehavior(DeviceWrapper childDevice, String powerOnBehavior) {
+    log_debug "▲ Received UpdatePowerOnBehavior request from ${childDevice.displayName}"
+    Integer endpointInt = Integer.parseInt(childDevice.deviceNetworkId.split('-')[1])
+    log_debug "🎬 Sending WriteAttributes command for ${childDevice.displayName}"
+    Integer attrValue = powerOnBehavior == 'TURN_POWER_OFF' ? 0x00 : (powerOnBehavior == 'TURN_POWER_ON' ? 0x01 : 0xFF)
+    utils_sendZigbeeCommands(zigbee.writeAttribute(
+        0x0006, 0x4003, 0x30, attrValue, [destEndpoint:endpointInt]
+    ))
 }
 
 // Implementation for capability.PushableButton
@@ -366,67 +315,43 @@ void parse(String description) {
 
     switch (msg) {
         
-        // Events for capability.Switch
+        // Events for capability.MultiRelay
         // ===================================================================================================================
         
         // Report/Read Attributes: OnOff
         case { contains it, [clusterInt:0x0006, commandInt:0x0A, attrInt:0x0000] }:
         case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x0000] }:
+            Integer relayNumber = msg.endpointInt
             String newState = msg.value == '00' ? 'off' : 'on'
-            utils_sendEvent name:'switch', value:newState, descriptionText:"Was turned ${newState}", type:type
-            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "OnOff=${newState}"
-            return
         
-        // Read Attributes Response: powerOnBehavior
-        case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x4003] }:
-            String newValue = ''
-            switch (Integer.parseInt(msg.value, 16)) {
-                case 0x00: newValue = 'TURN_POWER_OFF'; break
-                case 0x01: newValue = 'TURN_POWER_ON'; break
-                case 0xFF: newValue = 'RESTORE_PREVIOUS_STATE'; break
-                default: log_warn "Received unexpected attribute value: PowerOnBehavior=${msg.value}"; return
+            // Send event to module child device (only if state needs to change)
+            ChildDeviceWrapper childDevice = fetchChildDevice(relayNumber)
+            if (newState != childDevice.currentValue('switch', true)) {
+                childDevice.parse([[name:'switch', value:newState, descriptionText:"Was turned ${newState}", type:type]])
             }
-            powerOnBehavior = newValue
-            device.updateSetting 'powerOnBehavior', [value:newValue, type:'enum']
-            utils_processedZclMessage 'Read Attributes Response', "PowerOnBehavior=${newValue}"
+        
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Relay=${relayNumber}, Switch=${newState}"
             return
         
         // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, endpoint=${msg.endpointInt}, data=${msg.data}"
             return
         case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attribute Response
-        case { contains it, [clusterInt:0x0006, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Command
             return
         
         // Events for devices.NodOn_SIN-4-1-20
         // ===================================================================================================================
         
-        // Read Attributes: TransitionTime
-        case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x0001] }:
-        case { contains it, [clusterInt:0x0006, commandInt:0x0A, attrInt:0x0001] }:
-            String pulseDuration = Integer.parseInt(msg.value, 16).toString()
-            if (!PULSE_DURATIONS.containsKey(pulseDuration)) pulseDuration = '0'
-            device.updateSetting 'pulseDuration', [value:pulseDuration, type:'enum']
-            utils_processedZclMessage 'Read Attributes Response', "TransitionTime=${msg.value} (${pulseDuration}ms)"
-            return
-        
-        // Read Attributes: SwitchType
-        case { contains it, [clusterInt:0x0007, commandInt:0x01, attrInt:0x0000] }:
-        case { contains it, [clusterInt:0x0007, commandInt:0x0A, attrInt:0x0000] }:
-            String switchType = msg.value == '00' ? 'toggle' : 'momentary'
-            utils_sendEvent name:'switchType', value:switchType, descriptionText:"Switch type is ${switchType}", type:type
-            utils_processedZclMessage 'Read Attributes Response', "SwitchType=${msg.value} (${switchType})"
-            return
-        
         // Switch was pressed - OnOff cluster Toggle
         case { contains it, [clusterInt:0x0006, commandInt:0x02] }:
-            List<String> button = BUTTONS.SWITCH_1
+            List<String> button = msg.endpointInt == 1 ? BUTTONS.SWITCH_1 : BUTTONS.SWITCH_2
             utils_sendEvent name:'pushed', value:button[0], type:'physical', isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed"
             return
         
         // Other events that we expect but are not usefull
-        case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attributes Response
+        case { contains it, [clusterInt:0x0021] }: // ??
+        case { contains it, [clusterInt:0x1000] }: // ??
             return
         
         // Events for capability.HealthCheck
@@ -454,40 +379,6 @@ void parse(String description) {
             }
             utils_sendEvent name:'powerSource', value:powerSource, type:'digital', descriptionText:"Power source is ${powerSource}"
             utils_processedZclMessage 'Read Attributes Response', "PowerSource=${msg.value}"
-            return
-        
-        // Events for capability.ZigbeeGroups
-        // ===================================================================================================================
-        
-        // Get Group Membership Response Command
-        case { contains it, [clusterInt:0x0004, commandInt:0x02, direction:'01'] }:
-            Integer count = Integer.parseInt msg.data[1], 16
-            Set<String> groupNames = []
-            for (int pos = 0; pos < count; pos++) {
-                String groupId = "${msg.data[pos * 2 + 3]}${msg.data[pos * 2 + 2]}"
-                String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
-                log_debug "Found group membership: ${groupName}"
-                groupNames.add groupName
-            }
-            state.joinGrp = groupNames
-            if (state.joinGrp.size() == 0) state.remove 'joinGrp'
-            log_info "Current group membership: ${groupNames ?: 'None'}"
-            return
-        
-        // Add Group Response
-        case { contains it, [clusterInt:0x0004, commandInt:0x00, direction:'01'] }:
-            String status = msg.data[0] == '00' ? 'SUCCESS' : (msg.data[0] == '8A' ? 'ALREADY_MEMBER' : 'FAILED')
-            String groupId = "${msg.data[2]}${msg.data[1]}"
-            String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
-            utils_processedZclMessage 'Add Group Response', "Status=${status}, groupId=${groupId}, groupName=${groupName}"
-            return
-        
-        // Leave Group Response
-        case { contains it, [clusterInt:0x0004, commandInt:0x03, direction:'01'] }:
-            String status = msg.data[0] == '00' ? 'SUCCESS' : (msg.data[0] == '8B' ? 'NOT_A_MEMBER' : 'FAILED')
-            String groupId = "${msg.data[2]}${msg.data[1]}"
-            String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
-            utils_processedZclMessage 'Left Group Response', "Status=${status}, groupId=${groupId}, groupName=${groupName}"
             return
 
         // ---------------------------------------------------------------------------------------------------------------

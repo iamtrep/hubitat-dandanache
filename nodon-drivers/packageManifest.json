@@ -13,11 +13,27 @@
     "tags": [ "Zigbee", "Buttons", "Lights & Switches" ],
     "drivers" : [
         {
+            "id" : "15154428-ef3e-420f-9c4b-406c39917c74",
+            "name": "NodOn Component Relay Switch",
+            "description": "Hubitat driver for NodOn Component Relay Switch",
+            "namespace": "dandanache",
+            "location": "https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/component/NodOn_ComponentRelaySwitch.groovy",
+            "required": true
+        },
+        {
             "id" : "36286334-32da-4d82-a2e7-c4b70cc7d10f",
             "name": "NodOn Multifunction Relay Switch (SIN-4-1-20)",
             "description": "Hubitat driver for NodOn Zigbee Multifunction Relay Switch (SIN-4-1-20)",
             "namespace": "dandanache",
             "location": "https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-1-20.groovy",
+            "required": false
+        },
+        {
+            "id" : "7e3b803e-cc0e-4d4a-a76d-e5e2ce987fe2",
+            "name": "NodOn Lighting Relay Switch (SIN-4-2-20)",
+            "description": "Hubitat driver for NodOn Zigbee ON/OFF Lighting Relay Switch (SIN-4-2-20)",
+            "namespace": "dandanache",
+            "location": "https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-2-20.groovy",
             "required": false
         }
     ]

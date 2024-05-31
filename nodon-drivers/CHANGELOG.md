@@ -8,3 +8,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2024-05-30
 ### Added
 - Add driver for NodOn Multifunction Relay Switch (SIN-4-1-20)
+- Add driver for NodOn Lighting Relay Switch (SIN-4-2-20)

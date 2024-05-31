@@ -19,6 +19,10 @@ device:
         powerOnBehavior: true
         onWithTimedOff: true
     - file: src/devices/NodOn_SIN-4-1-20/SIN-4-1-20.groovy
+    - file: src/capabilities/PushableButton.groovy
+      params:
+        buttons:
+        - { id: 'SWITCH_1',  name: 'Switch 1',  number: 1 }
     - file: src/capabilities/HealthCheck.groovy
       params:
         schedule: 0 0 0/1 ? * * *

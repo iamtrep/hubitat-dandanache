@@ -21,8 +21,8 @@ attribute 'switchType', 'enum', ['toggle', 'momentary']
 {{# @inputs }}
 input(
     name: 'pulseDuration', type: 'enum',
-    title: 'Impulse Mode',
-    description: '<small>Disable Inpulse Mode or configure pulse duration.</small>',
+    title: 'Relay Impulse Mode',
+    description: '<small>Disable Inpulse Mode or configure relay pulse duration.</small>',
     options: PULSE_DURATIONS,
     defaultValue: '0',
     required: true
@@ -67,9 +67,14 @@ case { contains it, [clusterInt:0x0007, commandInt:0x0A, attrInt:0x0000] }:
     utils_processedZclMessage 'Read Attributes Response', "SwitchType=${msg.value} (${switchType})"
     return
 
+// Switch was pressed - OnOff cluster Toggle
+case { contains it, [clusterInt:0x0006, commandInt:0x02] }:
+    List<String> button = BUTTONS.SWITCH_1
+    utils_sendEvent name:'pushed', value:button[0], type:'physical', isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed"
+    return
+
 // Other events that we expect but are not usefull
-case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attributes: weird event when switch state changes
-case { contains it, [clusterInt:0x0006, commandInt:0x02] }: // Write Attributes Response
+case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attributes Response
     return
 {{/ @events }}
 {{!--------------------------------------------------------------------------}}
