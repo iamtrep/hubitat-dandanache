@@ -35,6 +35,14 @@
             "namespace": "dandanache",
             "location": "https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-2-20.groovy",
             "required": false
+        },
+        {
+            "id" : "1af9492c-b9ed-4a2d-b199-56aae9fb73fb",
+            "name": "NodOn Pilot Wire Heating Module (SIN-4-FP-21)",
+            "description": "Hubitat driver for NodOn Zigbee Pilot Wire Heating Module (SIN-4-FP-21)",
+            "namespace": "dandanache",
+            "location": "https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-FP-21.groovy",
+            "required": false
         }
     ]
 }

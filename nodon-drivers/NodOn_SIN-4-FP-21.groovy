@@ -1,27 +1,22 @@
 /**
- * NodOn Multifunction Relay Switch (SIN-4-1-20)
+ * NodOn Pilot Wire Heating Module (SIN-4-FP-21)
  *
  * @see https://dan-danache.github.io/hubitat/nodon-drivers/
  */
 import groovy.transform.CompileStatic
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = 'NodOn Multifunction Relay Switch (SIN-4-1-20)'
+@Field static final String DRIVER_NAME = 'NodOn Pilot Wire Heating Module (SIN-4-FP-21)'
 @Field static final String DRIVER_VERSION = '1.0.0'
 
-// Fields for devices.NodOn_SIN-4-1-20
-@Field static final Map<Integer, String> PULSE_DURATIONS = [
-       '0':'Disable Impulse Mode',
-     '100':'100 miliseconds',
-     '300':'300 miliseconds',
-     '500':'500 miliseconds',
-    '1000':'1 second',
-    '2000':'2 seconds',
-]
-
-// Fields for capability.PushableButton
-@Field static final Map<String, List<String>> BUTTONS = [
-    'SWITCH_1': ['1', 'Switch 1'],
+// Fields for devices.NodOn_SIN-4-FP-21
+@Field static final Map<Integer, String> PILOT_WIRE_MODES = [
+    '00':'off',
+    '01':'comfort',
+    '02':'eco',
+    '03':'anti-freeze',
+    '04':'comfort-1',
+    '05':'comfort-2',
 ]
 
 // Fields for capability.HealthCheck
@@ -32,34 +27,32 @@ import groovy.time.TimeCategory
     'thereshold': '3600' // When checking, mark the device as offline if no Zigbee message was received in the last 3600 seconds
 ]
 
-// Fields for capability.ZigbeeGroups
-@Field static final Map<String, String> GROUPS = [
-    '9900':'Alfa', '9901':'Bravo', '9902':'Charlie', '9903':'Delta', '9904':'Echo', '9905':'Foxtrot', '9906':'Golf', '9907':'Hotel', '9908':'India', '9909':'Juliett', '990A':'Kilo', '990B':'Lima', '990C':'Mike', '990D':'November', '990E':'Oscar', '990F':'Papa', '9910':'Quebec', '9911':'Romeo', '9912':'Sierra', '9913':'Tango', '9914':'Uniform', '9915':'Victor', '9916':'Whiskey', '9917':'Xray', '9918':'Yankee', '9919':'Zulu'
-]
-
 metadata {
-    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-1-20.groovy') {
+    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-FP-21.groovy') {
         capability 'Configuration'
         capability 'Refresh'
-        capability 'RelaySwitch'
         capability 'Actuator'
-        capability 'Switch'
-        capability 'PushableButton'
+        capability 'EnergyMeter'
+        capability 'PowerMeter'
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0007,1000,FC57', outClusters:'0003,0006,0019', model:'SIN-4-1-20', manufacturer:'NodOn', controllerType:'ZGB' // Firmware: 3.0.0-1.4.4 (128B-000A-00000300)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0702,1000,FC00', outClusters:'0019', model:'SIN-4-FP-21', manufacturer:'NodOn', controllerType:'ZGB' // Firmware: 3.0.0-1.4.4 (128B-0106-00010404)
         
-        // Attributes for devices.NodOn_SIN-4-1-20
-        attribute 'switchType', 'enum', ['toggle', 'momentary']
+        // Attributes for capability.PilotWire
+        attribute 'mode', 'enum', PILOT_WIRE_MODES*.value
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
     }
     
-    // Commands for capability.Switch
-    command 'toggle'
-    command 'onWithTimedOff', [[name:'On duration*', type:'NUMBER', description:'After how many seconds power will be turned Off [1..6500]']]
+    // Commands for capability.PilotWire
+    command 'off'
+    command 'setComfortMode'
+    command 'setEcoMode'
+    command 'setAntiFreezeMode'
+    command 'setComfort_1Mode'
+    command 'setComfort_2Mode'
     
     // Commands for capability.FirmwareUpdate
     command 'updateFirmware'
@@ -68,10 +61,10 @@ metadata {
         input(
             name: 'helpInfo', type: 'hidden',
             title: '''
-            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/nodon-drivers/img/NodOn_SIN-4-1-20.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                NodOn Multifunction Relay Switch (SIN-4-1-20) <small>v1.0.0</small><br>
+            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/nodon-drivers/img/NodOn_SIN-4-FP-21.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
+                NodOn Pilot Wire Heating Module (SIN-4-FP-21) <small>v1.0.0</small><br>
                 <small><div>
-                • <a href="https://dan-danache.github.io/hubitat/nodon-drivers/#nodon-multifunction-relay-switch-sin-4-1-20" target="_blank">device details</a><br>
+                • <a href="https://dan-danache.github.io/hubitat/nodon-drivers/#nodon-pilot-wire-heating-module-sin-4-fp-21" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-nodon-drivers/123853" target="_blank">community page</a><br>
                 </div></small>
             </div>
@@ -86,33 +79,31 @@ metadata {
             required: true
         )
         
-        // Inputs for capability.Switch
+        // Inputs for capability.EnergyMeter
         input(
-            name: 'powerOnBehavior',
-            type: 'enum',
-            title: 'Power On behaviour',
-            description: '<small>Select what happens after a power outage.</small>',
-            options: ['TURN_POWER_ON':'Turn power On', 'TURN_POWER_OFF':'Turn power Off', 'RESTORE_PREVIOUS_STATE':'Restore previous state'],
-            defaultValue: 'RESTORE_PREVIOUS_STATE',
+            name: 'energyReportDelta', type: 'enum',
+            title: 'Energy report frequency',
+            description: '<small>Configure when device reports total consumed energy.</small>',
+            options: [
+                 '100':'Report changes of +/- 0.1kWh',
+                 '500':'Report changes of +/- 0.5kWh',
+                '1000':'Report changes of +/- 1.0kWh',
+            ],
+            defaultValue: '100',
             required: true
         )
         input(
-            name: 'pulseDuration', type: 'enum',
-            title: 'Relay Impulse Mode',
-            description: '<small>Disable Inpulse Mode or configure relay pulse duration.</small>',
-            options: PULSE_DURATIONS,
-            defaultValue: '0',
+            name: 'powerReportDelta', type: 'enum',
+            title: 'Power report frequency',
+            description: '<small>Configure when device reports current power demand.</small>',
+            options: [
+                  '2':'Report changes of +/- 2W',
+                 '10':'Report changes of +/- 10W',
+                 '50':'Report changes of +/- 50W',
+                '100':'Report changes of +/- 100W',
+            ],
+            defaultValue: '50',
             required: true
-        )
-        
-        // Inputs for capability.ZigbeeBindings
-        input(
-            name: 'joinGroup', type: 'enum',
-            title: 'Join a Zigbee group',
-            description: '<small>Select a Zigbee group you want to join.</small>',
-            options: ['0000':'❌ Leave all Zigbee groups', '----':'- - - -'] + GROUPS,
-            defaultValue: '----',
-            required: false
         )
     }
 }
@@ -140,36 +131,23 @@ List<String> updated(boolean auto = false) {
     if (logLevel == '1') runIn 1800, 'logsOff'
     log_info "🛠️ logLevel = ${['1':'Debug', '2':'Info', '3':'Warning', '4':'Error'].get(logLevel)}"
     
-    // Preferences for capability.Switch
-    if (powerOnBehavior == null) {
-        powerOnBehavior = 'RESTORE_PREVIOUS_STATE'
-        device.updateSetting 'powerOnBehavior', [value:powerOnBehavior, type:'enum']
+    // Preferences for capability.EnergyMeter
+    if (energyReportDelta == null) {
+        energyReportDelta = '640000000000'
+        device.updateSetting 'energyReportDelta', [value:energyReportDelta, type:'enum']
     }
-    log_info "🛠️ powerOnBehavior = ${powerOnBehavior}"
-    cmds += zigbee.writeAttribute(0x0006, 0x4003, 0x30, powerOnBehavior == 'TURN_POWER_OFF' ? 0x00 : (powerOnBehavior == 'TURN_POWER_ON' ? 0x01 : 0xFF))
-    if (pulseDuration == null) {
-        pulseDuration = '0'
-        device.updateSetting 'pulseDuration', [value:pulseDuration, type:'enum']
+    log_info "🛠️ Energy report frequency = +/- ${energyReportDelta}kWh"
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0702 0x0000 0x25 0x0000 0x0E10 {${utils_payload Integer.parseInt(energyReportDelta), 12}} {}"
+    
+    if (powerReportDelta == null) {
+        powerReportDelta = '640000000000'
+        device.updateSetting 'powerReportDelta', [value:powerReportDelta, type:'enum']
     }
-    log_info "🛠️ pulseDuration = ${pulseDuration}ms"
-    cmds += zigbee.writeAttribute(0x0006, 0x0001, 0x21, Integer.parseInt(pulseDuration), [mfgCode:'0x128B', destEndpoint:0x01])
+    log_info "🛠️ Power report frequency = +/- ${powerReportDelta}W"
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0702 0x0400 0x2A 0x0000 0x0E10 {${utils_payload Integer.parseInt(powerReportDelta), 6}} {}"
     
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, 'healthCheck'
-    
-    // Preferences for capability.ZigbeeGroups
-    if (joinGroup != null && joinGroup != '----') {
-        if (joinGroup == '0000') {
-            log_info '🛠️ Leaving all Zigbee groups'
-            cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 04}" // Leave all groups
-        } else {
-            String groupName = GROUPS.getOrDefault(joinGroup, 'Unknown')
-            log_info "🛠️ Joining group: ${joinGroup} (${groupName})"
-            cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 00 ${utils_payload joinGroup} ${Integer.toHexString(groupName.length()).padLeft(2, '0')}${groupName.bytes.encodeHex()}}"  // Join group
-        }
-        device.updateSetting 'joinGroup', [value:'----', type:'enum']
-        cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}" // Get groups membership
-    }
 
     if (auto) return cmds
     utils_sendZigbeeCommands cmds
@@ -215,13 +193,14 @@ void configure(boolean auto = false) {
     state.lastRx = 0
     state.lastCx = DRIVER_VERSION
     
-    // Configuration for capability.Switch
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
-    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes
+    // Configuration for capability.PilotWire
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0xFC00 {${device.zigbeeId}} {}" // PilotWire cluster
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0xFC00 0x0000 0x20 0x0000 0x0258 {01} {0x128B}" // Report PilotWireMode (uint8) at least every 10 minutes (Δ = 1)
     
-    // Configuration for capability.PushableButton
-    Integer numberOfButtons = BUTTONS.count { true }
-    sendEvent name:'numberOfButtons', value:numberOfButtons, descriptionText:"Number of buttons is ${numberOfButtons}"
+    // Configuration for capability.EnergyMeter
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0702 {${device.zigbeeId}} {}" // (Metering (Smart Energy) cluster
+    //cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0702 0x0000 0x25 0x0000 0x0E10 {640000000000} {}" // Report CurrentSummationDelivered (uint48) at least every 1 hour (Δ = 0.1kWh)
+    //cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0702 0x0400 0x2A 0x0000 0x0E10 {320000} {}" // Report InstantaneousDemand (int24) at least every 1 hour (Δ = 50W)
     
     // Configuration for capability.HealthCheck
     sendEvent name:'healthStatus', value:'online', descriptionText:'Health status initialized to online'
@@ -252,51 +231,41 @@ void refresh(boolean auto = false) {
 
     List<String> cmds = []
     
-    // Refresh for capability.Switch
-    cmds += zigbee.readAttribute(0x0006, 0x0000) // OnOff
-    cmds += zigbee.readAttribute(0x0006, 0x4003) // PowerOnBehavior
+    // Refresh for capability.PilotWire
+    cmds += zigbee.readAttribute(0xFC00, 0x0000, [mfgCode: '0x128B']) // PilotWireMode
     
-    // Refresh for devices.NodOn_SIN-4-1-20
-    cmds += zigbee.readAttribute(0x0006, 0x0001, [mfgCode: '0x128B']) // TransitionTime
-    cmds += zigbee.readAttribute(0x0007, 0x0000) // SwitchType
-    
-    // Refresh for capability.ZigbeeGroups
-    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}" // Get groups membership
+    // Refresh for capability.EnergyMeter
+    cmds += zigbee.readAttribute(0x0702, 0x0301) // Multiplier
+    cmds += zigbee.readAttribute(0x0702, 0x0302) // Divisor
+    cmds += zigbee.readAttribute(0x0702, 0x0000) // EnergySumation
+    cmds += zigbee.readAttribute(0x0702, 0x0400) // InstantaneousDemand
     utils_sendZigbeeCommands cmds
 }
 
-// Implementation for capability.Switch
-void on() {
-    log_debug '🎬 Sending On command'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114301}"])
-}
+// Implementation for capability.PilotWire
 void off() {
     log_debug '🎬 Sending Off command'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114300}"])
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0xFC00 {058B124300 00}"])
 }
-
-void toggle() {
-    log_debug '🎬 Sending Toggle command'
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114302}"])
+void setComfortMode() {
+    log_debug '🎬 Sending Comfort Mode command'
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0xFC00 {058B124300 01}"])
 }
-
-void onWithTimedOff(BigDecimal onTime = 1) {
-    Integer delay = onTime < 1 ? 1 : (onTime > 6500 ? 6500 : onTime)
-    log_debug '🎬 Sending OnWithTimedOff command'
-    Integer dur = delay * 10
-    String payload = "00 ${utils_payload dur, 4} 0000"
-    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0006 {114342 ${payload}}"])
+void setEcoMode() {
+    log_debug '🎬 Sending Comfort Mode command'
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0xFC00 {058B124300 02}"])
 }
-
-// Implementation for capability.PushableButton
-void push(String buttonNumber) { push Integer.parseInt(buttonNumber) }
-void push(BigDecimal buttonNumber) {
-    String buttonName = BUTTONS.find { it.value[0] == "${buttonNumber}" }?.value?.getAt(1)
-    if (buttonName == null) {
-        log_warn "Cannot push button ${buttonNumber} because it is not defined"
-        return
-    }
-    utils_sendEvent name:'pushed', value:buttonNumber, type:'digital', isStateChange:true, descriptionText:"Button ${buttonNumber} (${buttonName}) was pressed"
+void setAntiFreezeMode() {
+    log_debug '🎬 Sending Anti-Freeze Mode command'
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0xFC00 {058B124300 03}"])
+}
+void setComfort_1Mode() {
+    log_debug '🎬 Sending Comfort-1 Mode command'
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0xFC00 {058B124300 04}"])
+}
+void setComfort_2Mode() {
+    log_debug '🎬 Sending Comfort-2 Mode command'
+    utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0xFC00 {058B124300 05}"])
 }
 
 // Implementation for capability.HealthCheck
@@ -366,67 +335,56 @@ void parse(String description) {
 
     switch (msg) {
         
-        // Events for capability.Switch
+        // Events for capability.PilotWire
         // ===================================================================================================================
         
-        // Report/Read Attributes: OnOff
-        case { contains it, [clusterInt:0x0006, commandInt:0x0A, attrInt:0x0000] }:
-        case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x0000] }:
-            String newState = msg.value == '00' ? 'off' : 'on'
-            utils_sendEvent name:'switch', value:newState, descriptionText:"Was turned ${newState}", type:type
-            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "OnOff=${newState}"
-            return
-        
-        // Read Attributes Response: powerOnBehavior
-        case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x4003] }:
-            String newValue = ''
-            switch (Integer.parseInt(msg.value, 16)) {
-                case 0x00: newValue = 'TURN_POWER_OFF'; break
-                case 0x01: newValue = 'TURN_POWER_ON'; break
-                case 0xFF: newValue = 'RESTORE_PREVIOUS_STATE'; break
-                default: log_warn "Received unexpected attribute value: PowerOnBehavior=${msg.value}"; return
-            }
-            powerOnBehavior = newValue
-            device.updateSetting 'powerOnBehavior', [value:newValue, type:'enum']
-            utils_processedZclMessage 'Read Attributes Response', "PowerOnBehavior=${newValue}"
+        // Report/Read Attributes: PilotWireMode
+        case { contains it, [clusterInt:0xFC00, commandInt:0x0A, attrInt:0x0000] }:
+        case { contains it, [clusterInt:0xFC00, commandInt:0x01, attrInt:0x0000] }:
+            String mode = PILOT_WIRE_MODES[msg.value]
+            utils_sendEvent name:'mode', value:mode, descriptionText:"mode changed to ${mode}", type:type
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "PilotWireMode=${msg.value} (${mode})"
             return
         
         // Other events that we expect but are not usefull
-        case { contains it, [clusterInt:0x0006, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
-            return
-        case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attribute Response
-        case { contains it, [clusterInt:0x0006, commandInt:0x06, isClusterSpecific:false, direction:'01'] }: // Configure Reporting Command
+        case { contains it, [clusterInt:0xFC00, commandInt:0x07] }:
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=PilotWireMode, data=${msg.data}"
             return
         
-        // Events for devices.NodOn_SIN-4-1-20
+        // Events for capability.EnergyMeter
         // ===================================================================================================================
         
-        // Read Attributes: TransitionTime
-        case { contains it, [clusterInt:0x0006, commandInt:0x01, attrInt:0x0001] }:
-        case { contains it, [clusterInt:0x0006, commandInt:0x0A, attrInt:0x0001] }:
-            String pulseDuration = Integer.parseInt(msg.value, 16).toString()
-            if (!PULSE_DURATIONS.containsKey(pulseDuration)) pulseDuration = '0'
-            device.updateSetting 'pulseDuration', [value:pulseDuration, type:'enum']
-            utils_processedZclMessage 'Read Attributes Response', "TransitionTime=${msg.value} (${pulseDuration}ms)"
+        // Report/Read Attributes Reponse: EnergySummation
+        case { contains it, [clusterInt:0x0702, commandInt:0x0A, attrInt:0x0000] }:
+        case { contains it, [clusterInt:0x0702, commandInt:0x01, attrInt:0x0000] }:
+            Long energy = Long.parseLong(msg.value, 16) * (state.multiplier ?: 1) / (state.divisor ?: 1000)
+            utils_sendEvent name:'energy', value:energy, unit:'kWh', descriptionText:"Total consumed energy is ${energy} kWh", type:type
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "EnergySummation=${msg.value} (${energy}kWh)"
             return
         
-        // Read Attributes: SwitchType
-        case { contains it, [clusterInt:0x0007, commandInt:0x01, attrInt:0x0000] }:
-        case { contains it, [clusterInt:0x0007, commandInt:0x0A, attrInt:0x0000] }:
-            String switchType = msg.value == '00' ? 'toggle' : 'momentary'
-            utils_sendEvent name:'switchType', value:switchType, descriptionText:"Switch type is ${switchType}", type:type
-            utils_processedZclMessage 'Read Attributes Response', "SwitchType=${msg.value} (${switchType})"
+        // Report/Read Attributes Reponse: InstantaneousDemand
+        case { contains it, [clusterInt:0x0702, commandInt:0x0A, attrInt:0x0400] }:
+        case { contains it, [clusterInt:0x0702, commandInt:0x01, attrInt:0x0400] }:
+            Integer power = Integer.parseInt(msg.value, 16) * 1000 * (state.multiplier ?: 1) / (state.divisor ?: 1000)
+            utils_sendEvent name:'power', value:power, unit:'Watt', descriptionText:"Current power demand is ${power} W", type:type
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Power=${msg.value} (${power}W)"
             return
         
-        // Switch was pressed - OnOff cluster Toggle
-        case { contains it, [clusterInt:0x0006, commandInt:0x02] }:
-            List<String> button = BUTTONS.SWITCH_1
-            utils_sendEvent name:'pushed', value:button[0], type:'physical', isStateChange:true, descriptionText:"Button ${button[0]} (${button[1]}) was pushed"
+        // Read Attributes Reponse: Multiplier
+        case { contains it, [clusterInt:0x0702, commandInt:0x01, attrInt:0x0301] }:
+            state.multiplier = Integer.parseInt(msg.value, 16)
+            utils_processedZclMessage 'Read Attributes Response', "Multiplier=${msg.value} (${state.multiplier})"
+            return
+        
+        // Read Attributes Reponse: Divisor
+        case { contains it, [clusterInt:0x0702, commandInt:0x01, attrInt:0x0302] }:
+            state.divisor = Integer.parseInt(msg.value, 16)
+            utils_processedZclMessage 'Read Attributes Response', "Divisor=${msg.value} (${state.divisor})"
             return
         
         // Other events that we expect but are not usefull
-        case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attributes Response
+        case { contains it, [clusterInt:0x0702, commandInt:0x07] }:
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=CurrentSummation/InstantaneousDemand, data=${msg.data}"
             return
         
         // Events for capability.HealthCheck
@@ -454,40 +412,6 @@ void parse(String description) {
             }
             utils_sendEvent name:'powerSource', value:powerSource, type:'digital', descriptionText:"Power source is ${powerSource}"
             utils_processedZclMessage 'Read Attributes Response', "PowerSource=${msg.value}"
-            return
-        
-        // Events for capability.ZigbeeGroups
-        // ===================================================================================================================
-        
-        // Get Group Membership Response Command
-        case { contains it, [clusterInt:0x0004, commandInt:0x02, direction:'01'] }:
-            Integer count = Integer.parseInt msg.data[1], 16
-            Set<String> groupNames = []
-            for (int pos = 0; pos < count; pos++) {
-                String groupId = "${msg.data[pos * 2 + 3]}${msg.data[pos * 2 + 2]}"
-                String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
-                log_debug "Found group membership: ${groupName}"
-                groupNames.add groupName
-            }
-            state.joinGrp = groupNames
-            if (state.joinGrp.size() == 0) state.remove 'joinGrp'
-            log_info "Current group membership: ${groupNames ?: 'None'}"
-            return
-        
-        // Add Group Response
-        case { contains it, [clusterInt:0x0004, commandInt:0x00, direction:'01'] }:
-            String status = msg.data[0] == '00' ? 'SUCCESS' : (msg.data[0] == '8A' ? 'ALREADY_MEMBER' : 'FAILED')
-            String groupId = "${msg.data[2]}${msg.data[1]}"
-            String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
-            utils_processedZclMessage 'Add Group Response', "Status=${status}, groupId=${groupId}, groupName=${groupName}"
-            return
-        
-        // Leave Group Response
-        case { contains it, [clusterInt:0x0004, commandInt:0x03, direction:'01'] }:
-            String status = msg.data[0] == '00' ? 'SUCCESS' : (msg.data[0] == '8B' ? 'NOT_A_MEMBER' : 'FAILED')
-            String groupId = "${msg.data[2]}${msg.data[1]}"
-            String groupName = GROUPS.containsKey(groupId) ? "<abbr title=\"0x${groupId}\">${GROUPS.get(groupId)}</abbr>" : "0x${groupId}"
-            utils_processedZclMessage 'Left Group Response', "Status=${status}, groupId=${groupId}, groupName=${groupName}"
             return
 
         // ---------------------------------------------------------------------------------------------------------------
