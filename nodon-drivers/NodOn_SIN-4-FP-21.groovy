@@ -133,14 +133,14 @@ List<String> updated(boolean auto = false) {
     
     // Preferences for capability.EnergyMeter
     if (energyReportDelta == null) {
-        energyReportDelta = '640000000000'
+        energyReportDelta = '100'
         device.updateSetting 'energyReportDelta', [value:energyReportDelta, type:'enum']
     }
     log_info "🛠️ Energy report frequency = +/- ${energyReportDelta}kWh"
     cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0702 0x0000 0x25 0x0000 0x0E10 {${utils_payload Integer.parseInt(energyReportDelta), 12}} {}"
     
     if (powerReportDelta == null) {
-        powerReportDelta = '640000000000'
+        powerReportDelta = '50'
         device.updateSetting 'powerReportDelta', [value:powerReportDelta, type:'enum']
     }
     log_info "🛠️ Power report frequency = +/- ${powerReportDelta}W"

@@ -1,19 +1,20 @@
 device:
-  model: NodOn Multifunction Relay Switch (SIN-4-1-20)
-  importUrl: https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-1-20.groovy
-  image: https://dan-danache.github.io/hubitat/nodon-drivers/img/NodOn_SIN-4-1-20.webp
+  model: NodOn Relay Switch with Metering (SIN-4-1-21)
+  importUrl: https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-1-21.groovy
+  image: https://dan-danache.github.io/hubitat/nodon-drivers/img/NodOn_SIN-4-1-21.webp
   links:
   - name: device details
-    url: https://dan-danache.github.io/hubitat/nodon-drivers/#nodon-multifunction-relay-switch-sin-4-1-20
+    url: https://dan-danache.github.io/hubitat/nodon-drivers/#nodon-relay-switch-with-metering-sin-4-1-21
   - name: community page
     url: https://community.hubitat.com/t/release-nodon-drivers/123853
 
   fingerprints:
-  - firmwares: 3.0.0-1.4.4 (128B-000A-00000300)
-    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0007,1000,FC57', outClusters:'0003,0006,0019', model:'SIN-4-1-20', manufacturer:'NodOn', controllerType:'ZGB'
+  - firmwares: 3.0.0-1.4.4 (128B-0005-00000300)
+    value: fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0007,0702,1000', outClusters:'0003,0006,0019', model:'SIN-4-1-21', manufacturer:'NodOn', controllerType:'ZGB' 
 
   capabilities:
     - file: src/capabilities/RelaySwitch.groovy
+    - file: src/capabilities/EnergyMeter.groovy
     - file: src/capabilities/PushableButton.groovy
       params:
         buttons:

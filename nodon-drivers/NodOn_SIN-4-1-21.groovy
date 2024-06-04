@@ -1,12 +1,12 @@
 /**
- * NodOn Multifunction Relay Switch (SIN-4-1-20)
+ * NodOn Relay Switch with Metering (SIN-4-1-21)
  *
  * @see https://dan-danache.github.io/hubitat/nodon-drivers/
  */
 import groovy.transform.CompileStatic
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = 'NodOn Multifunction Relay Switch (SIN-4-1-20)'
+@Field static final String DRIVER_NAME = 'NodOn Relay Switch with Metering (SIN-4-1-21)'
 @Field static final String DRIVER_VERSION = '1.0.0'
 
 // Fields for capabilities.RelaySwitch
@@ -38,17 +38,19 @@ import groovy.time.TimeCategory
 ]
 
 metadata {
-    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-1-20.groovy') {
+    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-1-21.groovy') {
         capability 'Configuration'
         capability 'Refresh'
         capability 'Actuator'
         capability 'Switch'
         capability 'RelaySwitch'
+        capability 'EnergyMeter'
+        capability 'PowerMeter'
         capability 'PushableButton'
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0007,1000,FC57', outClusters:'0003,0006,0019', model:'SIN-4-1-20', manufacturer:'NodOn', controllerType:'ZGB' // Firmware: 3.0.0-1.4.4 (128B-000A-00000300)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0005,0006,0007,0702,1000', outClusters:'0003,0006,0019', model:'SIN-4-1-21', manufacturer:'NodOn', controllerType:'ZGB' // Firmware: 3.0.0-1.4.4 (128B-0005-00000300)
         
         // Attributes for capabilities.RelaySwitch
         attribute 'switchType', 'enum', ['toggle', 'momentary']
@@ -68,10 +70,10 @@ metadata {
         input(
             name: 'helpInfo', type: 'hidden',
             title: '''
-            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/nodon-drivers/img/NodOn_SIN-4-1-20.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                NodOn Multifunction Relay Switch (SIN-4-1-20) <small>v1.0.0</small><br>
+            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/nodon-drivers/img/NodOn_SIN-4-1-21.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
+                NodOn Relay Switch with Metering (SIN-4-1-21) <small>v1.0.0</small><br>
                 <small><div>
-                • <a href="https://dan-danache.github.io/hubitat/nodon-drivers/#nodon-multifunction-relay-switch-sin-4-1-20" target="_blank">device details</a><br>
+                • <a href="https://dan-danache.github.io/hubitat/nodon-drivers/#nodon-relay-switch-with-metering-sin-4-1-21" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-nodon-drivers/123853" target="_blank">community page</a><br>
                 </div></small>
             </div>
@@ -102,6 +104,33 @@ metadata {
             description: '<small>Disable Inpulse Mode or configure relay pulse duration.</small>',
             options: PULSE_DURATIONS,
             defaultValue: '0',
+            required: true
+        )
+        
+        // Inputs for capability.EnergyMeter
+        input(
+            name: 'energyReportDelta', type: 'enum',
+            title: 'Energy report frequency',
+            description: '<small>Configure when device reports total consumed energy.</small>',
+            options: [
+                 '100':'Report changes of +/- 0.1kWh',
+                 '500':'Report changes of +/- 0.5kWh',
+                '1000':'Report changes of +/- 1.0kWh',
+            ],
+            defaultValue: '100',
+            required: true
+        )
+        input(
+            name: 'powerReportDelta', type: 'enum',
+            title: 'Power report frequency',
+            description: '<small>Configure when device reports current power demand.</small>',
+            options: [
+                  '2':'Report changes of +/- 2W',
+                 '10':'Report changes of +/- 10W',
+                 '50':'Report changes of +/- 50W',
+                '100':'Report changes of +/- 100W',
+            ],
+            defaultValue: '50',
             required: true
         )
         
@@ -154,6 +183,21 @@ List<String> updated(boolean auto = false) {
     }
     log_info "🛠️ pulseDuration = ${pulseDuration}ms"
     cmds += zigbee.writeAttribute(0x0006, 0x0001, 0x21, Integer.parseInt(pulseDuration), [mfgCode:'0x128B', destEndpoint:0x01])
+    
+    // Preferences for capability.EnergyMeter
+    if (energyReportDelta == null) {
+        energyReportDelta = '100'
+        device.updateSetting 'energyReportDelta', [value:energyReportDelta, type:'enum']
+    }
+    log_info "🛠️ Energy report frequency = +/- ${energyReportDelta}kWh"
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0702 0x0000 0x25 0x0000 0x0E10 {${utils_payload Integer.parseInt(energyReportDelta), 12}} {}"
+    
+    if (powerReportDelta == null) {
+        powerReportDelta = '50'
+        device.updateSetting 'powerReportDelta', [value:powerReportDelta, type:'enum']
+    }
+    log_info "🛠️ Power report frequency = +/- ${powerReportDelta}W"
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0702 0x0400 0x2A 0x0000 0x0E10 {${utils_payload Integer.parseInt(powerReportDelta), 6}} {}"
     
     // Preferences for capability.HealthCheck
     schedule HEALTH_CHECK.schedule, 'healthCheck'
@@ -220,6 +264,11 @@ void configure(boolean auto = false) {
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0006 {${device.zigbeeId}} {}" // On/Off cluster
     cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0006 0x0000 0x10 0x0000 0x0258 {01} {}" // Report OnOff (bool) at least every 10 minutes
     
+    // Configuration for capability.EnergyMeter
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0702 {${device.zigbeeId}} {}" // (Metering (Smart Energy) cluster
+    //cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0702 0x0000 0x25 0x0000 0x0E10 {640000000000} {}" // Report CurrentSummationDelivered (uint48) at least every 1 hour (Δ = 0.1kWh)
+    //cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0702 0x0400 0x2A 0x0000 0x0E10 {320000} {}" // Report InstantaneousDemand (int24) at least every 1 hour (Δ = 50W)
+    
     // Configuration for capability.PushableButton
     Integer numberOfButtons = BUTTONS.count { true }
     sendEvent name:'numberOfButtons', value:numberOfButtons, descriptionText:"Number of buttons is ${numberOfButtons}"
@@ -258,6 +307,12 @@ void refresh(boolean auto = false) {
     cmds += zigbee.readAttribute(0x0006, 0x4003) // PowerOnBehavior
     cmds += zigbee.readAttribute(0x0006, 0x0001, [mfgCode: '0x128B']) // TransitionTime
     cmds += zigbee.readAttribute(0x0007, 0x0000) // SwitchType
+    
+    // Refresh for capability.EnergyMeter
+    cmds += zigbee.readAttribute(0x0702, 0x0301) // Multiplier
+    cmds += zigbee.readAttribute(0x0702, 0x0302) // Divisor
+    cmds += zigbee.readAttribute(0x0702, 0x0000) // EnergySumation
+    cmds += zigbee.readAttribute(0x0702, 0x0400) // InstantaneousDemand
     
     // Refresh for capability.ZigbeeGroups
     cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0x0004 {0143 02 00}" // Get groups membership
@@ -416,6 +471,42 @@ void parse(String description) {
             utils_processedZclMessage 'Configure Reporting Response', "attribute=OnOff, data=${msg.data}"
             return
         case { contains it, [clusterInt:0x0006, commandInt:0x04] }: // Write Attributes Response
+            return
+        
+        // Events for capability.EnergyMeter
+        // ===================================================================================================================
+        
+        // Report/Read Attributes Reponse: EnergySummation
+        case { contains it, [clusterInt:0x0702, commandInt:0x0A, attrInt:0x0000] }:
+        case { contains it, [clusterInt:0x0702, commandInt:0x01, attrInt:0x0000] }:
+            Long energy = Long.parseLong(msg.value, 16) * (state.multiplier ?: 1) / (state.divisor ?: 1000)
+            utils_sendEvent name:'energy', value:energy, unit:'kWh', descriptionText:"Total consumed energy is ${energy} kWh", type:type
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "EnergySummation=${msg.value} (${energy}kWh)"
+            return
+        
+        // Report/Read Attributes Reponse: InstantaneousDemand
+        case { contains it, [clusterInt:0x0702, commandInt:0x0A, attrInt:0x0400] }:
+        case { contains it, [clusterInt:0x0702, commandInt:0x01, attrInt:0x0400] }:
+            Integer power = Integer.parseInt(msg.value, 16) * 1000 * (state.multiplier ?: 1) / (state.divisor ?: 1000)
+            utils_sendEvent name:'power', value:power, unit:'Watt', descriptionText:"Current power demand is ${power} W", type:type
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "Power=${msg.value} (${power}W)"
+            return
+        
+        // Read Attributes Reponse: Multiplier
+        case { contains it, [clusterInt:0x0702, commandInt:0x01, attrInt:0x0301] }:
+            state.multiplier = Integer.parseInt(msg.value, 16)
+            utils_processedZclMessage 'Read Attributes Response', "Multiplier=${msg.value} (${state.multiplier})"
+            return
+        
+        // Read Attributes Reponse: Divisor
+        case { contains it, [clusterInt:0x0702, commandInt:0x01, attrInt:0x0302] }:
+            state.divisor = Integer.parseInt(msg.value, 16)
+            utils_processedZclMessage 'Read Attributes Response', "Divisor=${msg.value} (${state.divisor})"
+            return
+        
+        // Other events that we expect but are not usefull
+        case { contains it, [clusterInt:0x0702, commandInt:0x07] }:
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=CurrentSummation/InstantaneousDemand, data=${msg.data}"
             return
         
         // Events for capability.HealthCheck

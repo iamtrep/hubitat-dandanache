@@ -8,5 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2024-06-03
 ### Added
 - Add driver for NodOn Multifunction Relay Switch (SIN-4-1-20)
+- Add driver for NodOn Relay Switch with Metering (SIN-4-1-21)
 - Add driver for NodOn Lighting Relay Switch (SIN-4-2-20)
 - Add driver for NodOn Pilot Wire Heating Module (SIN-4-FP-21)
