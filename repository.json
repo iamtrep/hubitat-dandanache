@@ -50,6 +50,14 @@
             "category": "Utility",
             "tags": [ "Tools & Utilities" ],
             "location": "https://raw.githubusercontent.com/dan-danache/hubitat/main/hub-a-dashery-app/packageManifest.json"
+        },
+        {
+            "id": "8a5cfb88-1fda-4082-978f-fcaa1e680741",
+            "name": "Hubitat drivers for NodOn smart devices",
+            "description": "Drivers for the following NodOn devices: SIN-4-1-20, SIN-4-1-21, SIN-4-2-20, SIN-4-FP-21, SIN-4-RS-20.",
+            "category": "Utility",
+            "tags": [ "Tools & Utilities" ],
+            "location": "https://raw.githubusercontent.com/dan-danache/hubitat/main/nodon-drivers/packageManifest.json"
         }
     ]
 }
