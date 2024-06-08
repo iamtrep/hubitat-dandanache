@@ -5,6 +5,7 @@
  */
 import groovy.transform.CompileStatic
 import groovy.transform.Field
+import com.hubitat.zigbee.DataType
 
 @Field static final String DRIVER_NAME = 'NodOn Lighting Relay Switch (SIN-4-2-20)'
 @Field static final String DRIVER_VERSION = '1.0.0'
@@ -161,7 +162,6 @@ void configure(boolean auto = false) {
     // Query Basic cluster attributes
     cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0003, 0x0004, 0x4000]) // ApplicationVersion, HWVersion, ManufacturerName, SWBuildID
     cmds += zigbee.readAttribute(0x0000, [0x0005]) // ModelIdentifier
-    cmds += zigbee.readAttribute(0x0000, [0x000A]) // ProductCode
     utils_sendZigbeeCommands cmds
 
     log_info 'Configuration done; refreshing device current state in 7 seconds ...'
@@ -296,10 +296,11 @@ void parse(String description) {
     // Extract msg
     Map msg = [:]
     msg += zigbee.parseDescriptionAsMap description
-    if (msg.containsKey('endpoint')) msg.endpointInt = Integer.parseInt(msg.endpoint, 16)
-    if (msg.containsKey('sourceEndpoint')) msg.endpointInt = Integer.parseInt(msg.sourceEndpoint, 16)
-    if (msg.containsKey('cluster')) msg.clusterInt = Integer.parseInt(msg.cluster, 16)
-    if (msg.containsKey('command')) msg.commandInt = Integer.parseInt(msg.command, 16)
+    if (msg.containsKey('endpoint')) msg.endpointInt = Integer.parseInt msg.endpoint, 16
+    if (msg.containsKey('sourceEndpoint')) msg.endpointInt = Integer.parseInt msg.sourceEndpoint, 16
+    if (msg.containsKey('cluster')) msg.clusterInt = Integer.parseInt msg.cluster, 16
+    if (msg.containsKey('command')) msg.commandInt = Integer.parseInt msg.command, 16
+    if (msg.containsKey('manufacturerId')) msg.manufacturerInt = Integer.parseInt msg.manufacturerId, 16
     log_debug "msg=[${msg}]"
 
     state.lastRx = now()

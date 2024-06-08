@@ -51,6 +51,14 @@
             "namespace": "dandanache",
             "location": "https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-FP-21.groovy",
             "required": false
+        },
+        {
+            "id" : "76b42057-4e66-4ffc-9a8e-4fc6aaef3a36",
+            "name": "NodOn Roller Shutter Relay Switch (SIN-4-RS-20)",
+            "description": "Hubitat driver for NodOn Zigbee Roller Shutter Relay Switch (SIN-4-RS-20)",
+            "namespace": "dandanache",
+            "location": "https://raw.githubusercontent.com/dan-danache/hubitat/master/nodon-drivers/NodOn_SIN-4-RS-20.groovy",
+            "required": false
         }
     ]
 }

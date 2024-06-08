@@ -18,7 +18,7 @@ $(info ------------------------------------)
 
 .PHONY: all clean
 
-all: NodOn_SIN-4-1-20.groovy  NodOn_SIN-4-1-21.groovy  NodOn_SIN-4-2-20.groovy NodOn_SIN-4-FP-21.groovy
+all: NodOn_SIN-4-1-20.groovy  NodOn_SIN-4-1-21.groovy  NodOn_SIN-4-2-20.groovy  NodOn_SIN-4-FP-21.groovy  NodOn_SIN-4-RS-20.groovy
 
 %.groovy: src/devices/%/config.yaml src/common.yaml src/blueprint.groovy
 	tools/yaml-merge$(POSTFIX) src/common.yaml $< | tools/mustache$(POSTFIX) src/blueprint.groovy > $@

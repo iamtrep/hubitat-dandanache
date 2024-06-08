@@ -3,9 +3,6 @@
 capability 'Actuator'
 {{/ @definition }}
 {{!--------------------------------------------------------------------------}}
-{{# @inputs }}
-{{/ @inputs }}
-{{!--------------------------------------------------------------------------}}
 {{# @fields }}
 
 // Fields for devices.NodOn_SIN-4-FP-21
@@ -64,9 +61,6 @@ void setComfort_2Mode() {
     utils_sendZigbeeCommands(["he raw 0x${device.deviceNetworkId} 0x01 0x${device.endpointId} 0xFC00 {058B124300 05}"])
 }
 {{/ @implementation }}
-{{!--------------------------------------------------------------------------}}
-{{# @updated }}
-{{/ @updated }}
 {{!--------------------------------------------------------------------------}}
 {{# @configure }}
 
