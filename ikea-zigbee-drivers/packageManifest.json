@@ -158,8 +158,8 @@
         },
         {
             "id" : "6b7d3076-4019-4409-8927-04132d7d16ab",
-            "name": "Tretakt Smart Plug (E2204)",
-            "description": "Zigbee driver for Tretakt Smart Plug (E2204)",
+            "name": "IKEA Tretakt Smart Plug (E2204)",
+            "description": "Zigbee driver for IKEA Tretakt Smart Plug (E2204)",
             "namespace": "dandanache",
             "location": "https://raw.githubusercontent.com/dan-danache/hubitat/ikea-zigbee-drivers_5.0.1/ikea-zigbee-drivers/Ikea_E2204.groovy",
             "required": false
