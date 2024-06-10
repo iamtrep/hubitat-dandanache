@@ -66,7 +66,7 @@ metadata {
             <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Philips_RDM001.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
                 Philips Hue Wall Switch Module (RDM001) <small>v5.0.1</small><br>
                 <small><div>
-                • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#philips-hue-wall-switch-module-rmd001" target="_blank">device details</a><br>
+                • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#philips-hue-wall-switch-module-rdm001" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
                 </div></small>
             </div>

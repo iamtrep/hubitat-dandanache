@@ -342,9 +342,9 @@ void refresh(boolean auto = false) {
     cmds += zigbee.readAttribute(0x0B04, 0x050B) // ActivePower
     
     // Refresh for capability.EnergyMeter
-    cmds += zigbee.readAttribute(0x0702, 0x0000) // EnergySumation
     cmds += zigbee.readAttribute(0x0702, 0x0301) // EnergyMultiplier
     cmds += zigbee.readAttribute(0x0702, 0x0302) // EnergyDivisor
+    cmds += zigbee.readAttribute(0x0702, 0x0000) // EnergySumation
     
     // Refresh for capability.MultiRelay
     cmds += zigbee.readAttribute(0x0006, 0x0000, [destEndpoint:0x01]) // OnOff (ep 0x01)

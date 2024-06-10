@@ -1,12 +1,12 @@
 /**
- * IKEA Vindstyrka Air Quality Sensor (E2112)
+ * Tuya Temperature and Humidity Sensor (TS0201)
  *
  * @see https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/
  */
 import groovy.transform.CompileStatic
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = 'IKEA Vindstyrka Air Quality Sensor (E2112)'
+@Field static final String DRIVER_NAME = 'Tuya Temperature and Humidity Sensor (TS0201)'
 @Field static final String DRIVER_VERSION = '5.0.1'
 
 // Fields for capability.HealthCheck
@@ -14,44 +14,37 @@ import groovy.time.TimeCategory
 
 @Field static final Map<String, String> HEALTH_CHECK = [
     'schedule': '0 0 0/1 ? * * *', // Health will be checked using this cron schedule
-    'thereshold': '3600' // When checking, mark the device as offline if no Zigbee message was received in the last 3600 seconds
+    'thereshold': '43200' // When checking, mark the device as offline if no Zigbee message was received in the last 43200 seconds
 ]
 
 metadata {
-    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Ikea_E2112.groovy') {
+    definition(name:DRIVER_NAME, namespace:'dandanache', author:'Dan Danache', importUrl:'https://raw.githubusercontent.com/dan-danache/hubitat/master/ikea-zigbee-drivers/Tuya_TS0201.groovy') {
         capability 'Configuration'
         capability 'Refresh'
         capability 'Sensor'
-        capability 'AirQuality'
         capability 'TemperatureMeasurement'
         capability 'RelativeHumidityMeasurement'
+        capability 'Battery'
         capability 'HealthCheck'
         capability 'PowerSource'
 
-        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0003,0004,0402,0405,FC57,FC7C,042A,FC7E', outClusters:'0003,0019,0020,0202', model:'VINDSTYRKA', manufacturer:'IKEA of Sweden' // Firmware: 1.0.010 (117C-110F-00010010)
+        fingerprint profileId:'0104', endpointId:'01', inClusters:'0000,0001,0402,0405', outClusters:'0019,000A', model:'TS0201', manufacturer:'_TZ2000_a476raq2' // Firmware: Unknown
         
-        // Attributes for E2112.FineParticulateMatter
-        attribute 'airQuality', 'enum', ['good', 'moderate', 'unhealthy for sensitive groups', 'unhealthy', 'hazardous']
-        attribute 'pm25', 'number'
-        
-        // Attributes for E2112.VocIndex
-        attribute 'vocIndex', 'number'
+        // Attributes for capability.Battery
+        attribute 'lastBattery', 'date'
         
         // Attributes for capability.HealthCheck
         attribute 'healthStatus', 'enum', ['offline', 'online', 'unknown']
     }
-    
-    // Commands for capability.FirmwareUpdate
-    command 'updateFirmware'
 
     preferences {
         input(
             name: 'helpInfo', type: 'hidden',
             title: '''
-            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Ikea_E2112.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
-                IKEA Vindstyrka Air Quality Sensor (E2112) <small>v5.0.1</small><br>
+            <div style="min-height:55px; background:transparent url('https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/img/Tuya_TS0201.webp') no-repeat left center;background-size:auto 55px;padding-left:60px">
+                Tuya Temperature and Humidity Sensor (TS0201) <small>v5.0.1</small><br>
                 <small><div>
-                • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#vindstyrka-air-quality-sensor-e2112" target="_blank">device details</a><br>
+                • <a href="https://dan-danache.github.io/hubitat/ikea-zigbee-drivers/#tuya-temperature-and-humidity-sensor-ts0201" target="_blank">device details</a><br>
                 • <a href="https://community.hubitat.com/t/release-ikea-zigbee-drivers/123853" target="_blank">community page</a><br>
                 </div></small>
             </div>
@@ -142,14 +135,6 @@ void configure(boolean auto = false) {
     state.lastRx = 0
     state.lastCx = DRIVER_VERSION
     
-    // Configuration for E2112.FineParticulateMatter
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0x042A {${device.zigbeeId}} {}" // Particulate Matter 2.5 cluster
-    cmds += "he cr 0x${device.deviceNetworkId} 0x01 0x042A 0x0000 0x39 0x000A 0x0258 {40000000} {}" // Report MeasuredValue (single) at least every 10 minutes (Δ = ??)
-    
-    // Configuration for E2112.VocIndex
-    cmds += "zdo bind 0x${device.deviceNetworkId} 0x01 0x01 0xFC7E {${device.zigbeeId}} {}" // VocIndex Measurement cluster
-    cmds += "he cr 0x${device.deviceNetworkId} 0x01 0xFC7E 0x0000 0x39 0x000A 0x0258 {40000000} {117C}" // Report MeasuredValue (single) at least every 10 minutes (Δ = ??)
-    
     // Configuration for capability.Temperature
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0402 {${device.zigbeeId}} {}" // Temperature Measurement cluster
     cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0402 0x0000 0x29 0x0000 0x0258 {3200} {}" // Report MeasuredValue (int16) at least every 10 minutes (Δ = 0.5°C)
@@ -157,6 +142,10 @@ void configure(boolean auto = false) {
     // Configuration for capability.RelativeHumidity
     cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0405 {${device.zigbeeId}} {}" // Relative Humidity Measurement cluster
     cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0405 0x0000 0x21 0x0000 0x0258 {6400} {}" // Report MeasuredValue (uint16) at least every 10 minutes (Δ = 1%)
+    
+    // Configuration for capability.Battery
+    cmds += "zdo bind 0x${device.deviceNetworkId} 0x${device.endpointId} 0x01 0x0001 {${device.zigbeeId}} {}" // Power Configuration cluster
+    cmds += "he cr 0x${device.deviceNetworkId} 0x${device.endpointId} 0x0001 0x0021 0x20 0x0000 0x4650 {02} {}" // Report BatteryPercentage (uint8) at least every 5 hours (Δ = 1%)
     
     // Configuration for capability.HealthCheck
     sendEvent name:'healthStatus', value:'online', descriptionText:'Health status initialized to online'
@@ -191,33 +180,15 @@ void refresh(boolean auto = false) {
 
     List<String> cmds = []
     
-    // Refresh for E2112.FineParticulateMatter
-    cmds += zigbee.readAttribute(0x042A, 0x0000) // Fine Particulate Matter (PM25)
-    
-    // Refresh for E2112.VocIndex
-    cmds += zigbee.readAttribute(0xFC7E, 0x0000, [mfgCode: '0x117C']) // VOC Index
-    
     // Refresh for capability.Temperature
     cmds += zigbee.readAttribute(0x0402, 0x0000) // Temperature
     
     // Refresh for capability.RelativeHumidity
     cmds += zigbee.readAttribute(0x0405, 0x0000) // RelativeHumidity
+    
+    // Refresh for capability.Battery
+    cmds += zigbee.readAttribute(0x0001, 0x0021) // BatteryPercentage
     utils_sendZigbeeCommands cmds
-}
-
-// Implementation for E2112.FineParticulateMatter
-private Integer lerp(Integer ylo, Integer yhi, BigDecimal xlo, BigDecimal xhi, Integer cur) {
-    return Math.round(((cur - xlo) / (xhi - xlo)) * (yhi - ylo) + ylo)
-}
-private List pm25Aqi(Integer pm25) { // See: https://en.wikipedia.org/wiki/Air_quality_index#United_States
-    if (pm25 <=  12.1) return [lerp(  0,  50,   0.0,  12.0, pm25), 'good', 'green']
-    if (pm25 <=  35.5) return [lerp( 51, 100,  12.1,  35.4, pm25), 'moderate', 'gold']
-    if (pm25 <=  55.5) return [lerp(101, 150,  35.5,  55.4, pm25), 'unhealthy for sensitive groups', 'darkorange']
-    if (pm25 <= 150.5) return [lerp(151, 200,  55.5, 150.4, pm25), 'unhealthy', 'red']
-    if (pm25 <= 250.5) return [lerp(201, 300, 150.5, 250.4, pm25), 'very unhealthy', 'purple']
-    if (pm25 <= 350.5) return [lerp(301, 400, 250.5, 350.4, pm25), 'hazardous', 'maroon']
-    if (pm25 <= 500.5) return [lerp(401, 500, 350.5, 500.4, pm25), 'hazardous', 'maroon']
-    return [500, 'hazardous', 'maroon']
 }
 
 // Implementation for capability.HealthCheck
@@ -244,15 +215,6 @@ void pingExecute() {
 
     String offlineMarkAgo = TimeCategory.minus(thereshold, now).toString().replace('.000 seconds', ' seconds')
     log_info "Will be marked as offline if no message is received until ${thereshold.format('yyyy-MM-dd HH:mm:ss', location.timeZone)} (${offlineMarkAgo} from now)"
-}
-
-// Implementation for capability.FirmwareUpdate
-void updateFirmware() {
-    log_info 'Looking for firmware updates ...'
-    if (device.currentValue('powerSource', true) == 'battery') {
-        log_warn '[IMPORTANT] Click the "Update Firmware" button immediately after pushing any button on the device in order to first wake it up!'
-    }
-    utils_sendZigbeeCommands zigbee.updateFirmware()
 }
 
 // ===================================================================================================================
@@ -292,55 +254,6 @@ void parse(String description) {
     String type = state.containsKey('lastTx') && (now() - state.lastTx < 3000) ? 'digital' : 'physical'
 
     switch (msg) {
-        
-        // Events for E2112.FineParticulateMatter
-        // ===================================================================================================================
-        
-        // Report/Read Attributes Reponse: MeasuredValue
-        case { contains it, [clusterInt:0x042A, commandInt:0x0A, attrInt:0x0000] }:
-        case { contains it, [clusterInt:0x042A, commandInt:0x01, attrInt:0x0000] }:
-        
-            // A MeasuredValue of 0xFFFFFFFF indicates that the measurement is invalid
-            if (msg.value == 'FFFFFFFF') {
-                log_warn "Ignored invalid PM25 value: 0x${msg.value}"
-                return
-            }
-        
-            Integer pm25 = Math.round Float.intBitsToFloat(Integer.parseInt(msg.value, 16))
-            utils_sendEvent name:'pm25', value:pm25, unit:'μg/m³', descriptionText:"Fine particulate matter (PM2.5) concentration is ${pm25} μg/m³", type:type
-            List aqi = pm25Aqi pm25
-            utils_sendEvent name:'airQualityIndex', value:aqi[0], descriptionText:"Calculated Air Quality Index = ${aqi[0]}", type:type
-            utils_sendEvent name:'airQuality', value:"<span style=\"color:${aqi[2]}\">${aqi[1]}</span>", descriptionText:"Calculated Air Quality = ${aqi[1]}", type:type
-            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "PM25Measurement=${pm25} μg/m³"
-            return
-        
-        // Other events that we expect but are not usefull
-        case { contains it, [clusterInt:0x042A, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=PM25, data=${msg.data}"
-            return
-        
-        // Events for E2112.VocIndex
-        // ===================================================================================================================
-        
-        // Report/Read Attributes Reponse: MeasuredValue
-        case { contains it, [clusterInt:0xFC7E, commandInt:0x0A, attrInt:0x0000] }:
-        case { contains it, [clusterInt:0xFC7E, commandInt:0x01, attrInt:0x0000] }:
-        
-            // A MeasuredValue of 0xFFFFFFFF indicates that the measurement is invalid
-            if (msg.value == 'FFFFFFFF') {
-                log_warn "Ignored invalid VOC Index value: 0x${msg.value}"
-                return
-            }
-        
-            Integer vocIndex = Math.round Float.intBitsToFloat(Integer.parseInt(msg.value, 16))
-            utils_sendEvent name:'vocIndex', value:vocIndex, descriptionText:"Voc index is ${vocIndex} / 500", type:type
-            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "VocIndex=${msg.value}"
-            return
-        
-        // Other events that we expect but are not usefull
-        case { contains it, [clusterInt:0xFC7E, commandInt:0x07] }:
-            utils_processedZclMessage 'Configure Reporting Response', "attribute=VocIndex, data=${msg.data}"
-            return
         
         // Events for capability.Temperature
         // ===================================================================================================================
@@ -386,6 +299,36 @@ void parse(String description) {
         // Other events that we expect but are not usefull
         case { contains it, [clusterInt:0x0405, commandInt:0x07] }:
             utils_processedZclMessage 'Configure Reporting Response', "attribute=RelativeHumidity, data=${msg.data}"
+            return
+        
+        // Events for capability.Battery
+        // ===================================================================================================================
+        
+        // Report/Read Attributes Reponse: BatteryPercentage
+        case { contains it, [clusterInt:0x0001, commandInt:0x0A, attrInt:0x0021] }:
+        case { contains it, [clusterInt:0x0001, commandInt:0x01] }:
+        
+            // Hubitat fails to parse some Read Attributes Responses
+            if (msg.value == null && msg.data != null && msg.data[0] == '21' && msg.data[1] == '00') {
+                msg.value = msg.data[2]
+            }
+        
+            // The value 0xff indicates an invalid or unknown reading
+            if (msg.value == 'FF') {
+                log_warn "Ignored invalid remaining battery percentage value: 0x${msg.value}"
+                return
+            }
+        
+            Integer percentage = Integer.parseInt(msg.value, 16) / 2
+            Date lastBattery = new Date()
+            utils_sendEvent name:'battery', value:percentage, unit:'%', descriptionText:"Battery is ${percentage}% full", type:type
+            utils_sendEvent name:'lastBattery', value:lastBattery, descriptionText:"Last battery report time is ${lastBattery}", type:type
+            utils_processedZclMessage "${msg.commandInt == 0x0A ? 'Report' : 'Read'} Attributes Response", "BatteryPercentage=${percentage}%"
+            return
+        
+        // Other events that we expect but are not usefull
+        case { contains it, [clusterInt:0x0001, commandInt:0x07] }:
+            utils_processedZclMessage 'Configure Reporting Response', "attribute=BatteryPercentage, data=${msg.data}"
             return
         
         // Events for capability.HealthCheck
