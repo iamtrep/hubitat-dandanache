@@ -367,6 +367,7 @@ void parse(String description) {
             return
         case { contains it, [clusterInt:0x0102, commandInt:0x0A, attrInt:0x0003] }: // Report Attributes Reponse: TiltUpRunTime
         case { contains it, [clusterInt:0x0102, commandInt:0x0A, attrInt:0x0004] }: // Report Attributes Reponse: TiltDownRunTime
+        case { contains it, [clusterInt:0x0102, commandInt:0x0A, attrInt:0x0009] }: // Report Attributes Reponse: CurrentPositionTiltPercentage
         case { contains it, [clusterInt:0x0102, commandInt:0x04] }: // Write Attributes Response (0x04)
             return
         
