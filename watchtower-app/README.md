@@ -31,10 +31,7 @@ To use the Watchtower app, follow these steps:
 
 When you open the Watchtower app, the following screen will welcome you.
 
-From this screen
-
 ![Main screen](img/main.png)
-
 
 ### Devices screen
 
