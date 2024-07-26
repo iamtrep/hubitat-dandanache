@@ -1,4 +1,4 @@
-import { html, css, LitElement } from '../vendor/vendor.min.js';
+import { html, css, LitElement, nothing } from '../vendor/vendor.min.js';
 
 export class DashboardGrid extends LitElement {
     static styles = css`
@@ -18,20 +18,21 @@ export class DashboardGrid extends LitElement {
             position: relative;
             background-color: var(--bg-color-darker);
         }
-        .panel-container .panel-title {
+        .panel-title {
             position: absolute;
             top: 0;
             left: 50%;
             transform: translate(-50%, 0);
-            cursor: move;
             background-color: transparent;
             text-align: center;
             padding: 0.2em 1em;
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
+            user-select: none;
         }
-        .panel-container:hover .panel-title {
+        .grid-stack:not([mobile-view]) .panel-container:hover .panel-title {
+            cursor: move;
             background-color: var(--bg-color);
             box-shadow: 0 0 0.3em var(--shadow-color);
             border: 1px var(--border-color) solid;
@@ -58,17 +59,31 @@ export class DashboardGrid extends LitElement {
     `;
 
     static properties = {
-        name: { type: String, reflect: true }
+        name: { type: String, reflect: true },
+        mobileView: { type: Boolean, reflect: true }
     }
 
     constructor() {
         super()
         this.interval = undefined
+        this.mobileView = window.innerWidth < 768
+        window.addEventListener('resize', () => {
+            const newState = window.innerWidth < 768
+            if (this.mobileView == newState) return
+            this.mobileView = newState
+            this.applyMobileView()
+        })
+    }
+
+    applyMobileView() {
+        this.renderRoot.querySelectorAll('.panel').forEach(panel => panel.mobileView = this.mobileView)
+        this.grid.enableResize(!this.mobileView)
+        this.grid.enableMove(!this.mobileView)
     }
 
     render() {
         return html`
-            <div class="grid-stack spinner"></div>
+            <div class="grid-stack spinner" mobile-view=${this.mobileView ? 'true' : nothing}></div>
         `;
     }
 
@@ -100,22 +115,24 @@ export class DashboardGrid extends LitElement {
         }, this.renderRoot.querySelector('.grid-stack'))
     }
 
-    async init(panels, refresh) {
+    async init(panels) {
 
         // Add panels
+        this.grid.batchUpdate(true)
         panels.forEach(panel => {
             this.addPanel(panel.config, panel.w, panel.h, panel.x, panel.y)
         })
+        this.grid.batchUpdate(false)
 
-        // Remove spinner
+        // Remove spinner and init mobile view
         this.renderRoot.querySelector('.grid-stack').classList.remove('spinner')
+        setTimeout(() => this.applyMobileView(), 0)
     }
 
     setRefreshInterval(refreshMinutes) {
         this.interval && clearInterval(this.interval)
         if (refreshMinutes == 0) return
         this.interval = setInterval(() => {
-            console.log('calling refresh on all panels')
             this.renderRoot.querySelectorAll('.panel').forEach(panel => panel.refresh())
         }, refreshMinutes * 60 * 1000)
         console.info(`Setting auto-refresh timer for ${refreshMinutes} minutes`)

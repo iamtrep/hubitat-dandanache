@@ -9,7 +9,7 @@ export class DatastoreHelper {
         try {
             const response = await fetch(new Request(`./grid-layout.json?name=${name}&access_token=${this.accessToken()}`), { cache: 'no-store' })
             if (!response.ok) {
-                throw new Error(`Datastore.fetchGridLayout() - HTTP error, status = ${response.status}`)
+                throw new Error(`DatastoreHelper.fetchGridLayout() - HTTP error, status = ${response.status}`)
             }
             const text = await response.text()
             const json = JSON.parse(text)
@@ -31,7 +31,7 @@ export class DatastoreHelper {
                 cache: 'no-store'
             })
             if (!response.ok) {
-                throw new Error(`Datastore.saveGridLayout() - HTTP error, status = ${response.status}`)
+                throw new Error(`DatastoreHelper.saveGridLayout() - HTTP error, status = ${response.status}`)
             }
             const text = await response.text()
             const json = JSON.parse(text)
@@ -59,7 +59,7 @@ export class DatastoreHelper {
         this.CACHE[fileName] = fetch(new Request(`./${fileName}?access_token=${this.accessToken()}`), { cache: 'no-store' })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`Datastore.fetchAndCache(${fileName}) - HTTP error, status = ${response.status}`)
+                    throw new Error(`DatastoreHelper.fetchAndCache(${fileName}) - HTTP error, status = ${response.status}`)
                 }
                 return response.text()
             })
@@ -82,8 +82,7 @@ export class DatastoreHelper {
 
             // Data transfer failed
             if (!response.ok) {
-                console.log(response)
-                throw new Error(`Datastore.fetchSupportedAttributes() - HTTP error, status = ${response.status}`)
+                throw new Error(`DatastoreHelper.fetchDeviceData() - HTTP error, status = ${response.status}`)
             }
             const lines = (await response.text()).split("\n")
             const header = lines.shift().split(',')

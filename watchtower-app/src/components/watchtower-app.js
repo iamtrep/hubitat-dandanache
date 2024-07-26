@@ -44,6 +44,7 @@ export class WatchtowerApp extends LitElement {
         if (layout.panels.length === 0) menuElm.removeAttribute('hidden')
 
         // Init grid
+        await gridElm.updateComplete
         gridElm.init(layout.panels)
 
         // Update auto-refresh
@@ -57,7 +58,7 @@ export class WatchtowerApp extends LitElement {
             refresh: this.renderRoot.querySelector('dashboard-menu').refreshInterval,
             panels: this.renderRoot.querySelector('dashboard-grid').getPanelsConfig()
         }
-        console.log('saveDashboard', this.name, layout)
+        console.info('Saving dashboard to Hubitat', this.name, layout)
         await DatastoreHelper.saveGridLayout(this.name, layout)
     }
 

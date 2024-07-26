@@ -53,7 +53,7 @@ Links to the CSV files are available from the **View device** screen.
 
 ![View device screen](img/view-device.png)
 
-From this screen, you also have the option too remove the device configuration. Once you click the **Remove** button, the application will stop collecting metrics for this device. The CSV files are also removed from the File Manager.
+From this screen, you also have the option to remove the device configuration. Once you click the **Remove** button, the application will stop collecting metrics for this device. The CSV files are also removed from the File Manager.
 
 ### Dashboards screen
 
@@ -87,11 +87,11 @@ The first time you load a dashboard in a new tab (by clicking the dashboard name
 
 ### Dashboard menu
 
-The dashboard menu is not displayed by default. It will show only when the dashbaord has no panels. To toggle the dashboard menu, press the backtick (`` ` ``) key on your keyboard. This means that dashboards cannot be configured from a mobile device.
+The dashboard menu is not displayed by default. It will show only when the dashboard has no panels. To toggle the dashboard menu, press the backtick (`` ` ``) key on your keyboard. This means that dashboards cannot be configured from a mobile device.
 
 From the dashboard menu on the left, you can add a new dashboard panel, save the current dashbodard layout or configure the auto-refresh interval.
 
-> Important: Changes to the dashbaord layout are not saved automatically! When you are happy with the dashboard layout, you must click the **Save dashboard** button (from the dashboard left menu).
+> Important: Changes to the dashboard layout are not saved automatically! When you are happy with the dashboard layout, you must click the **Save dashboard** button (from the dashboard left menu).
 
 ### Supported panels
 
@@ -101,11 +101,11 @@ The following dashboard panel types are currently supported:
 
    ![Text panel](img/panel-text.png)
 
-- **Device** - This panel type renders a chart for one or two attributes for a selected device. If you select two attributes, its scale is rendered on the right side of the rendered chart.
+- **Device** - This panel type renders a chart with one or two attributes for a selected device. If you select two attributes, its scale is shown on the right side of the chart.
 
    ![Device panel](img/panel-device.png)
 
-- **Attribute** - This panel type renders a chart for a selected attribute, from multiple devices.
+- **Attribute** - This panel type renders a chart with the selected attribute, from multiple devices.
 
    ![Attribute panel](img/panel-attribute.png)
 

@@ -39,9 +39,9 @@ export class AttributePanel extends LitElement {
 
     static properties = {
         config: { type: Object, reflect: true },
+        mobileView: { type: Boolean, state: true },
         chart: { type: Object, state: true },
-        nodata: { type: Boolean, state: true },
-        mobileView: { type: Boolean, reflect: true }
+        nodata: { type: Boolean, state: true }
     }
 
     render() {
@@ -52,17 +52,16 @@ export class AttributePanel extends LitElement {
         `;
     }
 
+    updated(changedProperties) {
+        if (changedProperties.mobileView == this.mobileView) return
+        this.chart.options.plugins.zoom.pan.enabled = !this.mobileView
+        this.chart.options.plugins.zoom.zoom.pinch.enabled = !this.mobileView
+    }
+
     async connectedCallback() {
         super.connectedCallback()
 
         if (this.config.precision === undefined) this.config.precision = '5m'
-
-        this.mobileView = window.innerWidth < 768
-        window.addEventListener('resize', () => {
-            this.mobileView = window.innerWidth < 768
-            this.chart.options.plugins.zoom.pan.enabled = this.mobileView !== true
-            this.chart.options.plugins.zoom.zoom.pinch.enabled = this.mobileView !== true
-        })
 
         const colors = ColorHelper.colors()
         const graphColors = ColorHelper.graphColors()
@@ -189,7 +188,8 @@ export class AttributePanel extends LitElement {
                 },
                 plugins: [ ChartHelper.crosshairPlugin() ]
             }
-          );
+        )
+        this.chart.canvas.style.touchAction = 'pan-y'
     }
 
     changePrecision(event) {
@@ -232,7 +232,7 @@ export class AttributePanelConfig extends LitElement {
 
     render() {
         return html`
-            <label for="device">Select attribute:</label>
+            <label for="device">Select attribute to chart:</label>
             ${this.attributes ? this.renderAttributesSelect() : html`<aside class="spinner">Loading devices ...</aside>`}
             ${this.attr ? this.renderDevicesSelect() : nothing }
         `
@@ -271,6 +271,7 @@ export class AttributePanelConfig extends LitElement {
         const devices = this.devices.filter(device => device.attrs.includes(this.attr))
         return html`
             <section>
+                <label>Select devices (at least one):</label>
                 ${devices.map(device => {
                     return html`<label><input value="${device.id}" type="checkbox"
                         required=${this.devs.length == 0 ? 'yes' : nothing}

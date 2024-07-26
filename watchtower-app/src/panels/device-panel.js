@@ -39,9 +39,9 @@ export class DevicePanel extends LitElement {
 
     static properties = {
         config: { type: Object, reflect: true },
+        mobileView: { type: Boolean, state: true },
         chart: { type: Object, state: true },
         nodata: { type: Boolean, state: true },
-        mobileView:{ type: Boolean, state: true }
     }
 
     render() {
@@ -52,17 +52,16 @@ export class DevicePanel extends LitElement {
         `;
     }
 
+    updated(changedProperties) {
+        if (changedProperties.mobileView == this.mobileView) return
+        this.chart.options.plugins.zoom.pan.enabled = !this.mobileView
+        this.chart.options.plugins.zoom.zoom.pinch.enabled = !this.mobileView
+    }
+
     async connectedCallback() {
         super.connectedCallback()
 
         if (this.config.precision === undefined) this.config.precision = '5m'
-
-        this.mobileView = window.innerWidth < 768
-        window.addEventListener('resize', () => {
-            this.mobileView = window.innerWidth < 768
-            this.chart.options.plugins.zoom.pan.enabled = this.mobileView !== true
-            this.chart.options.plugins.zoom.zoom.pinch.enabled = this.mobileView !== true
-        })
 
         const colors = ColorHelper.colors()
         const supportedAttributes = await DatastoreHelper.fetchSupportedAttributes()
@@ -209,7 +208,8 @@ export class DevicePanel extends LitElement {
                 },
                 plugins: [ ChartHelper.crosshairPlugin() ]
             }
-          );
+        )
+        this.chart.canvas.style.touchAction = 'pan-y'
     }
 
     changePrecision(event) {
@@ -289,7 +289,7 @@ export class DevicePanelConfig extends LitElement {
     renderAttributesSelect() {
         return html`
             <section>
-                <label for="attr1">Select attribute:</label>
+                <label for="attr1">Select attribute to chart:</label>
                 <select id="attr1" .value=${this.attr1} @change=${event => this.attr1 = event.target.value} required="true">
                     <option value=""></option>
                     ${this.attributes.filter(attribute => attribute != this.attr2).map(attribute => html`
@@ -305,7 +305,7 @@ export class DevicePanelConfig extends LitElement {
     renderOptionalAttributesSelect() {
         return html`
             <section>
-                <label for="attr2">Select second attribute:</label>
+                <label for="attr2">Select additional attribute:</label>
                 <select id="attr2" .value=${this.attr2} @change=${event => this.attr2 = event.target.value}>
                     <option value="">[optional]</option>
                     ${this.attributes.filter(attribute => attribute != this.attr1).map(attribute => html`

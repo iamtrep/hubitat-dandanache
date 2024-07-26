@@ -152,7 +152,7 @@ export class DashboardAddDialog extends LitElement {
 
     constructor() {
         super()
-        this.title = undefined
+        this.title = ''
         this.type = undefined
     }
 
@@ -164,7 +164,7 @@ export class DashboardAddDialog extends LitElement {
                     <section class="modal-body">
                         <section>
                             <label for="title">Panel title:</label>
-                            <input type="text" id="title" placeholder="[optional]" autocomplete="off" @change=${event => this.title = event.target.value}/>
+                            <input type="text" id="title" .value=${this.title} autocomplete="off" @change=${event => this.title = event.target.value} placeholder="[optional]">
                         </section>
                         <section>
                             <label for="type">Panel type:</label>
@@ -204,7 +204,7 @@ export class DashboardAddDialog extends LitElement {
     }
 
     resetForm() {
-        this.title = undefined
+        this.title = ''
         this.type = undefined
     }
 
@@ -216,7 +216,7 @@ export class DashboardAddDialog extends LitElement {
     submit(event) {
         event.preventDefault()
         const config = this.renderRoot.querySelector('.panel-config').decorateConfig({title: this.title, type: this.type})
-        console.log('submit config', config)
+        console.info('Adding panel with config', config)
 
         this.close()
         this.resetForm()
