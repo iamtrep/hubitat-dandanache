@@ -10,34 +10,35 @@ export class DashboardMenu extends LitElement {
             height: 100%;
         }
         nav {
+            box-sizing: border-box;
             position: absolute;
             top: 0;
-            left: 0;
-            width: 10em;
+            left: -15em;
+            width: 15em;
             height: 100%;
-            padding: 5px;
+            padding: 1em;
             background-color: var(--bg-color-darker);
             color: var(--text-color);
-            box-shadow: 0 0 0.3em var(--shadow-color);
+            box-shadow: 0 0 1em var(--shadow-color);
             border-right: 1px var(--border-color) solid;
-            animation: showme 1s;
+            animation: hideme .3s;
         }
-        :host([hidden]) nav {
-            animation: hideme 1s;
-            left: -500px;
+        :host([open]) nav {
+            left: 0;
+            animation: showme .3s;
         }
         @keyframes hideme {
-            from { left: 0px }
-            to { left: -500px }
+            from { left: 0 }
+            to { left: -15em }
         }
         @keyframes showme {
-            from { left: -500px }
+            from { left: -15em }
             to { left: 0px }
         }
         hr {
             border: 0;
-            border-top: 1px var(--bg-color) solid;
-            margin: 10px 0;
+            border-top: 1px var(--separator-color) solid;
+            margin: 1em 0;
         }
         button {
             background-color: transparent;
@@ -45,15 +46,15 @@ export class DashboardMenu extends LitElement {
             border: 1px var(--border-color) solid;
             border-radius: 5px;
             margin-bottom: 5px;
-            padding: .4em .6em;
+            padding: .5em 1em;
             cursor: pointer;
             display: block;
             width: 100%;
             text-align: left;
+            box-shadow: 0 0 0.3em var(--shadow-color);
         }
         button:hover {
             background-color: var(--bg-color);
-            box-shadow: 0 0 0.3em var(--shadow-color);
         }
         label {
             display: block;
@@ -62,34 +63,40 @@ export class DashboardMenu extends LitElement {
         }
         select {
             display: block;
-        }
-        select {
-            display: block;
             width: 100%;
             margin-bottom: 5px;
+            padding: .5em;
             background-color: var(--bg-color);
             color: var(--text-color);
             border: 1px var(--border-color) solid;
-            padding: .5em;
+            border-radius: 5px;
+        }
+        select:focus, button:focus {
+            outline: 1px var(--Blue) solid;
+            border-color: var(--Blue)
         }
     `;
 
     static properties = {
-        hidden: { type: Boolean, reflect: true },
+        open: { type: Boolean, reflect: true },
         refreshInterval: { type: String, state: true },
+        startX: { type: Number, state: true }
     }
 
     constructor() {
         super()
-        this.hidden = true
+        this.open = false
         this.refreshInterval = '0'
+
+        const params = new URLSearchParams(window.location.search)
+        this.theme = params.get('theme') === 'dark' ? 'dark' : 'light'
     }
 
     render() {
         return html`
             <nav>
-                <button @click=${this.addPanel}>+ Add panel</button>
-                <button @click=${this.saveDashboard}>✓ Save dashboard</button>
+                <button @click=${this.addTile} title="Add a new dashboard tile"><b>+</b> Add tile</button>
+                <button @click=${this.compactTiles} title="Re-order dashboard tiles to fill any empty space">⋮⋮⋮ Compact space</button>
                 <hr>
                 <label for="refreshInterval">Auto-refresh</label>
                 <select id="refreshInterval" .value=${this.refreshInterval} @change=${this.changeRefreshInterval}>
@@ -99,17 +106,30 @@ export class DashboardMenu extends LitElement {
                     <option value="30">every 30 minutes</option>
                     <option value="60">every hour</option>
                 </select>
+                <label for="theme">Theme</label>
+                <select id="theme" .value=${this.theme} @change=${this.changeTheme}>
+                    <option value="light">light</option>
+                    <option value="dark">dark</option>
+                </select>
+                <hr>
+                <button @click=${this.saveDashboard} title="Save current dashboard layout">✓ Save dashboard</button>
             </nav>
         `;
     }
 
     connectedCallback() {
         super.connectedCallback();
-        window.addEventListener('keydown', event =>  event.key === '`' && (this.hidden = !this.hidden));
+        window.addEventListener('keydown', event =>  event.key === '`' && (this.open = !this.open));
+        window.addEventListener('touchstart', event =>  this.touchStart(event));
+        window.addEventListener('touchend', event =>  this.touchEnd(event));
     }
 
-    addPanel() {
+    addTile() {
         this.dispatchEvent(new CustomEvent('add'))
+    }
+
+    compactTiles() {
+        this.dispatchEvent(new CustomEvent('compact'))
     }
 
     saveDashboard() {
@@ -119,5 +139,37 @@ export class DashboardMenu extends LitElement {
     changeRefreshInterval(event) {
         this.refreshInterval = event.target.value
         this.dispatchEvent(new CustomEvent('changeRefreshInterval', { detail: this.refreshInterval }))
+    }
+
+    changeTheme(event) {
+        this.setTheme(event.target.value)
+    }
+
+    setTheme(theme) {
+        this.theme = theme
+        this.dispatchEvent(new CustomEvent('changeTheme', { detail: this.theme }))
+
+        // Apply theme
+        document.documentElement.setAttribute('data-theme', this.theme)
+
+        const params = new URLSearchParams(window.location.search)
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', theme == 'dark' ? '#002b36' : '#eee8d5')
+        document.querySelector('link[rel="manifest"]').setAttribute(
+            'href',
+            `./app.webmanifest?access_token=${params.get('access_token')}&name=${params.get('name')}&theme=${theme}`
+        )
+    }
+    touchStart(event) {
+        this.startX = event.changedTouches[0].clientX
+    }
+    touchEnd(event) {
+        if (this.startX == undefined) return
+        const endX = event.changedTouches[0].clientX
+        const diff = endX - this.startX
+        if (!this.open && this.startX < 30 && diff > 50) {
+            this.open = true
+            return
+        }
+        if (this.open && endX < 30 && diff < -50) this.open = false
     }
 }

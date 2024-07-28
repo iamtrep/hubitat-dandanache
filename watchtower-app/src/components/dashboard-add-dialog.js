@@ -4,7 +4,7 @@ export class DashboardAddDialog extends LitElement {
     static styles = css`
         :host {
             display: none;
-            position: absolute;
+            position: fixed;
             width: 100%; height: 100%;
             top: 0; left: 0;
             background-color: rgba(0, 0, 0, 0.3);
@@ -32,16 +32,17 @@ export class DashboardAddDialog extends LitElement {
             100% { transform: rotate(360deg) }
         }
         article {
+            box-sizing: border-box;
             display: block;
             position: absolute;
             top: -50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            min-width: 400px;
+            min-width: 300px;
             background-color: var(--bg-color-darker);
             color: var(--text-color);
             border: 1px var(--border-color) solid;
-            box-shadow: 0 0 0.3em var(--shadow-color);
+            box-shadow: 0 0 1em var(--shadow-color);
             border-radius: 5px;
             padding: 0;
         }
@@ -68,7 +69,7 @@ export class DashboardAddDialog extends LitElement {
         footer {
             padding: 1em;
             text-align: right;
-            border-top: 1px var(--bg-color) solid;
+            border-top: 1px var(--Gray) solid;
         }
         footer button {
             padding: .5em 1em;
@@ -78,12 +79,11 @@ export class DashboardAddDialog extends LitElement {
             color: var(--text-color);
             border: 1px var(--border-color) solid;
             border-radius: 5px;
+            box-shadow: 0 0 0.3em var(--shadow-color);
         }
         footer button:hover {
             background-color: var(--bg-color);
-            box-shadow: 0 0 0.3em var(--shadow-color);
         }
-
         label { display: block; margin-bottom: .3em }
         select {
             display: block;
@@ -95,6 +95,7 @@ export class DashboardAddDialog extends LitElement {
             background-color: var(--bg-color);
             color: var(--text-color);
             border: 1px var(--border-color) solid;
+            border-radius: 5px;
             padding: .5em;
             margin: 0;
         }
@@ -160,14 +161,14 @@ export class DashboardAddDialog extends LitElement {
         return html`
             <article role="dialog" aria-modal="true" aria-labelledby="d-title">
                 <form @submit=${this.submit}>
-                    <header id="d-title">Add dashboard panel</header>
+                    <header id="d-title">Add dashboard tile</header>
                     <section class="modal-body">
                         <section>
-                            <label for="title">Panel title:</label>
+                            <label for="title">Title title:</label>
                             <input type="text" id="title" .value=${this.title} autocomplete="off" @change=${event => this.title = event.target.value} placeholder="[optional]">
                         </section>
                         <section>
-                            <label for="type">Panel type:</label>
+                            <label for="type">Tile type:</label>
                             <select id="type" .value=${this.type} @change=${event => this.type = event.target.value} required="true">
                                 <option value=""></option>
                                 ${Object.entries(DashboardAddDialog.panels).map(([key, val]) => html`

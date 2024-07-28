@@ -1,6 +1,6 @@
 # Watchtower
 
-<img src="icon.png" style="height: 64px !important; weight: 64px !important; float: right; margin-bottom: 10px">
+<img src="icon.png" style="height: 42px !important; float: right; margin-bottom: 10px">
 Build dashboards for your smart devices.
 
 ## Installation

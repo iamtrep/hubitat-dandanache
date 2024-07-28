@@ -42,20 +42,25 @@ export class ChartHelper {
     }
 
     static updatePointStyle(chart) {
-        let shouldUpdateChart = false
-
         if (chart.scales.x === undefined || chart.data.datasets[0] === undefined) return
         const min = chart.scales.x.min
         const max = chart.scales.x.max
         const visibleDatapoints = chart.data.datasets[0].data.filter(point => point.x >= min && point.x <= max)
+        const chartType = visibleDatapoints.length == 0 || chart.width / visibleDatapoints.length < 30 ? 'line' : 'bar'
+        if (chart.config.type != chartType) {
+            chart.config.type = chartType
+            chart.update('none')
+        }
+        return
 
-        const newPointStyle = visibleDatapoints.length == 0 || chart.width / visibleDatapoints.length < 10 ? false : 'circle'
-        chart.data.datasets.forEach(dataset => {
-            if (newPointStyle !== dataset.pointStyle) {
-                dataset.pointStyle = newPointStyle
-                shouldUpdateChart = true
-            }
-        })
-        if (shouldUpdateChart) chart.update()
+        // let shouldUpdateChart = false
+        // const newPointStyle = visibleDatapoints.length == 0 || chart.width / visibleDatapoints.length < 10 ? false : 'circle'
+        // chart.data.datasets.forEach(dataset => {
+        //     if (newPointStyle !== dataset.pointStyle) {
+        //         dataset.pointStyle = newPointStyle
+        //         shouldUpdateChart = true
+        //     }
+        // })
+        // if (shouldUpdateChart) chart.update()
     }
 }

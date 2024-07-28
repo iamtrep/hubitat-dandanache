@@ -21,53 +21,54 @@ import com.hubitat.app.DeviceWrapper
 @Field static final String APP_NAME = 'Watchtower'
 @Field static final String APP_VERSION = '1.0.0'
 @Field static final def URL_PATTERN = ~/^https?:\/\/[^\/]+(.+)/
-@Field static final String APP_ICON = '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'
+@Field static final String APP_ICON = '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'
+@Field static final String MASKABLE_ICON = 'iVBORw0KGgoAAAANSUhEUgAAAgAAAAIABAMAAAAGVsnJAAAAElBMVEVHcExxpQBxpQBwpQBxpgCAvACY5M8+AAAABXRSTlMAJ7Ti/ZKd2DUAAANgSURBVHja7d1BctowGIZhAxcgkANAwwEo4+wbW75AY93/Kl22ixJJaQnw8zx7zTCadz5WHnUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwB8WT+esuwew6dN5476L7iXN+bw5fe9i26b8sRS7gUXKJWPoIXiecsl87ALrc9nQxbWYctm87sJaVV3ALvAE5BpvXVgHF5AfewVfH/0Cplzj/dEvYFSAAhSgAAUoQAEKUIACFKAABShAAQpQgAIUoAAFKEABClCAAhSgAAUoQAEKUIACFKAABShAAQpQgAIUoAAFKEABClCAAhSgAAUoQAEKUIACFKAABShAAQpQgAIUoAAFKEABClCAAhSgAAUoQAEKUIACFKAABShAAQq42wI2L306ZzztwxewSanwME3sApbFh2l2oQtY9OUD68gFrGoepolcwCGXDdEKaH+YJm4By6oLOMYqINjDNO0FtF/AKVgB7Q/TxC3gUHdncQt4zTXGWAW0X8D86AXMj15AUoANUIANUIANUIANUIANUIANUIANUIANUIANUIANUIANUIANUIANUIANUIANUIANUIANUMAFFD5m+bYOvwHbNH0gpX3wAjblj1mibUDrxyxD6AK2Uy6Zd5E3oM9lb8EKaP+YJfAGrKouYBe3gOdcYT7G3YBDrvEWq4D2n3aKuwFTrjEEK6D9AsJuwGLKNX6GLWBxSwXMCghwAUE3YFDAl2yAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmyAAmzArReQ7uSdode6aNqPvIe6gKH9RbPxTt4aO1zqyHDrr819/shz5ZErqPtpx/YjP+7kAla5wrz7x0cql5VHbvV/MLUfmdefOXINffs6HS515E7eHe5W7UeWFUeO3c2+PN1+ZFx/5sh1bGvfHv9teaEjV7uBaT4f5pz2fz0yNR7ZFI9cz+alT+eMp6f/dOSpcAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAu/cLBQBL1l75RF4AAAAASUVORK5CYII='
 
 @Field static final Map SUPPORTED_ATTRIBUTES = [
-    acceleration: [ unit:'% active', probe:{ device -> "${device.currentValue('acceleration')}" == 'active' ? 100 : 0 } ],
-    airQualityIndex: [ unit:'/500', probe:{ device -> "${device.currentValue('airQualityIndex')}" } ],
-    amperage: [ unit:'A', probe:{ device -> "${device.currentValue('amperage')}" } ],
-    battery: [ unit:'% full', probe:{ device -> "${device.currentValue('battery')}" } ],
-    camera: [ unit:'% on', probe:{ device -> "${device.currentValue('camera')}" == 'on' ? 100 : 0 } ],
-    carbonDioxide: [ unit:'ppm', probe:{ device -> "${device.currentValue('carbonDioxide')}" } ],
-    contact: [ unit:'% open', probe:{ device -> "${device.currentValue('contact')}" == 'open' ? 100 : 0 } ],
+    acceleration: [ min:0, max:100, unit:'% active', probe:{ device -> "${device.currentValue('acceleration')}" == 'active' ? 100 : 0 } ],
+    airQualityIndex: [ min:0, max:500, unit:'', probe:{ device -> "${device.currentValue('airQualityIndex')}" } ],
+    amperage: [ min:0, unit:'A', probe:{ device -> "${device.currentValue('amperage')}" } ],
+    battery: [ min:0, max:100, unit:'% full', probe:{ device -> "${device.currentValue('battery')}" } ],
+    camera: [ min:0, max:100, unit:'% on', probe:{ device -> "${device.currentValue('camera')}" == 'on' ? 100 : 0 } ],
+    carbonDioxide: [ min:0, unit:'ppm', probe:{ device -> "${device.currentValue('carbonDioxide')}" } ],
+    contact: [ min:0, max:100, unit:'% open', probe:{ device -> "${device.currentValue('contact')}" == 'open' ? 100 : 0 } ],
     coolingSetpoint: [ unit:'°', probe:{ device -> "${device.currentValue('coolingSetpoint')}" } ],
-    door: [ unit:'% open', probe:{ device -> "${device.currentValue('door')}" == 'open' ? 100 : 0 } ],
-    energy: [ unit:'kWh', probe:{ device -> "${device.currentValue('energy')}" } ],
-    filterStatus: [ unit:'% normal', probe:{ device -> "${device.currentValue('filterStatus')}" == 'normal' ? 100 : 0 } ],
+    door: [ min:0, max:100, unit:'% open', probe:{ device -> "${device.currentValue('door')}" == 'open' ? 100 : 0 } ],
+    energy: [ min:0, unit:'kWh', probe:{ device -> "${device.currentValue('energy')}" } ],
+    filterStatus: [ min:0, max:100, unit:'% normal', probe:{ device -> "${device.currentValue('filterStatus')}" == 'normal' ? 100 : 0 } ],
     frequency: [ unit:'Hz', probe:{ device -> "${device.currentValue('frequency')}" } ],
-    goal: [ unit:'steps', probe:{ device -> "${device.currentValue('goal')}" } ],
+    goal: [ min:0, unit:'steps', probe:{ device -> "${device.currentValue('goal')}" } ],
     heatingSetpoint: [ unit:'°', probe:{ device -> "${device.currentValue('heatingSetpoint')}" } ],
-    humidity: [ unit:'%', probe:{ device -> "${device.currentValue('humidity')}" } ],
-    illuminance: [ unit:'lx', probe:{ device -> "${device.currentValue('illuminance')}" } ],
+    humidity: [ min:0, max:100, unit:'%', probe:{ device -> "${device.currentValue('humidity')}" } ],
+    illuminance: [ min:0, unit:'lx', probe:{ device -> "${device.currentValue('illuminance')}" } ],
     lock: [ unit:'% locked', probe:{ device -> "${device.currentValue('lock')}" == 'locked' ? 100 : 0 } ],
-    lqi: [ unit:'lqi', probe:{ device -> "${device.currentValue('lqi')}" } ],
-    motion: [ unit:'% active', probe:{ device -> "${device.currentValue('motion')}" == 'active' ? 100 : 0 } ],
-    naturalGas: [ unit:'% detected', probe:{ device -> "${device.currentValue('naturalGas')}" == 'detected' ? 100 : 0 } ],
-    networkStatus: [ unit:'% online', probe:{ device -> "${device.currentValue('networkStatus')}" == 'online' ? 100 : 0 } ],
+    lqi: [ min:0, max:255, unit:'lqi', probe:{ device -> "${device.currentValue('lqi')}" } ],
+    motion: [ min:0, max:100, unit:'% active', probe:{ device -> "${device.currentValue('motion')}" == 'active' ? 100 : 0 } ],
+    naturalGas: [ min:0, max:100, unit:'% detected', probe:{ device -> "${device.currentValue('naturalGas')}" == 'detected' ? 100 : 0 } ],
+    networkStatus: [ min:0, max:100, unit:'% online', probe:{ device -> "${device.currentValue('networkStatus')}" == 'online' ? 100 : 0 } ],
     pH: [ unit:'pH', probe:{ device -> "${device.currentValue('pH')}" } ],
-    power: [ unit:'W', probe:{ device -> "${device.currentValue('power')}" } ],
-    presence: [ unit:'% present', probe:{ device -> "${device.currentValue('presence')}" == 'present' ? 100 : 0 } ],
-    pressure: [ unit:'psi', probe:{ device -> "${device.currentValue('pressure')}" } ],
-    rate: [ unit:'LPM', probe:{ device -> "${device.currentValue('rate')}" } ],
-    rssi: [ unit:'rssi', probe:{ device -> "${device.currentValue('rssi')}" } ],
-    securityKeypad: [ unit:'% armed', probe:{ device -> "${device.currentValue('securityKeypad')}".startsWith('armed') ? 100 : 0 } ],
-    sessionStatus: [ unit:'% running', probe:{ device -> "${device.currentValue('sessionStatus')}" == 'running' ? 100 : 0 } ],
-    shock: [ unit:'% detected', probe:{ device -> "${device.currentValue('shock')}" == 'detected' ? 100 : 0 } ],
-    sleeping: [ unit:'% sleeping', probe:{ device -> "${device.currentValue('sleeping')}" == 'sleeping' ? 100 : 0 } ],
-    smoke: [ unit:'% detected', probe:{ device -> "${device.currentValue('smoke')}" == 'detected' ? 100 : 0 } ],
-    sound: [ unit:'% detected', probe:{ device -> "${device.currentValue('sound')}" == 'detected' ? 100 : 0 } ],
+    power: [ min:0, unit:'W', probe:{ device -> "${device.currentValue('power')}" } ],
+    presence: [ min:0, max:100, unit:'% present', probe:{ device -> "${device.currentValue('presence')}" == 'present' ? 100 : 0 } ],
+    pressure: [ min:0, unit:'psi', probe:{ device -> "${device.currentValue('pressure')}" } ],
+    rate: [ min:0, unit:'LPM', probe:{ device -> "${device.currentValue('rate')}" } ],
+    rssi: [ min:0, max:255, unit:'rssi', probe:{ device -> "${device.currentValue('rssi')}" } ],
+    securityKeypad: [ min:0, max:100, unit:'% armed', probe:{ device -> "${device.currentValue('securityKeypad')}".startsWith('armed') ? 100 : 0 } ],
+    sessionStatus: [ min:0, max:100, unit:'% running', probe:{ device -> "${device.currentValue('sessionStatus')}" == 'running' ? 100 : 0 } ],
+    shock: [ min:0, max:100, unit:'% detected', probe:{ device -> "${device.currentValue('shock')}" == 'detected' ? 100 : 0 } ],
+    sleeping: [ min:0, max:100, unit:'% sleeping', probe:{ device -> "${device.currentValue('sleeping')}" == 'sleeping' ? 100 : 0 } ],
+    smoke: [ min:0, max:100, unit:'% detected', probe:{ device -> "${device.currentValue('smoke')}" == 'detected' ? 100 : 0 } ],
+    sound: [ min:0, max:100, unit:'% detected', probe:{ device -> "${device.currentValue('sound')}" == 'detected' ? 100 : 0 } ],
     soundPressureLevel: [ unit:'dB', probe:{ device -> "${device.currentValue('soundPressureLevel')}" } ],
     steps: [ unit:'steps', probe:{ device -> "${device.currentValue('steps')}" } ],
-    'switch': [ unit:'% on', probe:{ device -> "${device.currentValue('switch')}" == 'on' ? 100 : 0 } ],
-    tamper: [ unit:'% detected', probe:{ device -> "${device.currentValue('tamper')}" == 'detected' ? 100 : 0 } ],
+    'switch': [ min:0, max:100, unit:'% on', probe:{ device -> "${device.currentValue('switch')}" == 'on' ? 100 : 0 } ],
+    tamper: [ min:0, max:100, unit:'% detected', probe:{ device -> "${device.currentValue('tamper')}" == 'detected' ? 100 : 0 } ],
     temperature: [ unit:'°', probe:{ device -> "${device.currentValue('temperature')}" } ],
-    transportStatus: [ unit:'% playing', probe:{ device -> "${device.currentValue('transportStatus')}" == 'playing' ? 100 : 0 } ],
-    valve: [ unit:'% open', probe:{ device -> "${device.currentValue('valve')}" == 'open' ? 100 : 0 } ],
-    water: [ unit:'% wet', probe:{ device -> "${device.currentValue('water')}" == 'wet' ? 100 : 0 } ],
-    windowBlind: [ unit:'% open', probe:{ device -> "${device.currentValue('windowBlind')}".contains('open') ? 100 : 0 } ],
-    windowShade: [ unit:'% open', probe:{ device -> "${device.currentValue('windowShade')}".contains('open') ? 100 : 0 } ],
-    voltage: [ unit:'V', probe:{ device -> "${device.currentValue('voltage')}" } ],
+    transportStatus: [ min:0, max:100, unit:'% playing', probe:{ device -> "${device.currentValue('transportStatus')}" == 'playing' ? 100 : 0 } ],
+    valve: [ min:0, max:100, unit:'% open', probe:{ device -> "${device.currentValue('valve')}" == 'open' ? 100 : 0 } ],
+    water: [ min:0, max:100, unit:'% wet', probe:{ device -> "${device.currentValue('water')}" == 'wet' ? 100 : 0 } ],
+    windowBlind: [ min:0, max:100, unit:'% open', probe:{ device -> "${device.currentValue('windowBlind')}".contains('open') ? 100 : 0 } ],
+    windowShade: [ min:0, max:100, unit:'% open', probe:{ device -> "${device.currentValue('windowShade')}".contains('open') ? 100 : 0 } ],
+    voltage: [ min:0, unit:'V', probe:{ device -> "${device.currentValue('voltage')}" } ],
 
     // Non-standard attributes
     pm25: [ unit:'μg/m3', probe:{ device -> "${device.currentValue('pm25')}" } ],
@@ -269,7 +270,6 @@ Map main() {
                 href(name:'changelogLink', title:'Change log', description:'See latest application changes', page:'changelog', required:false)
 
                 // Preferences
-                input(name:'useDarkTheme', type:'bool', title:'Use dark theme', defaultValue:false, submitOnChange:true)
                 input(name:'logEnable', type:'bool', title:'Enable debug logging', defaultValue:false, submitOnChange:true)
             }
         }
@@ -571,118 +571,6 @@ Map changelog() {
 }
 
 // ===================================================================================================================
-// Implement Mappings
-// ===================================================================================================================
-
-mappings {
-    path('/watchtower.html') { action:[ GET:'getDashboardHtmlMapping' ] }
-    path('/watchtower.js') { action:[ GET:'getDashboardJsMapping' ] }
-    path('/icon.png') { action:[ GET:'getIconMapping' ] }
-    path('/app.webmanifest') { action:[ GET:'getAppManifestMapping' ] }
-    path('/grid-layout.json') { action:[ GET:'getGridLayoutMapping', PUT:'setGridLayoutMapping' ] }
-    path('/monitored-devices.json') { action:[ GET:'getMonitoredDevicesMapping' ] }
-    path('/supported-attributes.json') { action:[ GET:'getSupportedAttributesMapping' ] }
-}
-
-def getDashboardHtmlMapping() {
-    debug "Proxying watchtower.html to ${request.HOST} (${request.requestSource})"
-    if (params.name == null) throw new RuntimeException('Missing "name" query param')
-    return render(
-        status: 200,
-        contentType: 'text/html',
-        data: new String(downloadHubFile('watchtower.html'), 'UTF-8')
-            .replaceAll('\\$\\{access_token\\}', "${state.accessToken}")
-            .replaceAll('\\$\\{dashboard_name\\}', "${params.name}")
-    )
-}
-
-def getDashboardJsMapping() {
-    debug "Proxying watchtower.js to ${request.HOST} (${request.requestSource})"
-    return render(
-        status: 200,
-        contentType: 'text/javascript',
-        data: new String(downloadHubFile('watchtower.js'), 'UTF-8')
-    )
-}
-
-def getIconMapping() {
-    debug 'Returning app icon'
-    return render(
-        status: 200,
-        contentType: 'image/png',
-        data: APP_ICON.decodeBase64()
-    )
-}
-
-def getAppManifestMapping() {
-    debug 'Returning PWA manifest'
-    if (params.name == null) throw new RuntimeException('Missing "name" query param')
-    return render(
-        status: 200,
-        contentType: 'application/manifest+json',
-        data: """\
-        {
-            "id": "${java.util.UUID.nameUUIDFromBytes(params.name.getBytes())}",
-            "name": "${params.name}",
-            "short_name": "${params.name}",
-            "description": "View metrics for your smart devices.",
-            "start_url": "${buildDashboardURL(params.name)}",
-            "icons": [{
-                "src": "data:image/png;base64,${APP_ICON}",
-                "sizes": "512x512",
-                "type": "image/png",
-                "purpose": "maskable"
-            }],
-            "categories": ["utilities"],
-            "display": "standalone",
-            "orientation": "portrait",
-            "theme_color": "${useDarkTheme ? "#073642" : "#eee8d5"}",
-            "background_color": "${useDarkTheme ? "#073642" : "#eee8d5"}"
-        }
-        """
-    )
-}
-
-def getGridLayoutMapping() {
-    debug "Returning grid layout for dashboard: ${params.name}"
-    if (params.name == null) throw new RuntimeException('Missing "name" query param')
-
-    List<String> dashboardList = app.getSetting('dashboards') ?: []
-    int idx = dashboardList.findIndexOf { it == "${params.name}" }
-    if (idx == -1) return render(status:200, contentType:'application/json', data:'{"status": false}')
-    return render(status:200, contentType:'application/json', data:state["g.${idx}"] ?: '{"panels":[]}')
-}
-
-def setGridLayoutMapping() {
-    debug "Saving grid layout for dashboard: ${params.name}"
-    if (params.name == null) throw new RuntimeException('Missing "name" query param')
-
-    List<String> dashboardList = app.getSetting('dashboards') ?: []
-    int idx = dashboardList.findIndexOf { it == params.name }
-    if (idx == -1) return render(status:200, contentType:'application/json', data:'{"status": false}')
-
-    runIn(1, 'saveGridLayout', [data: [idx:idx, json:"${request.body}"]])
-    return render(status:200, contentType:'application/json', data:'{"status": true}')
-}
-
-def getMonitoredDevicesMapping() {
-    debug "Returning monitored devices list"
-    List devices = collectDeviceConfiguration().collect { return [id:it[1].id, name:it[1].displayName, attrs:it[2]] }
-    return render(status:200, contentType:'application/json', data:new JsonBuilder(devices).toString())
-}
-
-def getSupportedAttributesMapping() {
-    debug "Returning supported attributes list"
-    Map attributes = SUPPORTED_ATTRIBUTES.collectEntries{key, val -> [key, [unit: val.unit]]}
-    attributes.temperature.unit += location.temperatureScale
-    return render(status:200, contentType:'application/json', data:new JsonBuilder(attributes).toString())
-}
-
-def saveGridLayout(data) {
-    state["g.${data.idx}"] = data.json
-}
-
-// ===================================================================================================================
 // Helper functions
 // ===================================================================================================================
 
@@ -796,7 +684,7 @@ def buildURL(String fileName) {
         ? "${getApiServerUrl()}/${hubUID}/apps/${app.id}"
         : "${(getFullLocalApiServerUrl() =~ URL_PATTERN).findAll()[0][1]}"
     
-    return "${prefix}/${fileName}?access_token=${state.accessToken}&dark=${useDarkTheme == true}"
+    return "${prefix}/${fileName}?access_token=${state.accessToken}"
 }
 
 def buildDashboardURL(String dashboardName) {
@@ -804,7 +692,7 @@ def buildDashboardURL(String dashboardName) {
         ? "${getApiServerUrl()}/${hubUID}/apps/${app.id}"
         : "${(getFullLocalApiServerUrl() =~ URL_PATTERN).findAll()[0][1]}"
     
-    return "${prefix}/watchtower.html?name=${java.net.URLEncoder.encode(dashboardName, 'UTF-8')}&access_token=${state.accessToken}&dark=${useDarkTheme == true}"
+    return "${prefix}/watchtower.html?name=${java.net.URLEncoder.encode(dashboardName, 'UTF-8')}&access_token=${state.accessToken}"
 }
 
 
@@ -944,4 +832,123 @@ void deleteDataFiles(DeviceWrapper device) {
     try { deleteHubFile("wt_${device.id}_1h.csv") } catch (NoSuchFileException ex) { }
     try { deleteHubFile("wt_${device.id}_1d.csv") } catch (NoSuchFileException ex) { }
     try { deleteHubFile("wt_${device.id}_1w.csv") } catch (NoSuchFileException ex) { }
+}
+
+
+// ===================================================================================================================
+// Implement Mappings
+// ===================================================================================================================
+
+mappings {
+    path('/watchtower.html') { action:[ GET:'getDashboardHtmlMapping' ] }
+    path('/watchtower.js') { action:[ GET:'getDashboardJsMapping' ] }
+    path('/icon.png') { action:[ GET:'getIconMapping' ] }
+    path('/app.webmanifest') { action:[ GET:'getAppManifestMapping' ] }
+    path('/grid-layout.json') { action:[ GET:'getGridLayoutMapping', PUT:'setGridLayoutMapping' ] }
+    path('/monitored-devices.json') { action:[ GET:'getMonitoredDevicesMapping' ] }
+    path('/supported-attributes.json') { action:[ GET:'getSupportedAttributesMapping' ] }
+}
+
+def getDashboardHtmlMapping() {
+    debug "Proxying watchtower.html to ${request.HOST} (${request.requestSource})"
+    if (params.name == null) throw new RuntimeException('Missing "name" query param')
+    return render(
+        status: 200,
+        contentType: 'text/html',
+        data: new String(downloadHubFile('watchtower.html'), 'UTF-8')
+            .replaceAll('\\$\\{access_token\\}', "${state.accessToken}")
+            .replaceAll('\\$\\{dashboard_name\\}', "${params.name}")
+    )
+}
+
+def getDashboardJsMapping() {
+    debug "Proxying watchtower.js to ${request.HOST} (${request.requestSource})"
+    return render(
+        status: 200,
+        contentType: 'text/javascript',
+        data: new String(downloadHubFile('watchtower.js'), 'UTF-8')
+    )
+}
+
+def getIconMapping() {
+    debug 'Returning app icon'
+    return render(
+        status: 200,
+        contentType: 'image/png',
+        data: APP_ICON.decodeBase64()
+    )
+}
+
+def getAppManifestMapping() {
+    debug "Returning PWA manifest: ${params}"
+    if (params.name == null) throw new RuntimeException('Missing "name" query param')
+    return render(
+        status: 200,
+        contentType: 'application/manifest+json',
+        data: """\
+        {
+            "id": "${java.util.UUID.nameUUIDFromBytes(params.name.getBytes())}",
+            "name": "${params.name}",
+            "short_name": "${params.name}",
+            "description": "View metrics for your smart devices.",
+            "start_url": "${buildDashboardURL(params.name)}",
+            "icons": [{
+                "src": "data:image/png;base64,${MASKABLE_ICON}",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "maskable"
+            },{
+                "src": "data:image/png;base64,${APP_ICON}",
+                "sizes": "512x512",
+                "type": "image/png"
+            }],
+            "categories": ["utilities"],
+            "display": "standalone",
+            "orientation": "any",
+            "theme_color": "${params.theme == 'dark' ? "#002b36" : "#eee8d5"}",
+            "background_color": "${params.theme == 'dark' ? "#002b36" : "#eee8d5"}"
+        }
+        """
+    )
+}
+
+def getGridLayoutMapping() {
+    debug "Returning grid layout for dashboard: ${params.name}"
+    if (params.name == null) throw new RuntimeException('Missing "name" query param')
+
+    List<String> dashboardList = app.getSetting('dashboards') ?: []
+    int idx = dashboardList.findIndexOf { it == "${params.name}" }
+    if (idx == -1) return render(status:200, contentType:'application/json', data:'{"status": false}')
+    return render(status:200, contentType:'application/json', data:state["g.${idx}"] ?: '{"panels":[]}')
+}
+
+def setGridLayoutMapping() {
+    debug "Saving grid layout for dashboard: ${params.name}"
+    if (params.name == null) throw new RuntimeException('Missing "name" query param')
+
+    List<String> dashboardList = app.getSetting('dashboards') ?: []
+    int idx = dashboardList.findIndexOf { it == params.name }
+    if (idx == -1) return render(status:200, contentType:'application/json', data:'{"status": false}')
+
+    runIn(1, 'saveGridLayout', [data: [idx:idx, json:"${request.body}"]])
+    return render(status:200, contentType:'application/json', data:'{"status": true}')
+}
+
+def getMonitoredDevicesMapping() {
+    debug "Returning monitored devices list"
+    List devices = collectDeviceConfiguration().collect { return [id:it[1].id, name:it[1].displayName, attrs:it[2]] }
+    return render(status:200, contentType:'application/json', data:new JsonBuilder(devices).toString())
+}
+
+def getSupportedAttributesMapping() {
+    debug "Returning supported attributes list"
+    Map attributes = SUPPORTED_ATTRIBUTES.collectEntries{ key, val -> [key, val.findAll { k, v -> k != 'probe' }] }
+    attributes.coolingSetpoint.unit = "°${location.temperatureScale}"
+    attributes.heatingSetpoint.unit = "°${location.temperatureScale}"
+    attributes.temperature.unit = "°${location.temperatureScale}"
+    return render(status:200, contentType:'application/json', data:new JsonBuilder(attributes).toString())
+}
+
+def saveGridLayout(data) {
+    state["g.${data.idx}"] = data.json
 }

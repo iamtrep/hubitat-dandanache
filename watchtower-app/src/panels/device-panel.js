@@ -15,6 +15,7 @@ export class DevicePanel extends LitElement {
             width: 100%;
             height: 100%;
         }
+        :host(.empty) canvas { visibility: hidden }
         precision-selector {
             position: absolute;
             bottom: 0;
@@ -91,7 +92,9 @@ export class DevicePanel extends LitElement {
                 color: colors.Green
             },
             ticks: { color: colors.TextColorDarker },
-            grid: { color: colors.BgColor }
+            grid: { color: colors.TextColorDarker + '44' },
+            min: supportedAttributes[this.config.attr1].min,
+            max: supportedAttributes[this.config.attr1].max
         }
 
         if (this.config.attr2 !== undefined) {
@@ -119,12 +122,14 @@ export class DevicePanel extends LitElement {
                 },
                 ticks: { color: colors.TextColorDarker },
                 grid: { drawOnChartArea: false },
+                min: supportedAttributes[this.config.attr2].min,
+                max: supportedAttributes[this.config.attr2].max
             }
         }
 
-        this.classList.remove('spinner')
         this.chart.data = { datasets }
         this.chart.update('none')
+        setTimeout(() => this.classList.remove('empty', 'spinner'), 200)
     }
 
     firstUpdated() {
@@ -139,7 +144,7 @@ export class DevicePanel extends LitElement {
                     responsive: true,
                     maintainAspectRatio: false,
                     onResize: chart => ChartHelper.updatePointStyle(chart),
-                    animation: { onComplete: ({ initial, chart }) => (initial ? ChartHelper.updatePointStyle(chart) : undefined) },
+                    animation: { duration: 0, onComplete: ({ initial, chart }) => (initial ? ChartHelper.updatePointStyle(chart) : undefined) },
                     layout: { padding: { top: 20, bottom: 3 }},
                     stacked: false,
                     pointStyle: false,
@@ -161,7 +166,7 @@ export class DevicePanel extends LitElement {
                                 maxRotation: 0,
                                 autoSkipPadding: 15
                             },
-                            grid: { color: colors.BgColor }
+                            grid: { color: colors.TextColorDarker + '44' }
                         }
                     },
                     interaction: {
@@ -170,18 +175,6 @@ export class DevicePanel extends LitElement {
                         intersect: false
                     },
                     plugins: {
-                        // annotation: {
-                        //     annotations: {
-                        //         lowMemoryWarning: {
-                        //             type: 'line',
-                        //             yMin: 800,
-                        //             yMax: 800,
-                        //             borderColor: colors.Red,
-                        //             borderWidth: 1,
-                        //             borderDash: [2, 2]
-                        //         }
-                        //     }
-                        // },
                         legend: { display: false },
                         tooltip: {
                             itemSort: (a, b) => b.raw.y - a.raw.y,
@@ -201,7 +194,7 @@ export class DevicePanel extends LitElement {
                                 mode: 'x',
                                 onZoomComplete: ({ chart }) => ChartHelper.updatePointStyle(chart)
                             },
-                            limits: { x: { min: 'original', max: 'original' }}
+                            limits: { x: { min: 'original', max: 'original' }},
                         },
                         crosshair: { color: colors.TextColor }
                     }
@@ -212,9 +205,10 @@ export class DevicePanel extends LitElement {
         this.chart.canvas.style.touchAction = 'pan-y'
     }
 
-    changePrecision(event) {
+    async changePrecision(event) {
         this.config.precision = event.detail
-        this.refresh()
+        await this.refresh()
+        this.chart.resetZoom()
     }
 
     async refresh() {
@@ -273,6 +267,7 @@ export class DevicePanelConfig extends LitElement {
     }
 
     renderDevicesSelect() {
+        setTimeout(() => this.renderRoot.querySelector('#device').focus(), 0)
         return html`
             <section>
                 <select id="device" .value=${this.dev} @change=${this.onDeviceSelect} required="true">
@@ -287,6 +282,7 @@ export class DevicePanelConfig extends LitElement {
     }
 
     renderAttributesSelect() {
+        setTimeout(() => this.renderRoot.querySelector('#attr1').focus(), 0)
         return html`
             <section>
                 <label for="attr1">Select attribute to chart:</label>
@@ -303,6 +299,7 @@ export class DevicePanelConfig extends LitElement {
     }
 
     renderOptionalAttributesSelect() {
+        setTimeout(() => this.renderRoot.querySelector('#attr2').focus(), 0)
         return html`
             <section>
                 <label for="attr2">Select additional attribute:</label>

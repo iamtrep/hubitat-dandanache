@@ -141,11 +141,15 @@ export class DashboardGrid extends LitElement {
     addPanel(config, w = 2, h = 1, x = undefined, y = undefined) {
         const content = `
             <div class="panel-container">
-                <${config.type} config='${JSON.stringify(config).replace(/'/g, '&apos;')}' class="panel spinner"></${config.type}>
+                <${config.type} config='${JSON.stringify(config).replace(/'/g, '&apos;')}' class="panel empty spinner"></${config.type}>
                 <div class="panel-title">${config.title || '&nbsp' }</div>
             </div>
         `
         this.grid.addWidget({w, h, x, y, config, content})
+    }
+
+    compact() {
+        this.grid.compact()
     }
 
     getPanelsConfig() {

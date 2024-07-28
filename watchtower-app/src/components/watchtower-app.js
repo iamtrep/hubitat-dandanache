@@ -22,15 +22,18 @@ export class WatchtowerApp extends LitElement {
     render() {
         return html`
             <dashboard-grid name=${this.name}></dashboard-grid>
-            <dashboard-menu @add=${this.showAddDialog} @save=${this.saveDashboard} @changeRefreshInterval=${this.changeRefreshInterval}></dashboard-menu>
+            <dashboard-menu
+                @add=${this.showAddDialog}
+                @compact=${this.compactPanels}
+                @changeRefreshInterval=${this.changeRefreshInterval}
+                @save=${this.saveDashboard}
+            ></dashboard-menu>
             <dashboard-add-dialog @done=${this.addDashboardPanel}></dashboard-add-dialog>
         `
     }
 
     connectedCallback() {
         super.connectedCallback()
-        const params = new URLSearchParams(window.location.search)
-        document.documentElement.setAttribute('data-theme', this.params.get('dark') === 'true' ? 'dark' : 'light')
         document.body.classList.remove('spinner')
     }
 
@@ -39,23 +42,27 @@ export class WatchtowerApp extends LitElement {
         const gridElm = this.renderRoot.querySelector('dashboard-grid')
 
         const layout = await DatastoreHelper.fetchGridLayout(this.params.get('name'));
+        const refreshInterval = layout.refresh ? parseInt(layout.refresh) : 0
+        const theme = layout.theme === 'dark' ? 'dark' : 'light'
 
         // Show menu if dashboard contains no panels
-        if (layout.panels.length === 0) menuElm.removeAttribute('hidden')
+        if (layout.panels.length === 0) menuElm.open = true
 
         // Init grid
         await gridElm.updateComplete
         gridElm.init(layout.panels)
-
-        // Update auto-refresh
-        const refreshInterval = layout.refresh ? parseInt(layout.refresh) : 0
-        menuElm.refreshInterval = `${refreshInterval}`
         gridElm.setRefreshInterval(refreshInterval)
+
+        // Update menu
+        menuElm.refreshInterval = `${refreshInterval}`
+        menuElm.setTheme(theme)
     }
 
     async saveDashboard() {
+        const menuElm = this.renderRoot.querySelector('dashboard-menu')
         const layout = {
-            refresh: this.renderRoot.querySelector('dashboard-menu').refreshInterval,
+            refresh: menuElm.refreshInterval,
+            theme: menuElm.theme,
             panels: this.renderRoot.querySelector('dashboard-grid').getPanelsConfig()
         }
         console.info('Saving dashboard to Hubitat', this.name, layout)
@@ -64,6 +71,10 @@ export class WatchtowerApp extends LitElement {
 
     showAddDialog() {
         this.renderRoot.querySelector('dashboard-add-dialog').setAttribute('open', true)
+    }
+
+    compactPanels() {
+        this.renderRoot.querySelector('dashboard-grid').compact()
     }
 
     addDashboardPanel(event) {
