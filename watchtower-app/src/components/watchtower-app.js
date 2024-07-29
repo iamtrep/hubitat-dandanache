@@ -11,12 +11,25 @@ export class WatchtowerApp extends LitElement {
 
     constructor() {
         super()
+
+        this.menuElm = undefined
+        this.gridElm = undefined
+        this.dialogElm = undefined
+
         this.params = new URLSearchParams(window.location.search)
         this.name = this.params.get('name')
         if (this.name === null) {
             alert('Query parameter [name] is missing!')
             throw new Error('Query parameter [name] is missing!')
         }
+
+        this.mobileView = window.innerWidth < 768
+        window.addEventListener('resize', () => {
+            const newState = window.innerWidth < 768
+            if (this.mobileView == newState) return
+            this.mobileView = newState
+            this.applyMobileView()
+        })
     }
 
     render() {
@@ -38,51 +51,61 @@ export class WatchtowerApp extends LitElement {
     }
 
     async firstUpdated() {
-        const menuElm = this.renderRoot.querySelector('dashboard-menu')
-        const gridElm = this.renderRoot.querySelector('dashboard-grid')
+        this.menuElm = this.renderRoot.querySelector('dashboard-menu')
+        this.gridElm = this.renderRoot.querySelector('dashboard-grid')
+        this.dialogElm = this.renderRoot.querySelector('dashboard-add-dialog')
 
         const layout = await DatastoreHelper.fetchGridLayout(this.params.get('name'));
         const refreshInterval = layout.refresh ? parseInt(layout.refresh) : 0
         const theme = layout.theme === 'dark' ? 'dark' : 'light'
 
         // Show menu if dashboard contains no panels
-        if (layout.panels.length === 0) menuElm.open = true
+        if (layout.panels.length === 0) this.menuElm.open = true
 
         // Init grid
-        await gridElm.updateComplete
-        gridElm.init(layout.panels)
-        gridElm.setRefreshInterval(refreshInterval)
+        await this.gridElm.updateComplete
+        this.gridElm.init(layout.panels)
+        this.gridElm.setRefreshInterval(refreshInterval)
 
         // Update menu
-        menuElm.refreshInterval = `${refreshInterval}`
-        menuElm.setTheme(theme)
+        this.menuElm.refreshInterval = `${refreshInterval}`
+        this.menuElm.setTheme(theme)
+
+        // Apply mobile view
+        console.log('dsdsadadadadasdadsd')
+        this.applyMobileView()
+    }
+
+    applyMobileView() {
+        console.log('app:applyMobileView', this.mobileView)
+        this.gridElm.applyMobileView(this.mobileView)
+        this.menuElm.applyMobileView(this.mobileView)
     }
 
     async saveDashboard() {
-        const menuElm = this.renderRoot.querySelector('dashboard-menu')
         const layout = {
-            refresh: menuElm.refreshInterval,
-            theme: menuElm.theme,
-            panels: this.renderRoot.querySelector('dashboard-grid').getPanelsConfig()
+            refresh: this.menuElm.refreshInterval,
+            theme: this.menuElm.theme,
+            panels: this.gridElm.getPanelsConfig()
         }
         console.info('Saving dashboard to Hubitat', this.name, layout)
         await DatastoreHelper.saveGridLayout(this.name, layout)
     }
 
     showAddDialog() {
-        this.renderRoot.querySelector('dashboard-add-dialog').setAttribute('open', true)
+        this.dialogElm.setAttribute('open', true)
     }
 
     compactPanels() {
-        this.renderRoot.querySelector('dashboard-grid').compact()
+        this.gridElm.compact()
     }
 
     addDashboardPanel(event) {
-        this.renderRoot.querySelector('dashboard-grid').addPanel(event.detail)
+        this.gridElm.addPanel(event.detail)
     }
 
     changeRefreshInterval(event) {
         const refreshInterval = parseInt(event.detail)
-        this.renderRoot.querySelector('dashboard-grid').setRefreshInterval(refreshInterval)
+        this.gridElm.setRefreshInterval(refreshInterval)
     }
 }

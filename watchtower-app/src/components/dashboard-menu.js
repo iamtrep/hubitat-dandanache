@@ -1,4 +1,4 @@
-import { html, css, LitElement } from '../vendor/vendor.min.js';
+import { html, css, LitElement, nothing } from '../vendor/vendor.min.js';
 
 export class DashboardMenu extends LitElement {
     static styles = css`
@@ -81,7 +81,8 @@ export class DashboardMenu extends LitElement {
     static properties = {
         open: { type: Boolean, reflect: true },
         refreshInterval: { type: String, state: true },
-        startX: { type: Number, state: true }
+        startX: { type: Number, state: true },
+        mobileView: { type: Boolean, state: true }
     }
 
     constructor() {
@@ -96,9 +97,11 @@ export class DashboardMenu extends LitElement {
     render() {
         return html`
             <nav>
-                <button @click=${this.addTile} title="Add a new dashboard tile"><b>+</b> Add tile</button>
-                <button @click=${this.compactTiles} title="Re-order dashboard tiles to fill any empty space">⋮⋮⋮ Compact space</button>
-                <hr>
+                ${this.mobileView ? nothing : html`
+                    <button @click=${this.addTile} title="Add a new dashboard tile"><b>+</b> Add dashboard tile</button>
+                    <button @click=${this.compactTiles} title="Re-order dashboard tiles to fill any empty space">⋮⋮⋮ Compact space</button>
+                    <hr>
+                `}
                 <label for="refreshInterval">Auto-refresh</label>
                 <select id="refreshInterval" .value=${this.refreshInterval} @change=${this.changeRefreshInterval}>
                     <option value="0">no refresh</option>
@@ -112,8 +115,10 @@ export class DashboardMenu extends LitElement {
                     <option value="light">light</option>
                     <option value="dark">dark</option>
                 </select>
-                <hr>
-                <button @click=${this.saveDashboard} title="Save current dashboard layout">✓ Save dashboard</button>
+                ${this.mobileView ? nothing: html`
+                    <hr>
+                    <button @click=${this.saveDashboard} title="Save current dashboard layout">✓ Save dashboard</button>
+                `}
             </nav>
         `;
     }
@@ -123,6 +128,11 @@ export class DashboardMenu extends LitElement {
         window.addEventListener('keydown', event =>  event.key === '`' && (this.open = !this.open));
         window.addEventListener('touchstart', event =>  this.touchStart(event));
         window.addEventListener('touchend', event =>  this.touchEnd(event));
+    }
+
+    applyMobileView(mobileView) {
+        this.mobileView = mobileView
+        console.log('grid:applyMobileView', this.mobileView)
     }
 
     addTile() {

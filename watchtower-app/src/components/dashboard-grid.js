@@ -60,22 +60,12 @@ export class DashboardGrid extends LitElement {
 
     static properties = {
         name: { type: String, reflect: true },
-        mobileView: { type: Boolean, reflect: true }
+        mobileView: { type: Boolean, state: true }
     }
 
-    constructor() {
-        super()
-        this.interval = undefined
-        this.mobileView = window.innerWidth < 768
-        window.addEventListener('resize', () => {
-            const newState = window.innerWidth < 768
-            if (this.mobileView == newState) return
-            this.mobileView = newState
-            this.applyMobileView()
-        })
-    }
-
-    applyMobileView() {
+    applyMobileView(mobileView) {
+        this.mobileView = mobileView
+        console.log('grid:applyMobileView', this.mobileView)
         this.renderRoot.querySelectorAll('.panel').forEach(panel => panel.mobileView = this.mobileView)
         this.grid.enableResize(!this.mobileView)
         this.grid.enableMove(!this.mobileView)
@@ -126,7 +116,7 @@ export class DashboardGrid extends LitElement {
 
         // Remove spinner and init mobile view
         this.renderRoot.querySelector('.grid-stack').classList.remove('spinner')
-        setTimeout(() => this.applyMobileView(), 0)
+        //setTimeout(() => this.applyMobileView(), 0)
     }
 
     setRefreshInterval(refreshMinutes) {

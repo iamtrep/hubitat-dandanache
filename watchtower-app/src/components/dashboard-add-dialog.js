@@ -69,7 +69,6 @@ export class DashboardAddDialog extends LitElement {
         footer {
             padding: 1em;
             text-align: right;
-            border-top: 1px var(--Gray) solid;
         }
         footer button {
             padding: .5em 1em;
@@ -89,7 +88,7 @@ export class DashboardAddDialog extends LitElement {
         select {
             display: block;
         }
-        input[type="text"], select {
+        input, select {
             box-sizing: border-box;
             display: block;
             width: 100%;
@@ -123,11 +122,11 @@ export class DashboardAddDialog extends LitElement {
             background-color: var(--Base3);
             clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
         }
-        input[type="checkbox"]:focus, input[type="text"]:focus, select:focus, button:focus {
+        input:focus, select:focus, button:focus {
             outline: 1px var(--Blue) solid;
             border-color: var(--Blue)
         }
-        input[type="checkbox"]:user-invalid, input[type="text"]:user-invalid, select:user-invalid {
+        input:user-invalid, select:user-invalid {
             border-color: var(--Red) !important;
         }
         aside {
@@ -141,9 +140,10 @@ export class DashboardAddDialog extends LitElement {
     `;
 
     static panels = {
-        'text-panel': 'Text',
         'device-panel': 'Device',
         'attribute-panel': 'Attribute',
+        'text-panel': 'Text',
+        'iframe-panel': 'Iframe',
     }
 
     static properties = {
@@ -159,6 +159,7 @@ export class DashboardAddDialog extends LitElement {
     }
 
     render() {
+        setTimeout(() => this.renderRoot.querySelector('.panel-config')?.addEventListener('suggestTitle', event => this.suggestTitle(event)), 0)
         return html`
             <article role="dialog" aria-modal="true" aria-labelledby="d-title">
                 <form @submit=${this.submit}>
@@ -184,7 +185,7 @@ export class DashboardAddDialog extends LitElement {
                     </section>
                     <footer>
                         <button type="reset" @click=${this.close}>Cancel</button>
-                        <button type="submit">Add panel</button>
+                        <button type="submit">Add tile</button>
                     </footer>
                 </form>
             </article>
@@ -198,6 +199,10 @@ export class DashboardAddDialog extends LitElement {
     connectedCallback() {
         super.connectedCallback()
         window.addEventListener('keydown', event => event.key === 'Escape' && this.close())
+    }
+
+    suggestTitle(event) {
+        if (this.title == '') this.title = event.detail
     }
 
     updated(changedProperties) {

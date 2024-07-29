@@ -317,7 +317,14 @@ export class DevicePanelConfig extends LitElement {
 
     onDeviceSelect(event) {
         this.dev = event.target.value !== '' ? event.target.value : undefined
-        this.attributes = this.dev !== undefined ? this.devices.find(device => device.id == this.dev).attrs.sort() : undefined
+        if (this.dev === undefined) {
+            this.attributes = undefined
+            return
+        }
+
+        const device = this.devices.find(device => device.id == this.dev)
+        this.attributes = device.attrs.sort()
+        this.dispatchEvent(new CustomEvent('suggestTitle', { detail: device.name }))
     }
 
     decorateConfig(config) {

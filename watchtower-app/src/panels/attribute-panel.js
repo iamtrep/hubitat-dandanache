@@ -279,6 +279,9 @@ export class AttributePanelConfig extends LitElement {
     onAttributeSelect(event) {
         this.attr = event.target.value !== '' ? event.target.value : undefined
         this.devs = []
+        let suggestedTitle = this.attr.replace(/([A-Z])(?=[A-Z][a-z])|([a-z])(?=[A-Z])/g, '$& ')
+        suggestedTitle = suggestedTitle[0].toUpperCase() + suggestedTitle.slice(1);
+        if (this.attr) this.dispatchEvent(new CustomEvent('suggestTitle', { detail: suggestedTitle }))
     }
 
     onDeviceSelect() {
