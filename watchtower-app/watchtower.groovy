@@ -5,16 +5,15 @@ f/*
  *
  * @see https://github.com/dan-danache/hubitat
  */
+import groovy.json.JsonBuilder
 import groovy.transform.Field
 
+import java.math.RoundingMode
 import java.nio.file.NoSuchFileException
 import java.time.DayOfWeek
 import java.time.ZonedDateTime
 import java.time.ZoneId
 import java.util.Collections
-import java.math.RoundingMode
-
-import groovy.json.JsonBuilder
 
 import com.hubitat.app.DeviceWrapper
 
@@ -32,13 +31,13 @@ import com.hubitat.app.DeviceWrapper
     camera: [ min:0, max:100, unit:'% on', probe:{ device -> "${device.currentValue('camera')}" == 'on' ? 100 : 0 } ],
     carbonDioxide: [ min:0, unit:'ppm', probe:{ device -> "${device.currentValue('carbonDioxide')}" } ],
     contact: [ min:0, max:100, unit:'% open', probe:{ device -> "${device.currentValue('contact')}" == 'open' ? 100 : 0 } ],
-    coolingSetpoint: [ unit:'°', probe:{ device -> "${device.currentValue('coolingSetpoint')}" } ],
+    coolingSetpoint: [ min:0, unit:'°', probe:{ device -> "${device.currentValue('coolingSetpoint')}" } ],
     door: [ min:0, max:100, unit:'% open', probe:{ device -> "${device.currentValue('door')}" == 'open' ? 100 : 0 } ],
     energy: [ min:0, unit:'kWh', probe:{ device -> "${device.currentValue('energy')}" } ],
     filterStatus: [ min:0, max:100, unit:'% normal', probe:{ device -> "${device.currentValue('filterStatus')}" == 'normal' ? 100 : 0 } ],
     frequency: [ unit:'Hz', probe:{ device -> "${device.currentValue('frequency')}" } ],
     goal: [ min:0, unit:'steps', probe:{ device -> "${device.currentValue('goal')}" } ],
-    heatingSetpoint: [ unit:'°', probe:{ device -> "${device.currentValue('heatingSetpoint')}" } ],
+    heatingSetpoint: [ min:0, unit:'°', probe:{ device -> "${device.currentValue('heatingSetpoint')}" } ],
     humidity: [ min:0, max:100, unit:'%', probe:{ device -> "${device.currentValue('humidity')}" } ],
     illuminance: [ min:0, unit:'lx', probe:{ device -> "${device.currentValue('illuminance')}" } ],
     lock: [ unit:'% locked', probe:{ device -> "${device.currentValue('lock')}" == 'locked' ? 100 : 0 } ],
@@ -62,7 +61,7 @@ import com.hubitat.app.DeviceWrapper
     steps: [ unit:'steps', probe:{ device -> "${device.currentValue('steps')}" } ],
     'switch': [ min:0, max:100, unit:'% on', probe:{ device -> "${device.currentValue('switch')}" == 'on' ? 100 : 0 } ],
     tamper: [ min:0, max:100, unit:'% detected', probe:{ device -> "${device.currentValue('tamper')}" == 'detected' ? 100 : 0 } ],
-    temperature: [ unit:'°', probe:{ device -> "${device.currentValue('temperature')}" } ],
+    temperature: [ min:0, unit:'°', probe:{ device -> "${device.currentValue('temperature')}" } ],
     transportStatus: [ min:0, max:100, unit:'% playing', probe:{ device -> "${device.currentValue('transportStatus')}" == 'playing' ? 100 : 0 } ],
     valve: [ min:0, max:100, unit:'% open', probe:{ device -> "${device.currentValue('valve')}" == 'open' ? 100 : 0 } ],
     water: [ min:0, max:100, unit:'% wet', probe:{ device -> "${device.currentValue('water')}" == 'wet' ? 100 : 0 } ],

@@ -101,11 +101,12 @@ export class AttributePanel extends LitElement {
             },
             ticks: { color: colors.TextColorDarker },
             grid: { color: colors.TextColorDarker + '44' },
-            min: supportedAttributes[this.config.attr].min,
-            max: supportedAttributes[this.config.attr].max
+            suggestedMin: supportedAttributes[this.config.attr].min,
+            suggestedMax: supportedAttributes[this.config.attr].max
         }
 
         this.chart.data = { datasets }
+        ChartHelper.updateChartType(this.chart)
         this.chart.update('none')
         setTimeout(() => this.classList.remove('empty', 'spinner'), 200)
     }
@@ -121,8 +122,8 @@ export class AttributePanel extends LitElement {
                     normalized: true,
                     responsive: true,
                     maintainAspectRatio: false,
-                    onResize: chart => ChartHelper.updatePointStyle(chart),
-                    animation: { duration: 0, onComplete: ({ initial, chart }) => (initial ? ChartHelper.updatePointStyle(chart) : undefined) },
+                    onResize: chart => ChartHelper.updateChartType(chart),
+                    animation: { duration: 0, onComplete: ({ initial, chart }) => (initial ? ChartHelper.updateChartType(chart) : undefined) },
                     layout: { padding: { top: 20, bottom: 3 }},
                     stacked: false,
                     pointStyle: false,
@@ -170,7 +171,7 @@ export class AttributePanel extends LitElement {
                                 wheel: { enabled: true },
                                 pinch: { enabled: this.mobileView !== true },
                                 mode: 'x',
-                                onZoomComplete: ({ chart }) => ChartHelper.updatePointStyle(chart)
+                                onZoomComplete: ({ chart }) => ChartHelper.updateChartType(chart)
                             },
                             limits: { x: { min: 'original', max: 'original' }}
                         },
@@ -195,7 +196,7 @@ export class AttributePanel extends LitElement {
         //this.nodata = data.attr1.length == 0
         this.chart.data.datasets.forEach(dataset => dataset.data = data[dataset.ref])
         this.chart.update('none')
-        ChartHelper.updatePointStyle(this.chart)
+        ChartHelper.updateChartType(this.chart)
         this.classList.remove('spinner')
     }
 

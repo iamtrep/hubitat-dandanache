@@ -75,14 +75,15 @@ export class DashboardAddDialog extends LitElement {
             padding: .5em 1em;
             cursor: pointer;
             margin-left: 1em;
-            background-color: var(--bg-color-darker);
+            background-color: var(--bg-color);
             color: var(--text-color);
             border: 1px var(--border-color) solid;
             border-radius: 5px;
             box-shadow: 0 0 0.3em var(--shadow-color);
         }
         footer button:hover {
-            background-color: var(--bg-color);
+            background-color: var(--Blue);
+            color: var(--Base3);
         }
         label { display: block; margin-bottom: .3em }
         select {
@@ -92,7 +93,7 @@ export class DashboardAddDialog extends LitElement {
             box-sizing: border-box;
             display: block;
             width: 100%;
-            background-color: var(--bg-color);
+            background-color: var(--bg-color-darker);
             color: var(--text-color);
             border: 1px var(--border-color) solid;
             border-radius: 5px;

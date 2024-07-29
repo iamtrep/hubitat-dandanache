@@ -85,7 +85,6 @@ export class DevicePanel extends LitElement {
         this.chart.options.scales.attr1 = {
             position: 'left',
             display: true,
-            //beginAtZero: true,
             title: {
                 display: true,
                 text: `${datasets[0].label} ${supportedAttributes[this.config.attr1].unit}`,
@@ -93,8 +92,8 @@ export class DevicePanel extends LitElement {
             },
             ticks: { color: colors.TextColorDarker },
             grid: { color: colors.TextColorDarker + '44' },
-            min: supportedAttributes[this.config.attr1].min,
-            max: supportedAttributes[this.config.attr1].max
+            suggestedMin: supportedAttributes[this.config.attr1].min,
+            suggestedMax: supportedAttributes[this.config.attr1].max
         }
 
         if (this.config.attr2 !== undefined) {
@@ -114,7 +113,6 @@ export class DevicePanel extends LitElement {
             this.chart.options.scales.attr2 = {
                 position: 'right',
                 display: true,
-                //beginAtZero: true,
                 title: {
                     display: true,
                     text: `${datasets[1].label} ${supportedAttributes[this.config.attr2].unit}`,
@@ -128,6 +126,7 @@ export class DevicePanel extends LitElement {
         }
 
         this.chart.data = { datasets }
+        ChartHelper.updateChartType(this.chart)
         this.chart.update('none')
         setTimeout(() => this.classList.remove('empty', 'spinner'), 200)
     }
@@ -143,8 +142,8 @@ export class DevicePanel extends LitElement {
                     normalized: true,
                     responsive: true,
                     maintainAspectRatio: false,
-                    onResize: chart => ChartHelper.updatePointStyle(chart),
-                    animation: { duration: 0, onComplete: ({ initial, chart }) => (initial ? ChartHelper.updatePointStyle(chart) : undefined) },
+                    onResize: chart => ChartHelper.updateChartType(chart),
+                    animation: { duration: 0, onComplete: ({ initial, chart }) => (initial ? ChartHelper.updateChartType(chart) : undefined) },
                     layout: { padding: { top: 20, bottom: 3 }},
                     stacked: false,
                     pointStyle: false,
@@ -192,7 +191,7 @@ export class DevicePanel extends LitElement {
                                 wheel: { enabled: true },
                                 pinch: { enabled: this.mobileView !== true },
                                 mode: 'x',
-                                onZoomComplete: ({ chart }) => ChartHelper.updatePointStyle(chart)
+                                onZoomComplete: ({ chart }) => ChartHelper.updateChartType(chart)
                             },
                             limits: { x: { min: 'original', max: 'original' }},
                         },
@@ -214,11 +213,13 @@ export class DevicePanel extends LitElement {
     async refresh() {
         this.classList.add('spinner')
         const data = await DatastoreHelper.fetchDeviceData(this.config.dev, this.config.attr1, this.config.attr2, this.config.precision)
+        console.log('refresh data', data)
         this.nodata = data.attr1.length == 0
         this.chart.data.datasets[0].data = data.attr1
         if (this.config.attr2 !== undefined) this.chart.data.datasets[1].data = data.attr2
+        this.chart.config.type = data.attr1.length < 10 ? 'bar' : 'line'
         this.chart.update('none')
-        ChartHelper.updatePointStyle(this.chart)
+        ChartHelper.updateChartType(this.chart)
         this.classList.remove('spinner')
     }
 

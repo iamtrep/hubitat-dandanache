@@ -41,7 +41,7 @@ export class DashboardMenu extends LitElement {
             margin: 1em 0;
         }
         button {
-            background-color: transparent;
+            background-color: var(--bg-color);
             color: var(--text-color);
             border: 1px var(--border-color) solid;
             border-radius: 5px;
@@ -54,7 +54,8 @@ export class DashboardMenu extends LitElement {
             box-shadow: 0 0 0.3em var(--shadow-color);
         }
         button:hover {
-            background-color: var(--bg-color);
+            background-color: var(--Blue);
+            color: var(--Base3);
         }
         label {
             display: block;
@@ -66,7 +67,7 @@ export class DashboardMenu extends LitElement {
             width: 100%;
             margin-bottom: 5px;
             padding: .5em;
-            background-color: var(--bg-color);
+            background-color: var(--bg-color-darker);
             color: var(--text-color);
             border: 1px var(--border-color) solid;
             border-radius: 5px;
