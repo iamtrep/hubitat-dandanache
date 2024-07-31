@@ -1,7 +1,7 @@
 f/*
  * Watchtower app for Hubitat
  *
- * Build dashboards for your smart devices.
+ * Data-Driven Insights for a Smarter Home.
  *
  * @see https://github.com/dan-danache/hubitat
  */
@@ -85,7 +85,7 @@ definition(
     name: APP_NAME,
     namespace: 'dandanache',
     author: 'Dan Danache',
-    description: 'Build dashboards for your smart devices',
+    description: 'Data-Driven Insights for a Smarter Home',
     documentationLink: 'https://community.hubitat.com/t/release-watchtower-app/134375',
     importUrl: 'https://raw.githubusercontent.com/dan-danache/hubitat/watchtower_1.0.0/watchtower-app/watchtower.groovy',
     category: 'Utility',

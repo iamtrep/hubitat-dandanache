@@ -16,7 +16,7 @@
         "namespace": "dandanache",
         "location": "https://raw.githubusercontent.com/dan-danache/hubitat/main/watchtower-app/watchtower.groovy",
         "name": "Watchtower",
-        "description": "Build dashboards for your smart devices.",
+        "description": "Data-Driven Insights for a Smarter Home",
         "oauth": true,
         "required": true
     }],

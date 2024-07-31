@@ -1,7 +1,16 @@
 # Watchtower
 
-<img src="icon.png" style="height: 42px !important; float: right; margin-bottom: 10px">
-Build dashboards for your smart devices.
+"Data-Driven Insights for a Smarter Home"
+
+Watchtower is a Hubitat application designed to monitor and record device attributes at various time resolutions, ensuring efficient long-term data retention.
+
+Utilizing a fixed-size database akin to a Round-Robin Database (RRD), Watchtower captures high-resolution data every five minutes, which then degrades into hourly, daily, and weekly averages. This method allows users to maintain a comprehensive historical record of their smart devices' performance without overwhelming storage capacities.
+
+Users can configure which devices and attributes to monitor, and the application automatically reads and stores these values in CSV files, making it easy to access and analyze the collected data.
+
+In addition to robust data collection, Watchtower offers customizable dashboards for visualizing device metrics. Dashboard can use various types of tiles, such as device charts, attribute comparisons, text/HTML, and iframes.
+
+Watchtower provides a reliable solution for long-term smart home monitoring and data visualization.
 
 ## Installation
 
