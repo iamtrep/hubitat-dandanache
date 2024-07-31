@@ -31,7 +31,7 @@ The following time resolution are used:
 
 ### How it Works
 
-1. **Every 5 minutes**: The application reads the current value for all configured device attributes and stores this data in the File Manager using CSV files named `wt_${device_id}_5m.csv`, one file per configured device. Only devices configured in the Devices screen are queried.
+1. **Every 5 minutes**: The application reads the current value for all configured device attributes and stores this data in the File Manager using CSV files named `wt_${device_id}_5m.csv`, one file per configured device. Only devices configured in the application's **Devices** screen are queried.
 
 1. **At the start of every hour**: The application reads the data from each device's `wt_${device_id}_5m.csv` file, selects records from the last hour, calculates the averages, and saves them in CSV files named `wt_${device_id}_1h.csv`.
 
@@ -98,7 +98,7 @@ Click the **Done** button on the bottom-right to save the configuration and retu
 
 When you load a dashboard in a new tab for the first time (by clicking the dashboard name in the Watchtower app), a blank screen will appear where you can add dashboard tiles.
 
-**Note**: If you have just configured new monitored devices in the Watchtower app, there may not be enough data collected to display on the dashboard tiles. If a chart displays the **No data yet message**, don't worry. Simply check back later (e.g., in a day or two) to allow the application to collect sufficient data points.
+**Note**: If you have just configured new monitored devices in the Watchtower app, there may not be enough data collected to display on the dashboard tiles. If a chart displays the **No data yet** message, don't worry. Simply check back later (e.g., in a day or two) to allow the application to collect sufficient data points.
 
 ### Dashboard Menu
 
@@ -116,7 +116,7 @@ The following dashboard tile types are currently supported:
 
 - **Device** - Renders a chart with one or two attributes for a selected device. If you select a second attribute, its scale is shown on the right side of the chart.
 
-   Example usage: chart temperature and humidity for a specific device
+   Example usage: chart temperature and humidity for a specific device.
 
    ![Device tile](img/tile-device.png)
 
