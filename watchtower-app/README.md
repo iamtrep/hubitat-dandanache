@@ -57,7 +57,7 @@ From this screen, you also have the option to remove the device configuration. O
 
 ### Dashboards screen
 
-From the dashboards screen, you can add, rename and delete dashboards for the configured devices. Clicking the dashboard name, will open the specified dashboard in a new tab and you can add and remove panels for the selected dashboard.
+From the dashboards screen, you can add, rename and delete dashboards for the configured devices. Clicking the dashboard name, will open the specified dashboard in a new tab and you can add and remove tiles for the selected dashboard.
 
 ![Dashboards screen](img/dashboards.png)
 
@@ -83,54 +83,56 @@ Click the **Done** button on the bottom-right to save the configuration and retu
 
 The first time you load a dashboard in a new tab (by clicking the dashboard name in the Watchtower app), a blank screen will appear when you can add dashboard pannels.
 
-> **Note**: If you just configured new monitored devices from the Watchtower app, there is not enough data collected to display on the dashboard panels. Don't worry if a chart is displaying the **No data yet** message, just come back later (e.g. a day or two) to allow the application to collect enough datapoints.
+> **Note**: If you just configured new monitored devices from the Watchtower app, there is not enough data collected to display on the dashboard tiles. Don't worry if a chart is displaying the **No data yet** message, just come back later (e.g. a day or two) to allow the application to collect enough datapoints.
 
 ### Dashboard menu
 
-The dashboard menu is not displayed by default. It will show only when the dashboard has no panels. To toggle the dashboard menu, press the backtick (`` ` ``) key on your keyboard. This means that dashboards cannot be configured from a mobile device.
+The dashboard menu is not displayed by default. It will show only when the dashboard has no tiles. To toggle the dashboard menu, press the backtick (`` ` ``) key on your keyboard. This means that dashboards cannot be configured from a mobile device.
 
-From the dashboard menu on the left, you can add a new dashboard panel, save the current dashbodard layout or configure the auto-refresh interval.
+From the dashboard menu on the left, you can add a new dashboard tile, save the current dashbodard layout or configure the auto-refresh interval.
 
 > Important: Changes to the dashboard layout are not saved automatically! When you are happy with the dashboard layout, you must click the **Save dashboard** button (from the dashboard left menu).
 
-### Supported panels
+### Supported dashboard tiles
 
-The following dashboard panel types are currently supported:
+The following dashboard tile types are currently supported:
 
-- **Text** - This panel type renders plain or HTML text.
+- **Device** - This tile type renders a chart with one or two attributes for a selected device. If you select two attributes, its scale is shown on the right side of the chart.
 
-   ![Text panel](img/panel-text.png)
+   ![Device tile](img/tile-device.png)
 
-- **Device** - This panel type renders a chart with one or two attributes for a selected device. If you select two attributes, its scale is shown on the right side of the chart.
+- **Attribute** - This tile type renders a chart with the selected attribute, from multiple devices.
 
-   ![Device panel](img/panel-device.png)
+   ![Attribute tile](img/tile-attribute.png)
 
-- **Attribute** - This panel type renders a chart with the selected attribute, from multiple devices.
+- **Text** - This tile type renders plain or HTML text.
 
-   ![Attribute panel](img/panel-attribute.png)
+   ![Text tile](img/tile-text.png)
 
-### Move and resize panels
+- **Iframe** - This tile type renders an embedded website from a specified URL.
 
-Move panels around by dragging on their title. Resize panels by dragging on the bottom-right resize handler.
+   ![Text tile](img/tile-iframe.png)
 
-### Remove panels
+### Move and resize dashboard tiles
 
-To remove a dashboard panel, just drag it outside the dashboard grid.
+Move tiles around by dragging on their title. Resize tiles by dragging on the bottom-right resize handler.
 
-### Edit panels
+### Remove dashboard tiles
 
-Dashboard panels cannot be edited. If you picked the wrong device / attribute or want to change the panel title, just remove it and add it again with the correct configuration.
+To remove a dashboard tile, just drag it outside the dashboard grid.
+
+### Edit dashboard tiles
+
+Dashboard tiles cannot be edited. If you picked the wrong device / attribute or want to change the tile title, just remove it and add it again with the correct configuration.
 
 **Important**: Don't forget to save your dashboard after you get it right!
 
 ### Themes
-Dashboards can be configured to use a light or dark theme:
+Dashboards can be configured to use a light or dark theme. You can change the theme from the left dashboard menu.
 
 ![Light theme](img/theme-light.png)
 
 ![Dark theme](img/theme-dark.png)
-
-You can change the theme either by editing the dashboard URL (the `dark=true` or `dark=false` bit at the end of the URL), or from the Watchtower app's main screen (the **Use dark theme** switch at the bottom).
 
 
 ---

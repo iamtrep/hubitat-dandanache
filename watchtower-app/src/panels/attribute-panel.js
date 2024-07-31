@@ -71,21 +71,25 @@ export class AttributePanel extends LitElement {
         //this.nodata = data.attr1.length == 0
 
         const datasets = []
-        let idx = 0
         for (const deviceId of this.config.devs) {
-            const color = ColorHelper.chartColors[idx++]
             datasets.push({
                 label: monitoredDevices.find(monitoredDevice => monitoredDevice.id == deviceId).name,
                 data: data[`dev_${deviceId}`],
                 pointStyle: false,
-                backgroundColor: color ? `${color}44` : undefined,
-                borderColor: color ? color : undefined,
                 borderWidth: 1.2,
                 tension: 0.5,
-                fill: 'start',
                 unit: supportedAttributes[this.config.attr].unit,
                 ref: `dev_${deviceId}`
             })
+        }
+
+        if (this.config.devs.length <= 2) {
+            for (let idx = 0; idx < this.config.devs.length; idx++) {
+                const color = ColorHelper.chartColors[idx]
+                datasets[idx].fill = 'start'
+                datasets[idx].borderColor = color
+                datasets[idx].backgroundColor = `${color}44`
+            }
         }
 
         const attrLabel = ChartHelper.prettyName(this.config.attr)
@@ -99,7 +103,7 @@ export class AttributePanel extends LitElement {
                 color: colors.Green
             },
             ticks: { color: colors.TextColorDarker },
-            grid: { color: colors.TextColorDarker + '44' },
+            grid: { color: colors.TextColorDarker + '33' },
             suggestedMin: supportedAttributes[this.config.attr].min,
             suggestedMax: supportedAttributes[this.config.attr].max
         }

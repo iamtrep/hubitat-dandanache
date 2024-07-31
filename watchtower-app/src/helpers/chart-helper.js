@@ -112,8 +112,7 @@ export class ChartHelper {
             afterEvent: (chart, event) => {
                 const evt = event.event;
                 if (event.inChartArea === true || evt.type !== 'click' || chart.data.datasets.length === 1) return
-                const x = evt.x
-                const y = evt.y
+                const { x, y } = evt
                 const scale = Object.entries(chart.scales)
                     .filter(([key, value]) => key !== 'y' && value.axis === 'y' && value.top < y && value.bottom > y && value.left < x && value.right > x)
                     .map(entry => entry[0])

@@ -101,6 +101,7 @@ export class DashboardAddDialog extends LitElement {
         }
         input[type="checkbox"] {
             appearance: none;
+            display: inline-block;
             margin: 0;
             background-color: var(--bg-color);
             border: 1px var(--border-color) solid;

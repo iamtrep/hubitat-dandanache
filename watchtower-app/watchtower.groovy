@@ -1,7 +1,7 @@
 f/*
  * Watchtower app for Hubitat
  *
- * View dashboards for your Hubitat hub metrics.
+ * Build dashboards for your smart devices.
  *
  * @see https://github.com/dan-danache/hubitat
  */
@@ -34,7 +34,7 @@ import com.hubitat.app.DeviceWrapper
     acceleration: [ min:0, max:100, unit:'% active', probe:{ device -> "${device.currentValue('acceleration')}" == 'active' ? 100 : 0 } ],
     airQualityIndex: [ min:0, max:500, unit:'', probe:{ device -> "${device.currentValue('airQualityIndex')}" } ],
     amperage: [ min:0, unit:'A', probe:{ device -> "${device.currentValue('amperage')}" } ],
-    battery: [ min:0, max:100, unit:'% full', probe:{ device -> "${device.currentValue('battery')}" } ],
+    battery: [ min:0, max:100, unit:'%', probe:{ device -> "${device.currentValue('battery')}" } ],
     camera: [ min:0, max:100, unit:'% on', probe:{ device -> "${device.currentValue('camera')}" == 'on' ? 100 : 0 } ],
     carbonDioxide: [ min:0, unit:'ppm', probe:{ device -> "${device.currentValue('carbonDioxide')}" } ],
     contact: [ min:0, max:100, unit:'% open', probe:{ device -> "${device.currentValue('contact')}" == 'open' ? 100 : 0 } ],
@@ -128,13 +128,6 @@ private void warn(message) {
 
 def appButtonHandler(String buttonName) {
     List<String> dashboardList = app.getSetting('dashboards') ?: []
-
-    if (buttonName == 'doShit') {
-        //state.remove 'h.hubDatabaseSize'
-        info 'Doing shit ...'
-        collectDeviceMetrics()
-        return
-    }
 
     if (buttonName == 'addDashboard') {
         log.info "addDashboard clicked"
@@ -286,9 +279,6 @@ Map main() {
                 // Preferences
                 input(name:'logEnable', type:'bool', title:'Enable debug logging', defaultValue:false, submitOnChange:true)
             }
-            section {
-            input(name:'doShit', title:'Do shit', type:'button')
-        }
         }
     }
 }
@@ -304,7 +294,7 @@ Map devices() {
         }
 
         // Render table
-        List devices = collectDeviceConfiguration()
+        List devices = collectDeviceConfiguration().take(5)
         String table = '<div style="overflow-x:auto; border: 1px rgba(0,0,0,.12) solid"><table id="app-table" class="mdl-data-table tstat-col"><tbody>'
         devices.each {
             String deviceName = it[1]?.displayName ?: HUB_NAME

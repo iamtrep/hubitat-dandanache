@@ -24,13 +24,13 @@ export class ColorHelper {
         const css = getComputedStyle(document.documentElement)
         ColorHelper.chartColors = [
             css.getPropertyValue('--Red'),
-            css.getPropertyValue('--Cyan'),
-            css.getPropertyValue('--Yellow'),
             css.getPropertyValue('--Blue'),
-            css.getPropertyValue('--Green'),
-            css.getPropertyValue('--Orange'),
-            css.getPropertyValue('--Magenta'),
-            css.getPropertyValue('--Gray')
+            //css.getPropertyValue('--Cyan'),
+            //css.getPropertyValue('--Yellow'),
+            //css.getPropertyValue('--Green'),
+            //css.getPropertyValue('--Orange'),
+            //css.getPropertyValue('--Magenta'),
+            //css.getPropertyValue('--Gray')
         ]
     }
 }

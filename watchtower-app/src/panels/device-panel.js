@@ -91,7 +91,7 @@ export class DevicePanel extends LitElement {
                 color: colors.Green
             },
             ticks: { color: colors.TextColorDarker },
-            grid: { color: colors.TextColorDarker + '44' },
+            grid: { color: colors.TextColorDarker + '33' },
             suggestedMin: supportedAttributes[this.config.attr1].min,
             suggestedMax: supportedAttributes[this.config.attr1].max
         }
