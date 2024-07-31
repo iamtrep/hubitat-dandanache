@@ -18,14 +18,34 @@ To install the Watchtower app using the Hubitat Package Manager (and receive aut
 9. Click the **Add user app** button in the top right corner.
 10. Select **Watchtower** from the list of apps.
 
+## Metrics collection
+
+The application uses a fixed-size database, similar in design and purpose to RRD (round-robin-database). It allows for higher resolution (minutes per point) of recent data to degrade into lower resolutions for long-term retention of historical data.
+
+The following data resolution are used:
+- 5 minutes
+- 1 hour
+- 1 day
+- 1 week
+
+### How it works
+
+1. Every 5 minute, the application reads the current values for all configured devices attributes, and stores this data in the **File Manager** using CSV files called `wt_${device_id}_5m.csv`, one file per configured device. Only devices configured in the  **Devices** screen are queried.
+
+1. Every hour, at minute 00, for each configured device, the application reads the data from its `wt_${device_id}_5m.csv` CSV file, selects only the records in the last hour, calculates the averages, and saves them in a CSV files called `wt_${device_id}_1h.csv`.
+
+1. At every midnight, the application reads the data from its `wt_${device_id}_5m.csv` CSV file, selects only the records in the last day (00:00 - 23:59), calculates the averages, and saves them in a CSV files called `wt_${device_id}_1d.csv`.
+
+1. Every Sunday midnight, the application reads the data from its `wt_${device_id}_1h.csv` CSV file, selects only the records in the last week (Monday 00:00 - Sunday 23:59), calculates the averages, and saves them in a CSV files called `wt_${device_id}_1w.csv`.
+
+**Important**: In order to keep the files at a fixed size, old records from each CSV files are discarded on every save, according to the instructions in the **Settings** screen.
+
 ## Usage
 
 To use the Watchtower app, follow these steps:
 
 1. Go to the **Apps** menu in the Hubitat interface.
 2. Select **Watchtower** from the list of apps.
-
-## Usage
 
 ### Main screen
 
@@ -65,15 +85,7 @@ Click the **Done** button on the bottom-right to return back to the main screen.
 
 ### Settings screen
 
-The application uses a fixed-size database, similar in design and purpose to RRD (round-robin-database). It allows for higher resolution (minutes per point) of recent data to degrade into lower resolutions for long-term retention of historical data.
-
-The following data resolution are used:
-- 5 minutes
-- 1 hour
-- 1 day
-- 1 week
-
-From the settings screen, you can configure how long the collected metrics are stored for each resolution.
+From the settings screen, you can configure how long the collected metrics are stored for each time resolution.
 
 ![Settings screen](img/settings.png)
 
