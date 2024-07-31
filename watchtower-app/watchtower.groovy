@@ -294,7 +294,7 @@ Map devices() {
         }
 
         // Render table
-        List devices = collectDeviceConfiguration().take(5)
+        List devices = collectDeviceConfiguration()
         String table = '<div style="overflow-x:auto; border: 1px rgba(0,0,0,.12) solid"><table id="app-table" class="mdl-data-table tstat-col"><tbody>'
         devices.each {
             String deviceName = it[1]?.displayName ?: HUB_NAME
