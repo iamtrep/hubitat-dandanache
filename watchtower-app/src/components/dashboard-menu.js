@@ -132,7 +132,6 @@ export class DashboardMenu extends LitElement {
 
     applyMobileView(mobileView) {
         this.mobileView = mobileView
-        console.log('grid:applyMobileView', this.mobileView)
     }
 
     addTile() {
@@ -170,9 +169,11 @@ export class DashboardMenu extends LitElement {
             `./app.webmanifest?access_token=${params.get('access_token')}&name=${params.get('name')}&theme=${theme}`
         )
     }
+
     touchStart(event) {
         this.startX = event.changedTouches[0].clientX
     }
+
     touchEnd(event) {
         if (this.startX == undefined) return
         const endX = event.changedTouches[0].clientX

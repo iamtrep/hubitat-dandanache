@@ -65,7 +65,6 @@ export class DashboardGrid extends LitElement {
 
     applyMobileView(mobileView) {
         this.mobileView = mobileView
-        console.log('grid:applyMobileView', this.mobileView)
         this.renderRoot.querySelectorAll('.panel').forEach(panel => panel.mobileView = this.mobileView)
         this.grid.enableResize(!this.mobileView)
         this.grid.enableMove(!this.mobileView)

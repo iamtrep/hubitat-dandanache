@@ -72,12 +72,10 @@ export class WatchtowerApp extends LitElement {
         this.menuElm.setTheme(theme)
 
         // Apply mobile view
-        console.log('dsdsadadadadasdadsd')
         this.applyMobileView()
     }
 
     applyMobileView() {
-        console.log('app:applyMobileView', this.mobileView)
         this.gridElm.applyMobileView(this.mobileView)
         this.menuElm.applyMobileView(this.mobileView)
     }

@@ -64,17 +64,16 @@ export class AttributePanel extends LitElement {
 
         if (this.config.precision === undefined) this.config.precision = '5m'
 
-        const colors = ColorHelper.colors()
-        const graphColors = ColorHelper.graphColors()
         const supportedAttributes = await DatastoreHelper.fetchSupportedAttributes()
         const monitoredDevices = await DatastoreHelper.fetchMonitoredDevices()
         const data = await DatastoreHelper.fetchAttributeData(this.config.attr, this.config.devs, this.config.precision)
+        const colors = ColorHelper.colors()
         //this.nodata = data.attr1.length == 0
 
         const datasets = []
         let idx = 0
         for (const deviceId of this.config.devs) {
-            const color = graphColors[idx++]
+            const color = ColorHelper.chartColors[idx++]
             datasets.push({
                 label: monitoredDevices.find(monitoredDevice => monitoredDevice.id == deviceId).name,
                 data: data[`dev_${deviceId}`],
@@ -89,7 +88,7 @@ export class AttributePanel extends LitElement {
             })
         }
 
-        const attrLabel = this.config.attr.charAt(0).toUpperCase() + this.config.attr.slice(1)
+        const attrLabel = ChartHelper.prettyName(this.config.attr)
         this.chart.options.scales.y = {
             position: 'left',
             display: true,
@@ -112,75 +111,7 @@ export class AttributePanel extends LitElement {
     }
 
     firstUpdated() {
-        const colors = ColorHelper.colors()
-        this.chart = new Chart(
-            this.renderRoot.querySelector('canvas'),
-            {
-                type: 'line',
-                options: {
-                    parsing: false,
-                    normalized: true,
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    onResize: chart => ChartHelper.updateChartType(chart),
-                    animation: { duration: 0, onComplete: ({ initial, chart }) => (initial ? ChartHelper.updateChartType(chart) : undefined) },
-                    layout: { padding: { top: 20, bottom: 3 }},
-                    stacked: false,
-                    pointStyle: false,
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                minUnit: 'minute',
-                                displayFormats: {
-                                    minute: 'd LLL HH:mm',
-                                    hour: 'd LLL HH:mm',
-                                    day: 'd LLL'
-                                },
-                                tooltipFormat: 'd LLL HH:mm'
-                            },
-                            title: { display: false },
-                            ticks: {
-                                color: colors.TextColorDarker,
-                                maxRotation: 0,
-                                autoSkipPadding: 15
-                            },
-                            grid: { color: colors.TextColorDarker + '44' }
-                        }
-                    },
-                    interaction: {
-                        mode: 'nearest',
-                        axis: 'x',
-                        intersect: false
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            itemSort: (a, b) => b.raw.y - a.raw.y,
-                            callbacks: { label: t => ` ${t.dataset.label}: ${t.parsed.y}${t.dataset.unit}` },
-                            backgroundColor: colors.BgColorDarker,
-                            titleColor: colors.TextColor,
-                            bodyColor: colors.TextColorDarker,
-                            borderColor: colors.BorderColor,
-                            borderWidth: 1
-                        },
-                        decimation: { enabled: true, algorithm: 'lttb' },
-                        zoom: {
-                            pan: { enabled: this.mobileView !== true, mode: 'x' },
-                            zoom: {
-                                wheel: { enabled: true },
-                                pinch: { enabled: this.mobileView !== true },
-                                mode: 'x',
-                                onZoomComplete: ({ chart }) => ChartHelper.updateChartType(chart)
-                            },
-                            limits: { x: { min: 'original', max: 'original' }}
-                        },
-                        crosshair: { color: colors.TextColor }
-                    }
-                },
-                plugins: [ ChartHelper.crosshairPlugin() ]
-            }
-        )
+        this.chart = new Chart(this.renderRoot.querySelector('canvas'), ChartHelper.defaultConfig(this.mobileView))
         this.chart.canvas.style.touchAction = 'pan-y'
     }
 
@@ -279,9 +210,7 @@ export class AttributePanelConfig extends LitElement {
     onAttributeSelect(event) {
         this.attr = event.target.value !== '' ? event.target.value : undefined
         this.devs = []
-        let suggestedTitle = this.attr.replace(/([A-Z])(?=[A-Z][a-z])|([a-z])(?=[A-Z])/g, '$& ')
-        suggestedTitle = suggestedTitle[0].toUpperCase() + suggestedTitle.slice(1);
-        if (this.attr) this.dispatchEvent(new CustomEvent('suggestTitle', { detail: suggestedTitle }))
+        if (this.attr) this.dispatchEvent(new CustomEvent('suggestTitle', { detail: ChartHelper.prettyName(this.attr) }))
     }
 
     onDeviceSelect() {

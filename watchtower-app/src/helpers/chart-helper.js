@@ -1,15 +1,80 @@
 import '../vendor/vendor.min.js'
+import { ColorHelper } from './color-helper.js'
 
 export class ChartHelper {
+    static defaultConfig(mobileView) {
+        const colors = ColorHelper.colors()
+        return {
+            type: 'line',
+            options: {
+                parsing: false,
+                normalized: true,
+                responsive: true,
+                maintainAspectRatio: false,
+                onResize: chart => ChartHelper.updateChartType(chart),
+                animation: { duration: 0, onComplete: ({ initial, chart }) => (initial ? ChartHelper.updateChartType(chart) : undefined) },
+                layout: { padding: { top: 20, bottom: 3 }},
+                stacked: false,
+                pointStyle: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            minUnit: 'minute',
+                            displayFormats: {
+                                minute: 'd LLL HH:mm',
+                                hour: 'd LLL HH:mm',
+                                day: 'd LLL'
+                            },
+                            tooltipFormat: 'd LLL HH:mm'
+                        },
+                        title: { display: false },
+                        ticks: {
+                            color: colors.TextColorDarker,
+                            maxRotation: 0,
+                            autoSkipPadding: 15
+                        },
+                        grid: { color: colors.TextColorDarker + '44' }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        itemSort: (a, b) => b.raw.y - a.raw.y,
+                        callbacks: { label: t => ` ${t.dataset.label}: ${t.parsed.y}${t.dataset.unit}` },
+                        backgroundColor: colors.BgColorDarker,
+                        titleColor: colors.TextColor,
+                        bodyColor: colors.TextColorDarker,
+                        borderColor: colors.BorderColor,
+                        borderWidth: 1
+                    },
+                    decimation: { enabled: true, algorithm: 'lttb' },
+                    zoom: {
+                        pan: { enabled: mobileView !== true, mode: 'x' },
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: mobileView !== true },
+                            mode: 'x',
+                            onZoomComplete: ({ chart }) => ChartHelper.updateChartType(chart)
+                        },
+                        limits: { x: { min: 'original', max: 'original' }},
+                    }
+                }
+            },
+            plugins: [ ChartHelper.crosshairPlugin() ]
+        }
+    }
+
     static crosshairPlugin() {
+        const colors = ColorHelper.colors()
         return {
             id: 'crosshair',
-            defaults: {
-                width: 1,
-                color: 'red',
-                dash: [2, 2]
-            },
-            afterInit: (chart, args, opts) => {
+            afterInit: (chart) => {
                 chart.crosshair = {
                     x: 0,
                     y: 0
@@ -22,7 +87,7 @@ export class ChartHelper {
                 chart.crosshair = { x, y, draw: inChartArea }
                 chart.draw()
             },
-            beforeDatasetsDraw: (chart, args, opts) => {
+            beforeDatasetsDraw: (chart) => {
                 const { ctx } = chart
                 const { top, bottom, left, right } = chart.chartArea
                 const { x, y, draw } = chart.crosshair
@@ -30,9 +95,9 @@ export class ChartHelper {
 
                 ctx.save()
                 ctx.beginPath()
-                ctx.lineWidth = opts.width
-                ctx.strokeStyle = opts.color
-                ctx.setLineDash(opts.dash)
+                ctx.lineWidth = 1
+                ctx.strokeStyle = colors.TextColor
+                ctx.setLineDash([2, 2])
                 ctx.moveTo(x, bottom)
                 ctx.lineTo(x, top)
                 ctx.stroke()
@@ -45,12 +110,20 @@ export class ChartHelper {
         if (chart.scales.x === undefined || chart.data.datasets[0] === undefined) return
         const min = chart.scales.x.min
         const max = chart.scales.x.max
-        const visibleDatapoints = chart.data.datasets[0].data.filter(point => point.x >= min && point.x <= max)
-        const chartType = visibleDatapoints.length < 10 || chart.width / visibleDatapoints.length > 30 ? 'bar' : 'line'
+        const data = chart.data.datasets[0].data
+        const visibleDatapoints = chart.getZoomLevel() <= 1 ? data.length : data.filter(point => point.x >= min && point.x <= max).length
+
+        const chartType = chart.width / visibleDatapoints > 30 ? 'bar' : 'line'
         chart.options.scales.x.offset = chartType == 'bar'
         if (chart.config.type != chartType) {
             chart.config.type = chartType
             chart.update('none')
         }
+    }
+
+    static prettyName(camelCase) {
+        return (camelCase[0].toUpperCase() + camelCase.slice(1))
+            .replace(/([A-Z])(?=[A-Z][a-z])|([a-z])(?=[A-Z])/g, '$& ')
+            .replace('Hub ', '')
     }
 }

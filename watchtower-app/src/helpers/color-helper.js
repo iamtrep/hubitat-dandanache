@@ -18,9 +18,11 @@ export class ColorHelper {
             Gray: css.getPropertyValue('--Gray')
         }
     }
-    static graphColors() {
+
+    static {
+        // These are fixed and don't depend on the current theme
         const css = getComputedStyle(document.documentElement)
-        return [
+        ColorHelper.chartColors = [
             css.getPropertyValue('--Red'),
             css.getPropertyValue('--Cyan'),
             css.getPropertyValue('--Yellow'),

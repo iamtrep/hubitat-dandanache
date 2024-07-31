@@ -64,13 +64,13 @@ export class DevicePanel extends LitElement {
 
         if (this.config.precision === undefined) this.config.precision = '5m'
 
-        const colors = ColorHelper.colors()
         const supportedAttributes = await DatastoreHelper.fetchSupportedAttributes()
         const data = await DatastoreHelper.fetchDeviceData(this.config.dev, this.config.attr1, this.config.attr2, this.config.precision)
+        const colors = ColorHelper.colors()
         this.nodata = data.attr1.length == 0
 
         const datasets = [{
-            label: this.config.attr1.charAt(0).toUpperCase() + this.config.attr1.slice(1),
+            label: ChartHelper.prettyName(this.config.attr1),
             data: data.attr1,
             pointStyle: false,
             backgroundColor: colors.Green + '44',
@@ -98,7 +98,7 @@ export class DevicePanel extends LitElement {
 
         if (this.config.attr2 !== undefined) {
             datasets.push({
-                label: this.config.attr2.charAt(0).toUpperCase() + this.config.attr2.slice(1),
+                label: ChartHelper.prettyName(this.config.attr2),
                 data: data.attr2,
                 pointStyle: false,
                 backgroundColor: colors.Blue + '44',
@@ -132,75 +132,7 @@ export class DevicePanel extends LitElement {
     }
 
     firstUpdated() {
-        const colors = ColorHelper.colors()
-        this.chart = new Chart(
-            this.renderRoot.querySelector('canvas'),
-            {
-                type: 'line',
-                options: {
-                    parsing: false,
-                    normalized: true,
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    onResize: chart => ChartHelper.updateChartType(chart),
-                    animation: { duration: 0, onComplete: ({ initial, chart }) => (initial ? ChartHelper.updateChartType(chart) : undefined) },
-                    layout: { padding: { top: 20, bottom: 3 }},
-                    stacked: false,
-                    pointStyle: false,
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                minUnit: 'minute',
-                                displayFormats: {
-                                    minute: 'd LLL HH:mm',
-                                    hour: 'd LLL HH:mm',
-                                    day: 'd LLL'
-                                },
-                                tooltipFormat: 'd LLL HH:mm'
-                            },
-                            title: { display: false },
-                            ticks: {
-                                color: colors.TextColorDarker,
-                                maxRotation: 0,
-                                autoSkipPadding: 15
-                            },
-                            grid: { color: colors.TextColorDarker + '44' }
-                        }
-                    },
-                    interaction: {
-                        mode: 'nearest',
-                        axis: 'x',
-                        intersect: false
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            itemSort: (a, b) => b.raw.y - a.raw.y,
-                            callbacks: { label: t => ` ${t.dataset.label}: ${t.parsed.y}${t.dataset.unit}` },
-                            backgroundColor: colors.BgColorDarker,
-                            titleColor: colors.TextColor,
-                            bodyColor: colors.TextColorDarker,
-                            borderColor: colors.BorderColor,
-                            borderWidth: 1
-                        },
-                        decimation: { enabled: true, algorithm: 'lttb' },
-                        zoom: {
-                            pan: { enabled: this.mobileView !== true, mode: 'x' },
-                            zoom: {
-                                wheel: { enabled: true },
-                                pinch: { enabled: this.mobileView !== true },
-                                mode: 'x',
-                                onZoomComplete: ({ chart }) => ChartHelper.updateChartType(chart)
-                            },
-                            limits: { x: { min: 'original', max: 'original' }},
-                        },
-                        crosshair: { color: colors.TextColor }
-                    }
-                },
-                plugins: [ ChartHelper.crosshairPlugin() ]
-            }
-        )
+        this.chart = new Chart(this.renderRoot.querySelector('canvas'), ChartHelper.defaultConfig(this.mobileView))
         this.chart.canvas.style.touchAction = 'pan-y'
     }
 
