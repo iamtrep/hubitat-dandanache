@@ -563,7 +563,7 @@ Map settings() {
 
 Map changelog() {
     dynamicPage(name:'changelog', title:'Change log', install:false, uninstall:false) {
-        section('v1.0.0 - 2024-02-26', hideable:true, hidden:false) {
+        section('v1.0.0 - 2024-07-31', hideable:true, hidden:false) {
             paragraph '''\
                 <ul>
                     <li>Initial release</li>

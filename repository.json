@@ -58,6 +58,14 @@
             "category": "Utility",
             "tags": [ "Tools & Utilities" ],
             "location": "https://raw.githubusercontent.com/dan-danache/hubitat/main/nodon-drivers/packageManifest.json"
+        },
+        {
+            "id": "3762a0c1-b4dd-4e61-a521-04e36d8eadde",
+            "name": "Watchtower",
+            "description": "Data-Driven Insights for a Smarter Home",
+            "category": "Utility",
+            "tags": [ "Tools & Utilities" , "Dashboards", "Monitoring"],
+            "location": "https://raw.githubusercontent.com/dan-danache/hubitat/main/watchtower-app/packageManifest.json"
         }
     ]
 }
