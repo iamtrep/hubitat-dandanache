@@ -7,14 +7,14 @@ export class DatastoreHelper {
 
     static async fetchGridLayout(name) {
         try {
-            const response = await fetch(new Request(`./grid-layout.json?name=${name}&access_token=${this.accessToken()}`), { cache: 'no-store' })
+            const response = await fetch(new Request(`./grid-layout.json?name=${encodeURIComponent(name)}&access_token=${this.accessToken()}`), { cache: 'no-store' })
             if (!response.ok) {
                 throw new Error(`DatastoreHelper.fetchGridLayout() - HTTP error, status = ${response.status}`)
             }
             const text = await response.text()
             const json = JSON.parse(text)
             if (json.status === false) {
-                throw new Error(`Dashboard with name "${name}" does not exist.`)
+                throw new Error(`Dashboard "${name}" does not exist.`)
             }
             return json
         } catch (ex) {
@@ -25,7 +25,7 @@ export class DatastoreHelper {
 
     static async saveGridLayout(name, layout) {
         try {
-            const response = await fetch(new Request(`./grid-layout.json?name=${name}&access_token=${this.accessToken()}`), {
+            const response = await fetch(new Request(`./grid-layout.json?name=${encodeURIComponent(name)}&access_token=${this.accessToken()}`), {
                 method: 'PUT',
                 body: JSON.stringify(layout),
                 cache: 'no-store'
@@ -36,7 +36,7 @@ export class DatastoreHelper {
             const text = await response.text()
             const json = JSON.parse(text)
             if (json.status === false) {
-                throw new Error(`Dashboard with name "${name}" does not exist.`)
+                throw new Error(`Dashboard "${name}" does not exist.`)
             }
             alert(`Dashboard "${name}" successfully saved!`)
             return json

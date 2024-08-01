@@ -166,7 +166,7 @@ export class DashboardMenu extends LitElement {
         document.querySelector('meta[name="theme-color"]').setAttribute('content', theme == 'dark' ? '#002b36' : '#eee8d5')
         document.querySelector('link[rel="manifest"]').setAttribute(
             'href',
-            `./app.webmanifest?access_token=${params.get('access_token')}&name=${params.get('name')}&theme=${theme}`
+            `./app.webmanifest?access_token=${params.get('access_token')}&name=${encodeURIComponent(params.get('name'))}&theme=${theme}`
         )
     }
 

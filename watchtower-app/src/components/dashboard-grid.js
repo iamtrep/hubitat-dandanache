@@ -115,7 +115,6 @@ export class DashboardGrid extends LitElement {
 
         // Remove spinner and init mobile view
         this.renderRoot.querySelector('.grid-stack').classList.remove('spinner')
-        //setTimeout(() => this.applyMobileView(), 0)
     }
 
     setRefreshInterval(refreshMinutes) {

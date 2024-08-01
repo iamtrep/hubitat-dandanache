@@ -127,57 +127,47 @@ private void warn(message) {
 // ===================================================================================================================
 
 def appButtonHandler(String buttonName) {
-    List<String> dashboardList = app.getSetting('dashboards') ?: []
+    List<String> dashboardList = collectDashboards()
 
     if (buttonName == 'addDashboard') {
-        log.info "addDashboard clicked"
-
-        // Find next empty position for insertion
-        state.position = (dashboardList ?: []).size
-
-        // Clear form
         app.removeSetting 'dashboardName'
-
-        // Update action
+        state.remove 'dashboardName'
         state.action = 'add'
-    }
-
-    if (buttonName == 'saveDashboard') {
-        log.info "saveDashboard ${dashboardName}"
-        String newDashboardName = "${dashboardName}".trim()
-        if (!dashboardList.contains(newDashboardName)) {
-            dashboardList[state.position] = newDashboardName
-            app.updateSetting('dashboards', dashboardList)
-        }
-
-        // Update action
-        state.remove 'position'
-        state.action = 'list'
-    }
-
-    if (buttonName.startsWith('removeDashboard_')) {
-        state.position = Integer.parseInt(buttonName.substring(16))
-
-        // Update action
-        state.action = 'confirm'
-    }
-
-    if (buttonName == 'removeDashboard') {
-
-        // Cleanup settings
-        String removedDashboardName = dashboardList.remove(state.position)
-        app.updateSetting('dashboards', dashboardList)
-        app.removeSetting "b.${removedDashboardName}"
-
-        // Update action
-        state.remove 'position'
-        state.action = 'list'
+        return
     }
 
     if (buttonName.startsWith('editDashboard_')) {
-        state.position = Integer.parseInt(buttonName.substring(14))
-        state.action = 'view'
-        app.updateSetting('dashboardName', dashboardList[state.position])
+        state.dashboardName = buttonName.substring(14)
+        app.updateSetting('dashboardName', state.dashboardName)
+        state.action = 'edit'
+        return
+    }
+
+    if (buttonName == 'saveDashboard') {
+        String newDashboardName = "${app.getSetting('dashboardName')}".trim()
+        if (!dashboardList.contains(newDashboardName)) {
+            String stateEntryName = "g.${state.dashboardName}"
+            state["g.${newDashboardName}"] = state[stateEntryName] ?: '{"panels":[]}'
+            state.remove stateEntryName
+        }
+        app.removeSetting 'dashboardName'
+        state.remove 'dashboardName'
+        state.action = 'list'
+        return
+    }
+
+    if (buttonName.startsWith('removeDashboard_')) {
+        state.dashboardName = buttonName.substring(16)
+        state.action = 'confirm'
+        return
+    }
+
+    if (buttonName == 'removeDashboard') {
+        String stateEntryName = "g.${state.dashboardName}"
+        state.remove stateEntryName
+        state.remove 'dashboardName'
+        state.action = 'list'
+        return
     }
 
     if (buttonName == 'addDevice') {
@@ -193,12 +183,14 @@ def appButtonHandler(String buttonName) {
 
         // Update action
         state.action = 'add'
+        return
     }
 
     if (buttonName.startsWith('viewDevice_')) {
         state.position = Integer.parseInt(buttonName.substring(11))
         state.highlightPosition = state.position
         state.action = 'view'
+        return
     }
 
     if (buttonName == 'removeDevice') {
@@ -216,6 +208,7 @@ def appButtonHandler(String buttonName) {
         // Update action
         state.remove 'position'
         state.action = 'list'
+        return
     }
 
     if (buttonName == 'cancel') {
@@ -229,6 +222,7 @@ def appButtonHandler(String buttonName) {
         // Update action
         state.remove 'position'
         state.action = 'list'
+        return
     }
 
     if (buttonName == 'saveDevice' || buttonName == 'close') {
@@ -431,22 +425,19 @@ Map devices() {
 }
 
 Map dashboards() {
-    //app.removeSetting 'dashboards'
-    List<String> dashboardList = app.getSetting('dashboards') ?: []
+    List<String> dashboardList = collectDashboards().sort()
     dynamicPage(name:'dashboards', title:'Dashboards', install:false, uninstall:false) {
         String table = renderInfoBox('Click the button below to add your first dashboard')
-        int idx = 0
         if (dashboardList.size != 0) {
             table = '<div style="overflow-x:auto; border: 1px rgba(0,0,0,.12) solid"><table id="app-table" class="mdl-data-table tstat-col"><tbody>'
             dashboardList.each {
                 table += """
                     <tr>
                         <td><a href="${buildDashboardURL(it)}" target="_blank">${it} <i class="pi pi-external-link"></i></a></td>
-                        <td class="tbl-icon">${renderButton("editDashboard_${idx}", '✏️', 'Rename dashboard', 'view-btn')}</td>
-                        <td class="tbl-icon">${renderButton("removeDashboard_${idx}", '🗑️', 'Remove dashboard', 'view-btn')}</td>
+                        <td class="tbl-icon">${renderButton("editDashboard_${it}", '✏️', 'Rename dashboard', 'view-btn')}</td>
+                        <td class="tbl-icon">${renderButton("removeDashboard_${it}", '🗑️', 'Remove dashboard', 'view-btn')}</td>
                     </tr>
                 """
-                idx++
             }
             table += '</tbody></table></div>'
         }
@@ -461,7 +452,7 @@ Map dashboards() {
         }
 
         // Render add/view page
-        if (state.action == 'add' || state.action == 'view') {
+        if (state.action == 'add' || state.action == 'edit') {
             section {
                 input(
                     name: 'dashboardName',
@@ -473,16 +464,16 @@ Map dashboards() {
             }
 
             section {
-                boolean disableSaveButton = app.getSetting('dashboardName') == null || app.getSetting('dashboardName').trim() == '' || app.getSetting('dashboardName') == dashboardList[state.position]
+                boolean disableSaveButton = app.getSetting('dashboardName') == null || app.getSetting('dashboardName').trim() == '' || dashboardList.contains(app.getSetting('dashboardName'))
                 paragraph """\
-                    <div class="p-dialog-mask" style="display:${state.action == 'add' || state.action == 'view' ? 'flex' : 'none'}; position: fixed; height: 100%; width: 100%; left: 0px; top: 0px; justify-content: center; align-items: center; pointer-events: none; z-index: 3203;" data-pc-section="mask">
+                    <div class="p-dialog-mask" style="display:${state.action == 'add' || state.action == 'edit' ? 'flex' : 'none'}; position: fixed; height: 100%; width: 100%; left: 0px; top: 0px; justify-content: center; align-items: center; pointer-events: none; z-index: 3203;" data-pc-section="mask">
                         <div class="p-dialog p-component" style="display: flex; flex-direction: column; pointer-events: auto;" role="dialog" data-pc-name="dialog" data-pc-section="root" data-pd-focustrap="true">
                             <div class="p-dialog-header" data-pc-section="header">
                                 <span class="p-dialog-title" data-pc-section="title">${state.action == 'add' ? 'Add' : 'Rename'} dashboard</span>
                             </div>
                             <div id="dialog-body" class="p-dialog-content" data-pc-section="content"></div>
                             <div id="dialog-footer" class="p-dialog-footer" data-pc-section="footer">
-                                ${renderButton('cancel', '✖&nbsp;&nbsp;Cancel', 'Cancel add action', 'mdl-button mdl-js-button mdl-button--raised', 'dialog-btn')}
+                                ${renderButton('cancel', '✖&nbsp;&nbsp;Cancel', 'Cancel action', 'mdl-button mdl-js-button mdl-button--raised', 'dialog-btn')}
                                 ${renderButton(disableSaveButton, 'saveDashboard', '✔&nbsp;&nbsp;Save', 'Save dashboard', 'mdl-button mdl-button--primary mdl-js-button mdl-button--raised', 'dialog-btn')}
                             </div>
                         </div>
@@ -504,7 +495,7 @@ Map dashboards() {
                                 <span class="p-dialog-title" data-pc-section="title">Confirm</span>
                             </div>
                             <div id="dialog-body" class="p-dialog-content" data-pc-section="content">
-                                Remove the <b>${dashboardList[state.position]}</b> dashboard now?<br><br>
+                                Remove the <b>${state.dashboardName}</b> dashboard now?<br><br>
                             </div>
                             <div id="dialog-footer" class="p-dialog-footer" data-pc-section="footer">
                                 ${renderButton('cancel', 'No', 'Cancel remove action', 'mdl-button mdl-js-button mdl-button--raised', 'dialog-btn')}
@@ -520,6 +511,35 @@ Map dashboards() {
 
 Map settings() {
     dynamicPage(name:'settings', title:'Settings', install:false, uninstall:false) {
+        section('How data collection works', hideable:true, hidden:true) {
+            paragraph '''\
+                The application utilizes a fixed-size database, similar in design and purpose to an RRD (Round-Robin Database). This setup allows for high-resolution data (minutes per point) to gradually degrade into lower resolutions for long-term retention of historical data.
+                <br><br>
+
+                The following time resolution are used:
+                <ul>
+                    <li><b>5 minutes</b>: Attribute value in the last 5 minutes</li>
+                    <li><b>1 hour</b>: Average attribute value over the last hour</li>
+                    <li><b>1 day</b>: Average attribute value over the last day</li>
+                    <li><b>1 week</b>: Average attribute value over the last week</li>
+                </ul>
+                <br>
+                How it works:
+                <ul>
+                    <li><b>Every 5 minutes</b>: The application reads the current value for all configured device attributes and stores this data in the File Manager using CSV files named <code>wt_${device_id}_5m.csv</code>, one file per configured device. Only devices configured in the <b>Devices</b> screen are queried.</li>
+                    <li><b>At the start of every hour</b>: The application reads the data from each device's <code>wt_${device_id}_5m.csv</code> file, selects records from the last hour, calculates the averages, and saves them in CSV files named <code>wt_${device_id}_1h.csv</code>.</li>
+                    <li><b>At midnight daily</b>: The application reads the data from each device's <code>wt_${device_id}_5m.csv</code> file, selects records from the last day (00:00 - 23:59), calculates the averages, and saves them in CSV files named <code>wt_${device_id}_1d.csv</code>.</li>
+                    <li><b>At midnight every Sunday</b>: The application reads the data from each device's <code>wt_${device_id}_1h.csv</code> file, selects records from the last week (Monday 00:00 - Sunday 23:59), calculates the averages, and saves them in CSV files named <code>wt_${device_id}_1w.csv</code>.</li>
+                </ul>
+                <br>
+                To maintain a fixed file size, old records are discarded during each save, as specified below.
+                <style>
+                    .mdl-cell > div { white-space:normal !important }
+                    ul { margin:0; padding-left:1em }
+                    code { background:#e7e7e7; padding:.1rem .4rem; border-radius:.2rem }
+                </style>
+            '''
+        }
         section {
             input(
                 name: 'conf_5MinMaxLines',
@@ -686,6 +706,12 @@ def collectDeviceConfiguration() {
 
     List hubEntry = [0, null, HUB_ATTRIBUTES]
     return retVal.sort { it[1].label }.plus(0, [hubEntry])
+}
+
+List<String> collectDashboards() {
+    List<String> retVal = []
+    state.each { key, val -> if (key.startsWith('g.')) retVal.add(key.substring(2)) }
+    return retVal
 }
 
 def buildURL(String fileName) {
@@ -902,7 +928,6 @@ def getDashboardJsMapping() {
 }
 
 def getIconMapping() {
-    debug 'Returning app icon'
     return render(
         status: 200,
         contentType: 'image/png',
@@ -947,22 +972,25 @@ def getGridLayoutMapping() {
     debug "Returning grid layout for dashboard: ${params.name}"
     if (params.name == null) throw new RuntimeException('Missing "name" query param')
 
-    List<String> dashboardList = app.getSetting('dashboards') ?: []
-    int idx = dashboardList.findIndexOf { it == "${params.name}" }
-    if (idx == -1) return render(status:200, contentType:'application/json', data:'{"status": false}')
-    return render(status:200, contentType:'application/json', data:state["g.${idx}"] ?: '{"panels":[]}')
+    String stateEntryName = "g.${params.name}"
+    String layout = state[stateEntryName]
+    if (layout == null) return render(status:200, contentType:'application/json', data:'{"status": false}')
+    return render(status:200, contentType:'application/json', data:layout)
 }
 
 def setGridLayoutMapping() {
     debug "Saving grid layout for dashboard: ${params.name}"
     if (params.name == null) throw new RuntimeException('Missing "name" query param')
 
-    List<String> dashboardList = app.getSetting('dashboards') ?: []
-    int idx = dashboardList.findIndexOf { it == params.name }
-    if (idx == -1) return render(status:200, contentType:'application/json', data:'{"status": false}')
+    String stateEntryName = "g.${params.name}"
+    if (!state[stateEntryName]) return render(status:200, contentType:'application/json', data:'{"status": false}')
 
-    runIn(1, 'saveGridLayout', [data: [idx:idx, json:"${request.body}"]])
+    runIn(1, 'saveGridLayout', [data: [stateEntryName:stateEntryName, json:"${request.body}"]])
     return render(status:200, contentType:'application/json', data:'{"status": true}')
+}
+
+def saveGridLayout(data) {
+    state[data.stateEntryName] = data.json
 }
 
 def getMonitoredDevicesMapping() {
@@ -979,8 +1007,4 @@ def getSupportedAttributesMapping() {
     attributes.temperature.unit = "°${location.temperatureScale}"
     attributes.hubTemperature.unit = "°${location.temperatureScale}"
     return render(status:200, contentType:'application/json', data:new JsonBuilder(attributes).toString())
-}
-
-def saveGridLayout(data) {
-    state["g.${data.idx}"] = data.json
 }

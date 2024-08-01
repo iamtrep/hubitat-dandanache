@@ -66,17 +66,18 @@
                 --tooltip-bg-color: var(--Base2);
                 --tooltip-text-color: var(--Base02);
             }
+            html { height: 100%; -webkit-text-size-adjust: 100%; scrollbar-width:thin }
             body {
+                min-height: 100%;
                 box-sizing: border-box;
                 margin: 0;
                 padding: 5px;
                 font: 0.85rem sans-serif;
-                background: var(--bg-color);
+                background-color: var(--bg-color);
                 color: var(--text-color);
                 cursor: default;
                 width: calc(100% - 10px);
             }
-            html { -webkit-text-size-adjust: 100% }
             a { text-decoration: none; color: var(--Blue) }
 
             /* CSS spinner */
