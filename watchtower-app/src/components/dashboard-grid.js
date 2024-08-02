@@ -39,6 +39,9 @@ export class DashboardGrid extends LitElement {
             border-radius: 0 0 5px 5px;
             border-top: 0;
         }
+        .grid-stack-item-removing .panel-container {
+            background-color: rgba(255, 0, 0, 0.3);
+        }
         .spinner:after {
             position: absolute;
             top: calc(50% - 32px);
@@ -107,11 +110,33 @@ export class DashboardGrid extends LitElement {
     async init(panels) {
 
         // Add panels
-        this.grid.batchUpdate(true)
-        panels.forEach(panel => {
-            this.addPanel(panel.config, panel.w, panel.h, panel.x, panel.y)
-        })
-        this.grid.batchUpdate(false)
+        if (panels.length === 0) {
+            this.addPanel({
+                type: 'text-panel',
+                title: 'Quick Instructions',
+                message: `
+                    <b>😎 Welcome to your new dashboard!</b>
+                    <ul>
+                        <li>Press the backtick key (<b>\`</b>) on your keyboard to show or hide the left menu.
+                        <li>Click the <b>Add dashboard tile</b> button to add new tiles to your dashboard.
+                        <li>Rearrange tiles by dragging their titles.
+                        <li>Resize tiles by dragging the bottom-right corner.
+                        <li>Remove tiles by dragging them outside the dashboard grid.
+                        <li>Tiles cannot be edited; remove and add them again if needed.
+                        <li>Remember to click the <b>Save dashboard</b> button when you're happy with the layout (no auto-save).
+                    </ul>
+                    For more information, refer to the <a href="https://dan-danache.github.io/hubitat/watchtower-app/" target="_blank">official documentation</a>.
+                    <br><br>
+                    Enjoy customizing your dashboard!
+                `
+            }, 2, 2, 1, 0)
+        } else {
+            this.grid.batchUpdate(true)
+            panels.forEach(panel => {
+                this.addPanel(panel.config, panel.w, panel.h, panel.x, panel.y)
+            })
+            this.grid.batchUpdate(false)
+        }
 
         // Remove spinner and init mobile view
         this.renderRoot.querySelector('.grid-stack').classList.remove('spinner')

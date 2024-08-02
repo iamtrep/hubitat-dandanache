@@ -153,13 +153,13 @@ The following dashboard tile types are currently supported:
 
 ### Manage Dashboard Tiles
 
-- Move tiles around by dragging on their title. Resize tiles by dragging on the bottom-right resize handler.
+- Rearrange tiles by dragging their title. Resize tiles by dragging the bottom-right corner.
 
-- Remove a dashboard tile by dragging it outside the dashboard grid.
+- Remove tiles by moving them outside the dashboard grid.
 
 - Dashboard tiles cannot be edited. If you selected the wrong device/attribute or want to change the tile title, remove it and add it again with the correct configuration.
 
-> **Important**: Changes are not automatically saved! Don't forget to click the **Save dashboard** button when you are satisfied with the dashboard layout.
+> **Important**: Changes are not automatically saved! Remember to click the **Save dashboard** button when you are satisfied with the dashboard layout.
 
 ### Auto-refresh
 
