@@ -145,6 +145,7 @@ export class DashboardAddDialog extends LitElement {
         'attribute-panel': 'Attribute',
         'text-panel': 'Text',
         'iframe-panel': 'Iframe',
+        'hub-info-panel': 'Hub Info',
     }
 
     static properties = {

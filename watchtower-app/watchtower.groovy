@@ -897,13 +897,14 @@ void deleteDataFiles(DeviceWrapper device) {
 // ===================================================================================================================
 
 mappings {
-    path('/watchtower.html') { action:[ GET:'getDashboardHtmlMapping' ] }
-    path('/watchtower.js') { action:[ GET:'getDashboardJsMapping' ] }
-    path('/icon.png') { action:[ GET:'getIconMapping' ] }
-    path('/app.webmanifest') { action:[ GET:'getAppManifestMapping' ] }
-    path('/grid-layout.json') { action:[ GET:'getGridLayoutMapping', PUT:'setGridLayoutMapping' ] }
-    path('/monitored-devices.json') { action:[ GET:'getMonitoredDevicesMapping' ] }
-    path('/supported-attributes.json') { action:[ GET:'getSupportedAttributesMapping' ] }
+    path('/watchtower.html') { action:[ GET:'getDashboardHtmlMapping' ]}
+    path('/watchtower.js') { action:[ GET:'getDashboardJsMapping' ]}
+    path('/icon.png') { action:[ GET:'getIconMapping' ]}
+    path('/app.webmanifest') { action:[ GET:'getAppManifestMapping' ]}
+    path('/grid-layout.json') { action:[ GET:'getGridLayoutMapping', PUT:'setGridLayoutMapping' ]}
+    path('/monitored-devices.json') { action:[ GET:'getMonitoredDevicesMapping' ]}
+    path('/supported-attributes.json') { action:[ GET:'getSupportedAttributesMapping' ]}
+    path("/hub-info.json") { action:[ GET:'getHubInfoMapping' ]}
 }
 
 def getDashboardHtmlMapping() {
@@ -1007,4 +1008,22 @@ def getSupportedAttributesMapping() {
     attributes.temperature.unit = "°${location.temperatureScale}"
     attributes.hubTemperature.unit = "°${location.temperatureScale}"
     return render(status:200, contentType:'application/json', data:new JsonBuilder(attributes).toString())
+}
+
+def getHubInfoMapping() {
+    debug "Returning Hub information"
+    return render(
+        status: 200,
+        contentType: "application/json",
+        data: """\
+        {
+            "name": "${location.hub.name}",
+            "ip": "${location.hub.localIP}",
+            "uptime": ${location.hub.uptime.toLong()},
+            "model": "${getHubVersion()}",
+            "fw": "${location.hub.firmwareVersionString}",
+            "tscale": "${location.temperatureScale}"
+        }
+        """
+    )
 }

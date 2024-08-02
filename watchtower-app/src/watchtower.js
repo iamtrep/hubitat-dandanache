@@ -8,6 +8,7 @@ import { DevicePanel, DevicePanelConfig } from './panels/device-panel.js';
 import { AttributePanel, AttributePanelConfig } from './panels/attribute-panel.js';
 import { TextPanel, TextPanelConfig } from './panels/text-panel.js';
 import { IframePanel, IframePanelConfig } from './panels/iframe-panel.js';
+import { HubInfoPanel, HubInfoPanelConfig } from './panels/hub-info-panel.js';
 
 customElements.define('watchtower-app', WatchtowerApp)
 customElements.define('dashboard-menu', DashboardMenu)
@@ -26,3 +27,6 @@ customElements.define('text-panel-config', TextPanelConfig)
 
 customElements.define('iframe-panel', IframePanel)
 customElements.define('iframe-panel-config', IframePanelConfig)
+
+customElements.define('hub-info-panel', HubInfoPanel)
+customElements.define('hub-info-panel-config', HubInfoPanelConfig)

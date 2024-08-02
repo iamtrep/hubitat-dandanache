@@ -110,4 +110,18 @@ export class DatastoreHelper {
         }
         return data
     }
+
+    static async fetchHubInfo() {
+        try {
+            const response = await fetch(new Request(`./hub-info.json?access_token=${this.accessToken()}`), { cache: 'no-store' })
+            if (!response.ok) {
+                throw new Error(`DatastoreHelper.fetchHubInfo() - HTTP error, status = ${response.status}`)
+            }
+            const text = await response.text()
+            return JSON.parse(text)
+        } catch (ex) {
+            console.error(ex)
+            alert(ex.message)
+        }
+    }
 }

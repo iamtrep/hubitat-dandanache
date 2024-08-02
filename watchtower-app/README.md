@@ -145,7 +145,11 @@ The following dashboard tile types are currently supported:
 
    Example usage: load a widget from another location.
 
-   ![Text tile](img/tile-iframe.png)
+   ![Iframe tile](img/tile-iframe.png)
+
+- **Hub Info** - This tile type renders information about the Hubitat hub.
+
+   ![Hub Info tile](img/tile-hub-info.png)
 
 ### Manage Dashboard Tiles
 
