@@ -40,7 +40,7 @@ The following time resolution are used:
 
 ### How it Works
 
-1. **Every 5 minutes**: The application reads the current value for all configured device attributes and stores this data in the File Manager using CSV files named `wt_${device_id}_5m.csv`, one file per configured device. Only devices configured in the application's **Devices** screen are queried.
+1. **Every 5 minutes**: The application reads the **current value** for all configured device attributes and stores this data in the File Manager using CSV files named `wt_${device_id}_5m.csv`, one file per configured device. Only devices configured in the application's **Devices** screen are queried.
 
 1. **At the start of every hour**: The application reads the data from each device's `wt_${device_id}_5m.csv` file, selects records from the last hour, calculates the averages, and saves them in CSV files named `wt_${device_id}_1h.csv`.
 
@@ -49,6 +49,20 @@ The following time resolution are used:
 1. **At midnight every Sunday**: The application reads the data from each device's `wt_${device_id}_1h.csv` file, selects records from the last week (Monday 00:00 - Sunday 23:59), calculates the averages, and saves them in CSV files named `wt_${device_id}_1w.csv`.
 
 **Important**: To maintain a fixed file size, old records are discarded during each save, as specified in the **Settings** screen.
+
+### Limitations
+
+The data collection routine of the app is executed every 5 minutes. To minimize the hub CPU load, data points with a 5-minute resolution are collected by simply reading the current value of device attributes. The app does not track what happened in the last 5-minute interval; it assumes that the current value remained unchanged.
+
+This assumption works well for slow-moving attributes like temperature and humidity. However, for switches, motion sensors, contact sensors, etc., this assumption can lead to inaccurate values. For example, if a light bulb is turned on at 08:01 and off at 08:04, when the app collects the current value at 08:05, it will see the "switch" attribute as "off" and assume the light was off for the last 5 minutes, recording a “0% on time” for this interval.
+
+There are two options to improve this 5-minute data collection routine:
+
+1. The app can subscribe to device events and store what happened in the last 5 minutes in the app state.
+
+1. Every 5 minutes, the app can ask the device for the last 10 or 20 events, then filter for the changes of interest to calculate a more precise value.
+
+Both options require more resources from the hub (CPU cycles, state size) and are not currently implemented.
 
 ## Usage
 
