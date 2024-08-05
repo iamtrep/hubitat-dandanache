@@ -53,7 +53,7 @@
         },
         {
             "id": "8a5cfb88-1fda-4082-978f-fcaa1e680741",
-            "name": "Hubitat drivers for NodOn smart devices",
+            "name": "Hubitat drivers for NodOn smart devices.",
             "description": "Drivers for the following NodOn devices: SIN-4-1-20, SIN-4-1-21, SIN-4-2-20, SIN-4-FP-21, SIN-4-RS-20.",
             "category": "Utility",
             "tags": [ "Tools & Utilities" ],
@@ -62,7 +62,7 @@
         {
             "id": "3762a0c1-b4dd-4e61-a521-04e36d8eadde",
             "name": "Watchtower",
-            "description": "Data-Driven Insights for a Smarter Home",
+            "description": "Data-driven insights for a smarter home.",
             "category": "Utility",
             "tags": [ "Tools & Utilities" , "Dashboards", "Monitoring"],
             "location": "https://raw.githubusercontent.com/dan-danache/hubitat/main/watchtower-app/packageManifest.json"

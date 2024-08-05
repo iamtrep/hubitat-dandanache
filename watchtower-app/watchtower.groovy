@@ -1,11 +1,12 @@
 f/*
  * Watchtower app for Hubitat
  *
- * Data-Driven Insights for a Smarter Home.
+ * Data-driven insights for a smarter home.
  *
  * @see https://github.com/dan-danache/hubitat
  */
 import groovy.json.JsonBuilder
+import groovy.transform.CompileStatic
 import groovy.transform.Field
 
 import java.math.RoundingMode
@@ -16,6 +17,7 @@ import java.time.ZoneId
 import java.util.Collections
 
 import com.hubitat.app.DeviceWrapper
+import com.hubitat.hub.domain.Event
 
 @Field static final String APP_NAME = 'Watchtower'
 @Field static final String APP_VERSION = '1.0.0'
@@ -26,60 +28,102 @@ import com.hubitat.app.DeviceWrapper
 @Field static final List<String> HUB_ATTRIBUTES = ['hubCPU', 'hubRAM', 'hubTemperature', 'hubDatabaseSize']
 
 @Field static final Map SUPPORTED_ATTRIBUTES = [
-    hubCPU: [ min:0, max:100, unit:'%', probe:{ device, state -> state.hubCPU ?: '0' } ],
-    hubRAM: [ min:0, unit:'MB', probe:{ device, state -> state.hubRAM ?: '0' } ],
-    hubTemperature: [ min:0, unit:'°', probe:{ device, state -> state.hubTemperature ?: '0' } ],
-    hubDatabaseSize: [ min:0, unit:'MB', probe:{ device, state -> state.hubDatabaseSize ?: '0' } ],
+    hubCPU: [ min:0, max:100, unit:'%', probe:{ device, state, events, begin, end -> state.hubCPU ?: '0' } ],
+    hubRAM: [ min:0, unit:'MB free', probe:{ device, state, events, begin, end -> state.hubRAM ?: '0' } ],
+    hubTemperature: [ min:0, unit:'°', probe:{ device, state, events, begin, end -> state.hubTemperature ?: '0' } ],
+    hubDatabaseSize: [ min:0, unit:'MB', probe:{ device, state, events, begin, end -> state.hubDatabaseSize ?: '0' } ],
 
-    acceleration: [ min:0, max:100, unit:'% active', probe:{ device, state -> "${device.currentValue('acceleration')}" == 'active' ? 100 : 0 } ],
-    airQualityIndex: [ min:0, max:500, unit:'', probe:{ device, state -> "${device.currentValue('airQualityIndex')}" } ],
-    amperage: [ min:0, unit:'A', probe:{ device, state -> "${device.currentValue('amperage')}" } ],
-    battery: [ min:0, max:100, unit:'%', probe:{ device, state -> "${device.currentValue('battery')}" } ],
-    camera: [ min:0, max:100, unit:'% on', probe:{ device, state -> "${device.currentValue('camera')}" == 'on' ? 100 : 0 } ],
-    carbonDioxide: [ min:0, unit:'ppm', probe:{ device, state -> "${device.currentValue('carbonDioxide')}" } ],
-    contact: [ min:0, max:100, unit:'% open', probe:{ device, state -> "${device.currentValue('contact')}" == 'open' ? 100 : 0 } ],
-    coolingSetpoint: [ min:0, unit:'°', probe:{ device, state -> "${device.currentValue('coolingSetpoint')}" } ],
-    door: [ min:0, max:100, unit:'% open', probe:{ device, state -> "${device.currentValue('door')}" == 'open' ? 100 : 0 } ],
-    energy: [ min:0, unit:'kWh', probe:{ device, state -> "${device.currentValue('energy')}" } ],
-    filterStatus: [ min:0, max:100, unit:'% normal', probe:{ device, state -> "${device.currentValue('filterStatus')}" == 'normal' ? 100 : 0 } ],
-    frequency: [ unit:'Hz', probe:{ device, state -> "${device.currentValue('frequency')}" } ],
-    goal: [ min:0, unit:'steps', probe:{ device, state -> "${device.currentValue('goal')}" } ],
-    heatingSetpoint: [ min:0, unit:'°', probe:{ device, state -> "${device.currentValue('heatingSetpoint')}" } ],
-    humidity: [ min:0, max:100, unit:'%', probe:{ device, state -> "${device.currentValue('humidity')}" } ],
-    illuminance: [ min:0, unit:'lx', probe:{ device, state -> "${device.currentValue('illuminance')}" } ],
-    lock: [ unit:'% locked', probe:{ device, state -> "${device.currentValue('lock')}" == 'locked' ? 100 : 0 } ],
-    lqi: [ min:0, max:255, unit:'lqi', probe:{ device, state -> "${device.currentValue('lqi')}" } ],
-    motion: [ min:0, max:100, unit:'% active', probe:{ device, state -> "${device.currentValue('motion')}" == 'active' ? 100 : 0 } ],
-    naturalGas: [ min:0, max:100, unit:'% detected', probe:{ device, state -> "${device.currentValue('naturalGas')}" == 'detected' ? 100 : 0 } ],
-    networkStatus: [ min:0, max:100, unit:'% online', probe:{ device, state -> "${device.currentValue('networkStatus')}" == 'online' ? 100 : 0 } ],
-    pH: [ unit:'pH', probe:{ device, state -> "${device.currentValue('pH')}" } ],
-    power: [ min:0, unit:'W', probe:{ device, state -> "${device.currentValue('power')}" } ],
-    presence: [ min:0, max:100, unit:'% present', probe:{ device, state -> "${device.currentValue('presence')}" == 'present' ? 100 : 0 } ],
-    pressure: [ min:0, unit:'psi', probe:{ device, state -> "${device.currentValue('pressure')}" } ],
-    rate: [ min:0, unit:'LPM', probe:{ device, state -> "${device.currentValue('rate')}" } ],
-    rssi: [ min:0, max:255, unit:'rssi', probe:{ device, state -> "${device.currentValue('rssi')}" } ],
-    securityKeypad: [ min:0, max:100, unit:'% armed', probe:{ device, state -> "${device.currentValue('securityKeypad')}".startsWith('armed') ? 100 : 0 } ],
-    sessionStatus: [ min:0, max:100, unit:'% running', probe:{ device, state -> "${device.currentValue('sessionStatus')}" == 'running' ? 100 : 0 } ],
-    shock: [ min:0, max:100, unit:'% detected', probe:{ device, state -> "${device.currentValue('shock')}" == 'detected' ? 100 : 0 } ],
-    sleeping: [ min:0, max:100, unit:'% sleeping', probe:{ device, state -> "${device.currentValue('sleeping')}" == 'sleeping' ? 100 : 0 } ],
-    smoke: [ min:0, max:100, unit:'% detected', probe:{ device, state -> "${device.currentValue('smoke')}" == 'detected' ? 100 : 0 } ],
-    sound: [ min:0, max:100, unit:'% detected', probe:{ device, state -> "${device.currentValue('sound')}" == 'detected' ? 100 : 0 } ],
-    soundPressureLevel: [ unit:'dB', probe:{ device, state -> "${device.currentValue('soundPressureLevel')}" } ],
-    steps: [ unit:'steps', probe:{ device, state -> "${device.currentValue('steps')}" } ],
-    'switch': [ min:0, max:100, unit:'% on', probe:{ device, state -> "${device.currentValue('switch')}" == 'on' ? 100 : 0 } ],
-    tamper: [ min:0, max:100, unit:'% detected', probe:{ device, state -> "${device.currentValue('tamper')}" == 'detected' ? 100 : 0 } ],
-    temperature: [ min:0, unit:'°', probe:{ device, state -> "${device.currentValue('temperature')}" } ],
-    transportStatus: [ min:0, max:100, unit:'% playing', probe:{ device, state -> "${device.currentValue('transportStatus')}" == 'playing' ? 100 : 0 } ],
-    valve: [ min:0, max:100, unit:'% open', probe:{ device, state -> "${device.currentValue('valve')}" == 'open' ? 100 : 0 } ],
-    water: [ min:0, max:100, unit:'% wet', probe:{ device, state -> "${device.currentValue('water')}" == 'wet' ? 100 : 0 } ],
-    windowBlind: [ min:0, max:100, unit:'% open', probe:{ device, state -> "${device.currentValue('windowBlind')}".contains('open') ? 100 : 0 } ],
-    windowShade: [ min:0, max:100, unit:'% open', probe:{ device, state -> "${device.currentValue('windowShade')}".contains('open') ? 100 : 0 } ],
-    voltage: [ min:0, unit:'V', probe:{ device, state -> "${device.currentValue('voltage')}" } ],
+    acceleration: [ min:0, max:100, unit:'% active', probe:{ device, state, events, begin, end -> calc5minValue(device, 'acceleration', ['active'], events, begin, end) } ],
+    airQualityIndex: [ min:0, max:500, unit:'', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'airQualityIndex', events) } ],
+    amperage: [ min:0, unit:'A', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'amperage', events) } ],
+    battery: [ min:0, max:100, unit:'%', probe:{ device, state, events, begin, end -> "${device.currentValue('battery')}" } ],
+    camera: [ min:0, max:100, unit:'% on', probe:{ device, state, events, begin, end -> calc5minValue(device, 'camera', ['on'], events, begin, end) } ],
+    carbonDioxide: [ min:0, unit:'ppm', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'carbonDioxide', events) } ],
+    contact: [ min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'contact', ['open'], events, begin, end) } ],
+    coolingSetpoint: [ min:0, unit:'°', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'coolingSetpoint', events) } ],
+    door: [ min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'door', ['open'], events, begin, end) } ],
+    energy: [ min:0, unit:'kWh', probe:{ device, state, events, begin, end -> calc5minIncrease(device, 'energy', state) } ],
+    filterStatus: [ min:0, max:100, unit:'% normal', probe:{ device, state, events, begin, end -> "${device.currentValue('filterStatus')}" == 'normal' ? 100 : 0 } ],
+    frequency: [ unit:'Hz', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'frequency', events) } ],
+    goal: [ min:0, unit:'steps', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'goal', events) } ],
+    heatingSetpoint: [ min:0, unit:'°', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'heatingSetpoint', events) } ],
+    humidity: [ min:0, max:100, unit:'%', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'humidity', events) } ],
+    illuminance: [ min:0, unit:'lx', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'illuminance', events) } ],
+    lock: [ unit:'% locked', probe:{ device, state, events, begin, end -> calc5minValue(device, 'lock', ['locked'], events, begin, end) } ],
+    lqi: [ min:0, max:255, unit:'lqi', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'lqi', events) } ],
+    motion: [ min:0, max:100, unit:'% active', probe:{ device, state, events, begin, end -> calc5minValue(device, 'motion', ['active'], events, begin, end) } ],
+    naturalGas: [ min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'naturalGas', ['detected'], events, begin, end) } ],
+    networkStatus: [ min:0, max:100, unit:'% online', probe:{ device, state, events, begin, end -> calc5minValue(device, 'networkStatus', ['online'], events, begin, end) } ],
+    pH: [ unit:'pH', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'ph', events) } ],
+    power: [ min:0, unit:'W', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'power', events) } ],
+    presence: [ min:0, max:100, unit:'% present', probe:{ device, state, events, begin, end -> calc5minValue(device, 'presence', ['present'], events, begin, end) } ],
+    pressure: [ min:0, unit:'psi', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'pressure', events) } ],
+    rate: [ min:0, unit:'LPM', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'rate', events) } ],
+    rssi: [ min:0, max:255, unit:'rssi', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'rssi', events) } ],
+    securityKeypad: [ min:0, max:100, unit:'% armed', probe:{ device, state, events, begin, end -> calc5minValue(device, 'securityKeypad', ['armed home', 'armed away'], events, begin, end) } ],
+    sessionStatus: [ min:0, max:100, unit:'% running', probe:{ device, state, events, begin, end -> calc5minValue(device, 'sessionStatus', ['running'], events, begin, end) } ],
+    shock: [ min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'shock', ['detected'], events, begin, end) } ],
+    sleeping: [ min:0, max:100, unit:'% sleeping', probe:{ device, state, events, begin, end -> calc5minValue(device, 'sleeping', ['sleeping'], events, begin, end) } ],
+    smoke: [ min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'smoke', ['detected'], events, begin, end) } ],
+    sound: [ min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'sound', ['detected'], events, begin, end) } ],
+    soundPressureLevel: [ unit:'dB', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'soundPressureLevel', events) } ],
+    steps: [ unit:'steps', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'steps', events) } ],
+    'switch': [ min:0, max:100, unit:'% on', probe:{ device, state, events, begin, end -> calc5minValue(device, 'switch', ['on'], events, begin, end) } ],
+    tamper: [ min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'tamper', ['detected'], events, begin, end) } ],
+    temperature: [ min:0, unit:'°', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'temperature', events) } ],
+    transportStatus: [ min:0, max:100, unit:'% playing', probe:{ device, state, events, begin, end -> calc5minValue(device, 'transportStatus', ['playing'], events, begin, end) } ],
+    valve: [ min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'valve', ['open'], events, begin, end) } ],
+    water: [ min:0, max:100, unit:'% wet', probe:{ device, state, events, begin, end -> calc5minValue(device, 'water', ['wet'], events, begin, end) } ],
+    windowBlind: [ min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'windowBlind', ['opening', 'partially open', 'open'], events, begin, end) } ],
+    windowShade: [ min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'windowShade', ['opening', 'partially open', 'open'], events, begin, end) } ],
+    voltage: [ min:0, unit:'V', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'voltage', events) } ],
 
     // Non-standard attributes
-    pm25: [ unit:'μg/m3', probe:{ device, state -> "${device.currentValue('pm25')}" } ],
-    vocIndex: [ unit:'', probe:{ device, state -> "${device.currentValue('vocIndex')}" } ],
+    pm25: [ unit:'μg/m3', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'pm25', events) } ],
+    vocIndex: [ unit:'', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'vocIndex', events) } ],
 ]
+
+@CompileStatic
+static String calc5minValue(DeviceWrapper device, String attribute, List<String> onValues, List<Event> events, long beginTimestamp, long endTimestamp) {
+    long onTime = 0
+    long lastOnTimestamp = beginTimestamp
+    for (int i = 0; i < events.size(); i++) {
+        Event event = events.get(i)
+        if (event.name != attribute || !event.isStateChange) continue
+        if (onValues.contains(event.value)) {
+            lastOnTimestamp = event.getDate().getTime()
+            continue
+        } else {
+            onTime += event.getDate().getTime() - lastOnTimestamp
+        }
+    }
+    if (onValues.contains(device.currentValue(attribute))) onTime += endTimestamp - lastOnTimestamp
+    return new BigDecimal(onTime / 3000.0d).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+}
+
+@CompileStatic
+static String calc5minIncrease(DeviceWrapper device, String attribute, Map state) {
+    String stateKey = String.format('v.%s_%s', device.getId(), attribute)
+    String currentValue = device.currentValue(attribute)
+    String lastValue = state.get(stateKey) ?: currentValue
+    state.put(stateKey, currentValue)
+    return (new BigDecimal(currentValue) - new BigDecimal(lastValue)).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+}
+
+@CompileStatic
+static String calc5minAverage(DeviceWrapper device, String attribute, List<Event> events) {
+    String currentValue = device.currentValue(attribute)
+    BigDecimal sum = BigDecimal.ZERO
+    int count = 0
+    for (int i = 0; i < events.size(); i++) {
+        Event event = events.get(i)
+        if (event.name != attribute || !event.isStateChange) continue
+        sum += new BigDecimal(event.value)
+        count++
+    }
+    sum += new BigDecimal(currentValue)
+    return (sum / (count + 1)).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+}
 
 definition(
     name: APP_NAME,
@@ -783,11 +827,13 @@ void collectDeviceMetrics() {
 
 void update5MinData(ZonedDateTime now, DeviceWrapper device, List<String> attrs) {
     String deviceId = device?.id ?: '0'
-    debug "Updating 5 min metrics for device #${deviceId} ..."
+    Date beginDate = Date.from(now.minusMinutes(5).toInstant())
+    List<Event> events = device?.eventsSince(beginDate) ?: []
+    debug "Updating 5 min metrics for device #${deviceId}, events=${events} ..."
 
     // Compute and save a new CSV record
     List<String> newCsvRecord = [ "${now.toEpochSecond()}" ]
-    attrs.each { newCsvRecord.add(SUPPORTED_ATTRIBUTES[it].probe(device, state)) }
+    attrs.each { newCsvRecord.add(SUPPORTED_ATTRIBUTES[it].probe(device, state, events, beginDate.getTime(), now.toInstant().toEpochMilli())) }
     appendDataRecord("wt_${deviceId}_5m.csv", newCsvRecord, attrs, conf_5minMaxLines ?: 864)
 }
 

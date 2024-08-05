@@ -1,6 +1,6 @@
 # Watchtower
 
-"Data-Driven Insights for a Smarter Home"
+*Data-driven insights for a smarter home.*
 
 Watchtower is a Hubitat application designed to monitor and record device attributes at various time resolutions, ensuring efficient long-term data retention.
 
@@ -8,7 +8,7 @@ Utilizing a fixed-size database akin to a Round-Robin Database (RRD), Watchtower
 
 Users can configure which devices and attributes to monitor, and the application automatically reads and stores these values in CSV files, making it easy to access and analyze the collected data.
 
-In addition to robust data collection, Watchtower offers customizable dashboards for visualizing device metrics. Dashboards can render various types of tiles, such as device charts, attribute comparisons, text/HTML, and iframes.
+In addition to robust data collection, Watchtower offers customizable dashboards for visualizing device metrics. Dashboards can render various types of tiles, such as device charts, attribute comparisons, hub details, text/HTML, and iframes.
 
 Watchtower provides a reliable solution for long-term smart home monitoring and data visualization.
 
@@ -40,7 +40,7 @@ The following time resolution are used:
 
 ### How it Works
 
-1. **Every 5 minutes**: The application reads the **current value** for all configured device attributes and stores this data in the File Manager using CSV files named `wt_${device_id}_5m.csv`, one file per configured device. Only devices configured in the application's **Devices** screen are queried.
+1. **Every 5 minutes**: The application calculates the 5-minutes value for all configured device attributes and stores this data in the File Manager using CSV files named `wt_${device_id}_5m.csv`, one file per configured device. Only devices configured in the application's **Devices** screen are queried.
 
 1. **At the start of every hour**: The application reads the data from each device's `wt_${device_id}_5m.csv` file, selects records from the last hour, calculates the averages, and saves them in CSV files named `wt_${device_id}_1h.csv`.
 
@@ -48,21 +48,9 @@ The following time resolution are used:
 
 1. **At midnight every Sunday**: The application reads the data from each device's `wt_${device_id}_1h.csv` file, selects records from the last week (Monday 00:00 - Sunday 23:59), calculates the averages, and saves them in CSV files named `wt_${device_id}_1w.csv`.
 
-**Important**: To maintain a fixed file size, old records are discarded during each save, as specified in the **Settings** screen.
+**Note**: To maintain a fixed file size, old records are discarded during each save, as specified in the **Settings** screen.
 
-### Limitations
 
-The data collection routine of the app is executed every 5 minutes. To minimize the hub CPU load, data points with a 5-minute resolution are collected by simply reading the current value of device attributes. The app does not track what happened in the last 5-minute interval; it assumes that the current value remained unchanged.
-
-This assumption works well for slow-moving attributes like temperature and humidity. However, for switches, motion sensors, contact sensors, etc., this assumption can lead to inaccurate values. For example, if a light bulb is turned on at 08:01 and off at 08:04, when the app collects the current value at 08:05, it will see the "switch" attribute as "off" and assume the light was off for the last 5 minutes, recording a “0% on time” for this interval.
-
-There are two options to improve this 5-minute data collection routine:
-
-1. The app can subscribe to device events and store what happened in the last 5 minutes in the app state.
-
-1. Every 5 minutes, the app can ask the device for the last 10 or 20 events, then filter for the changes of interest to calculate a more precise value.
-
-Both options require more resources from the hub (CPU cycles, state size) and are not currently implemented.
 
 ## Usage
 
@@ -174,6 +162,31 @@ The following dashboard tile types are currently supported:
 - Dashboard tiles cannot be edited. If you selected the wrong device/attribute or want to change the tile title, remove it and add it again with the correct configuration.
 
 > **Important**: Changes are not automatically saved! Remember to click the **Save dashboard** button when you are satisfied with the dashboard layout.
+
+### Chart Time Resolution
+
+When you move your mouse over a chart, the time resolution picker is displayed at the bottom. You can switch between 5-minute, 1-hour, 1-day, and 1-week resolutions.
+
+Changing the time resolution updates the source of the graph data points. For example, selecting the "1h" resolution loads chart data from the `wt_${device_id}_1h.csv` file in the File Manager.
+
+### Charts Zoom and Pan
+The zoom and pan functionality allows you to interact with charts displaying multiple data points over time.
+
+#### Zooming In and Out
+
+- **Zoom In**: Scroll up with the mouse wheel to magnify the chart, focusing on specific data points or intervals.
+- **Zoom Out**: Scroll down with the mouse wheel to broaden the view, encompassing a larger time range or dataset.
+
+#### Panning (Horizontal Movement)
+Panning enables you to explore different time periods within the same chart:
+
+- **Left Panning**: Click, hold, and drag the chart to the left to view later data points or shift the view to the future.
+- **Right Panning**: Click, hold, and drag the chart to the right to reveal earlier data points or shift the view to the past.
+
+These interactive features enhance your ability to dynamically analyze data. Experiment with zooming and panning to uncover insights within your charts!
+
+### Line vs Bar Charts
+Charts will automatically switch between line and bar types based on the number of data points visible. When fewer data points are displayed (e.g., when zoomed in or when time resolution is changed), the chart switches to a bar type for better visibility. When more data points are available, a line chart is more suitable for data analysis.
 
 ### Auto-refresh
 
