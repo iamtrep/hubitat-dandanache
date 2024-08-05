@@ -361,7 +361,7 @@ Map devices() {
 
         // Render add button
         section {
-            input(name:'addDevice', title:'➕ Add device&nbsp;&nbsp;&nbsp;', type:'button')
+            input(name:'addDevice', title:'➕ Add device configuration&nbsp;&nbsp;', type:'button')
         }
 
         // Render add/view page
