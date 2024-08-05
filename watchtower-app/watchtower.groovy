@@ -316,6 +316,9 @@ Map main() {
 
                 // Preferences
                 input(name:'logEnable', type:'bool', title:'Enable debug logging', defaultValue:false, submitOnChange:true)
+                if (logEnable) {
+                    paragraph '<b>Warning</b>: When debug logging is enabled, the application will generate a lot of log entries and this can lead to an elevated hub CPU load.'
+                }
             }
         }
     }
