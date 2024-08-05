@@ -119,15 +119,12 @@ export class DashboardGrid extends LitElement {
                     <ul>
                         <li>Press the backtick key (<b>\`</b>) on your keyboard to show or hide the left menu.
                         <li>Click the <b>Add dashboard tile</b> button to add new tiles to your dashboard.
-                        <li>Rearrange tiles by dragging their titles.
-                        <li>Resize tiles by dragging the bottom-right corner.
+                        <li>Rearrange tiles by dragging their titles. Resize tiles by dragging the bottom-right corner.
                         <li>Remove tiles by dragging them outside the dashboard grid.
                         <li>Tiles cannot be edited; remove and add them again if needed.
-                        <li>Remember to click the <b>Save dashboard</b> button when you're happy with the layout (no auto-save).
+                        <li>Remember to click the <b>Save dashboard</b> button when you're happy with the layout.
                     </ul>
                     For more information, refer to the <a href="https://dan-danache.github.io/hubitat/watchtower-app/" target="_blank">official documentation</a>.
-                    <br><br>
-                    Enjoy customizing your dashboard!
                 `
             }, 2, 2, 1, 0)
         } else {

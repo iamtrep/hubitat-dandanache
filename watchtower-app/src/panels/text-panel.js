@@ -8,7 +8,11 @@ export class TextPanel extends LitElement {
             left: 50%;
             width: calc(100% - 2em);
             transform: translate(-50%, -50%);
+            max-height: 100%;
+            background-color: var(--bg-color-darker);
+            overflow-y: auto;
         }
+        article a { color: var(--Blue) }
     `
 
     static properties = {

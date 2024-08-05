@@ -491,6 +491,7 @@ Map dashboards() {
 
         section {
             paragraph "${renderCommonStyle()}${table}"
+            //input(name:'useCloudLinks', type:'bool', title:'Use cloud links', defaultValue:false, submitOnChange:true)
         }
 
         // Render add button
@@ -986,7 +987,7 @@ def getIconMapping() {
 }
 
 def getAppManifestMapping() {
-    debug "Returning PWA manifest: ${params}"
+    debug "Returning PWA manifest for dashboard: ${params.name}"
     if (params.name == null) throw new RuntimeException('Missing "name" query param')
     return render(
         status: 200,
