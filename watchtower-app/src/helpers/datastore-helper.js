@@ -104,7 +104,7 @@ export class DatastoreHelper {
 
     static buildCsvUrl(deviceId, precision) {
         if (window.location.host !== 'cloud.hubitat.com') return `/local/wt_${deviceId}_${precision}.csv`
-        return `./watchtower.csv?device=${deviceId}&precision${precision}?access_token=${this.accessToken()}`
+        return `./watchtower.csv?device=${deviceId}&precision=${precision}&access_token=${this.accessToken()}`
     }
 
     static async fetchAttributeData(attribute, deviceIds, precision) {
