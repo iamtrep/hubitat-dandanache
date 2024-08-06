@@ -540,7 +540,6 @@ Note: ".grid-stack" is required for proper CSS styling and drag/drop, and is the
             width: calc(100% - 2em);
             transform: translate(-50%, -50%);
             max-height: 100%;
-            background-color: var(--bg-color-darker);
             overflow-y: auto;
         }
         article a { color: var(--Blue) }

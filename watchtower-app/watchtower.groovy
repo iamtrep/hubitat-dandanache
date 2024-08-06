@@ -28,59 +28,59 @@ import com.hubitat.hub.domain.Event
 @Field static final List<String> HUB_ATTRIBUTES = ['hubCPU', 'hubRAM', 'hubTemperature', 'hubDatabaseSize']
 
 @Field static final Map SUPPORTED_ATTRIBUTES = [
-    hubCPU: [ min:0, max:100, unit:'%', probe:{ device, state, events, begin, end -> state.hubCPU ?: '0' } ],
-    hubRAM: [ min:0, unit:'MB free', probe:{ device, state, events, begin, end -> state.hubRAM ?: '0' } ],
-    hubTemperature: [ min:0, unit:'°', probe:{ device, state, events, begin, end -> state.hubTemperature ?: '0' } ],
-    hubDatabaseSize: [ min:0, unit:'MB', probe:{ device, state, events, begin, end -> state.hubDatabaseSize ?: '0' } ],
+    hubCPU: [min:0, max:100, unit:'%', probe:{ device, state, events, begin, end -> state.hubCPU ?: '0' }],
+    hubRAM: [min:0, unit:'MB free', probe:{ device, state, events, begin, end -> state.hubRAM ?: '0' }],
+    hubTemperature: [min:0, unit:'°', probe:{ device, state, events, begin, end -> state.hubTemperature ?: '0' }],
+    hubDatabaseSize: [min:0, unit:'MB', probe:{ device, state, events, begin, end -> state.hubDatabaseSize ?: '0' }],
 
-    acceleration: [ min:0, max:100, unit:'% active', probe:{ device, state, events, begin, end -> calc5minValue(device, 'acceleration', ['active'], events, begin, end) } ],
-    airQualityIndex: [ min:0, max:500, unit:'', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'airQualityIndex', events) } ],
-    amperage: [ min:0, unit:'A', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'amperage', events) } ],
-    battery: [ min:0, max:100, unit:'%', probe:{ device, state, events, begin, end -> "${device.currentValue('battery')}" } ],
-    camera: [ min:0, max:100, unit:'% on', probe:{ device, state, events, begin, end -> calc5minValue(device, 'camera', ['on'], events, begin, end) } ],
-    carbonDioxide: [ min:0, unit:'ppm', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'carbonDioxide', events) } ],
-    contact: [ min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'contact', ['open'], events, begin, end) } ],
-    coolingSetpoint: [ min:0, unit:'°', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'coolingSetpoint', events) } ],
-    door: [ min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'door', ['open'], events, begin, end) } ],
-    energy: [ min:0, unit:'kWh', probe:{ device, state, events, begin, end -> calc5minIncrease(device, 'energy', state) } ],
-    filterStatus: [ min:0, max:100, unit:'% normal', probe:{ device, state, events, begin, end -> "${device.currentValue('filterStatus')}" == 'normal' ? 100 : 0 } ],
-    frequency: [ unit:'Hz', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'frequency', events) } ],
-    goal: [ min:0, unit:'steps', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'goal', events) } ],
-    heatingSetpoint: [ min:0, unit:'°', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'heatingSetpoint', events) } ],
-    humidity: [ min:0, max:100, unit:'%', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'humidity', events) } ],
-    illuminance: [ min:0, unit:'lx', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'illuminance', events) } ],
-    lock: [ unit:'% locked', probe:{ device, state, events, begin, end -> calc5minValue(device, 'lock', ['locked'], events, begin, end) } ],
-    lqi: [ min:0, max:255, unit:'lqi', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'lqi', events) } ],
-    motion: [ min:0, max:100, unit:'% active', probe:{ device, state, events, begin, end -> calc5minValue(device, 'motion', ['active'], events, begin, end) } ],
-    naturalGas: [ min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'naturalGas', ['detected'], events, begin, end) } ],
-    networkStatus: [ min:0, max:100, unit:'% online', probe:{ device, state, events, begin, end -> calc5minValue(device, 'networkStatus', ['online'], events, begin, end) } ],
-    pH: [ unit:'pH', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'ph', events) } ],
-    power: [ min:0, unit:'W', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'power', events) } ],
-    presence: [ min:0, max:100, unit:'% present', probe:{ device, state, events, begin, end -> calc5minValue(device, 'presence', ['present'], events, begin, end) } ],
-    pressure: [ min:0, unit:'psi', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'pressure', events) } ],
-    rate: [ min:0, unit:'LPM', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'rate', events) } ],
-    rssi: [ min:0, max:255, unit:'rssi', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'rssi', events) } ],
-    securityKeypad: [ min:0, max:100, unit:'% armed', probe:{ device, state, events, begin, end -> calc5minValue(device, 'securityKeypad', ['armed home', 'armed away'], events, begin, end) } ],
-    sessionStatus: [ min:0, max:100, unit:'% running', probe:{ device, state, events, begin, end -> calc5minValue(device, 'sessionStatus', ['running'], events, begin, end) } ],
-    shock: [ min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'shock', ['detected'], events, begin, end) } ],
-    sleeping: [ min:0, max:100, unit:'% sleeping', probe:{ device, state, events, begin, end -> calc5minValue(device, 'sleeping', ['sleeping'], events, begin, end) } ],
-    smoke: [ min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'smoke', ['detected'], events, begin, end) } ],
-    sound: [ min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'sound', ['detected'], events, begin, end) } ],
-    soundPressureLevel: [ unit:'dB', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'soundPressureLevel', events) } ],
-    steps: [ unit:'steps', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'steps', events) } ],
-    'switch': [ min:0, max:100, unit:'% on', probe:{ device, state, events, begin, end -> calc5minValue(device, 'switch', ['on'], events, begin, end) } ],
-    tamper: [ min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'tamper', ['detected'], events, begin, end) } ],
-    temperature: [ min:0, unit:'°', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'temperature', events) } ],
-    transportStatus: [ min:0, max:100, unit:'% playing', probe:{ device, state, events, begin, end -> calc5minValue(device, 'transportStatus', ['playing'], events, begin, end) } ],
-    valve: [ min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'valve', ['open'], events, begin, end) } ],
-    water: [ min:0, max:100, unit:'% wet', probe:{ device, state, events, begin, end -> calc5minValue(device, 'water', ['wet'], events, begin, end) } ],
-    windowBlind: [ min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'windowBlind', ['opening', 'partially open', 'open'], events, begin, end) } ],
-    windowShade: [ min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'windowShade', ['opening', 'partially open', 'open'], events, begin, end) } ],
-    voltage: [ min:0, unit:'V', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'voltage', events) } ],
+    acceleration: [min:0, max:100, unit:'% active', probe:{ device, state, events, begin, end -> calc5minValue(device, 'acceleration', ['active'], events, begin, end) }],
+    airQualityIndex: [min:0, max:500, unit:'', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'airQualityIndex', events) }],
+    amperage: [min:0, unit:'A', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'amperage', events) }],
+    battery: [min:0, max:100, unit:'%', probe:{ device, state, events, begin, end -> "${device.currentValue('battery')}" }],
+    camera: [min:0, max:100, unit:'% on', probe:{ device, state, events, begin, end -> calc5minValue(device, 'camera', ['on'], events, begin, end) }],
+    carbonDioxide: [min:0, unit:'ppm', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'carbonDioxide', events) }],
+    contact: [min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'contact', ['open'], events, begin, end) }],
+    coolingSetpoint: [min:0, unit:'°', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'coolingSetpoint', events) }],
+    door: [min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'door', ['open'], events, begin, end) }],
+    energy: [min:0, unit:'kWh', probe:{ device, state, events, begin, end -> calc5minIncrease(device, 'energy', state) }],
+    filterStatus: [min:0, max:100, unit:'% normal', probe:{ device, state, events, begin, end -> "${device.currentValue('filterStatus')}" == 'normal' ? 100 : 0 }],
+    frequency: [unit:'Hz', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'frequency', events) }],
+    goal: [min:0, unit:'steps', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'goal', events) }],
+    heatingSetpoint: [min:0, unit:'°', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'heatingSetpoint', events) }],
+    humidity: [min:0, max:100, unit:'%', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'humidity', events) }],
+    illuminance: [min:0, unit:'lx', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'illuminance', events) }],
+    lock: [unit:'% locked', probe:{ device, state, events, begin, end -> calc5minValue(device, 'lock', ['locked'], events, begin, end) }],
+    lqi: [min:0, max:255, unit:'lqi', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'lqi', events) }],
+    motion: [min:0, max:100, unit:'% active', probe:{ device, state, events, begin, end -> calc5minValue(device, 'motion', ['active'], events, begin, end) }],
+    naturalGas: [min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'naturalGas', ['detected'], events, begin, end) }],
+    networkStatus: [min:0, max:100, unit:'% online', probe:{ device, state, events, begin, end -> calc5minValue(device, 'networkStatus', ['online'], events, begin, end) }],
+    pH: [unit:'pH', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'ph', events) }],
+    power: [min:0, unit:'W', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'power', events) }],
+    presence: [min:0, max:100, unit:'% present', probe:{ device, state, events, begin, end -> calc5minValue(device, 'presence', ['present'], events, begin, end) }],
+    pressure: [min:0, unit:'psi', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'pressure', events) }],
+    rate: [min:0, unit:'LPM', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'rate', events) }],
+    rssi: [min:0, max:255, unit:'rssi', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'rssi', events) }],
+    securityKeypad: [min:0, max:100, unit:'% armed', probe:{ device, state, events, begin, end -> calc5minValue(device, 'securityKeypad', ['armed home', 'armed away'], events, begin, end) }],
+    sessionStatus: [min:0, max:100, unit:'% running', probe:{ device, state, events, begin, end -> calc5minValue(device, 'sessionStatus', ['running'], events, begin, end) }],
+    shock: [min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'shock', ['detected'], events, begin, end) }],
+    sleeping: [min:0, max:100, unit:'% sleeping', probe:{ device, state, events, begin, end -> calc5minValue(device, 'sleeping', ['sleeping'], events, begin, end) }],
+    smoke: [min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'smoke', ['detected'], events, begin, end) }],
+    sound: [min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'sound', ['detected'], events, begin, end) }],
+    soundPressureLevel: [unit:'dB', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'soundPressureLevel', events) }],
+    steps: [unit:'steps', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'steps', events) }],
+    'switch': [min:0, max:100, unit:'% on', probe:{ device, state, events, begin, end -> calc5minValue(device, 'switch', ['on'], events, begin, end) }],
+    tamper: [min:0, max:100, unit:'% detected', probe:{ device, state, events, begin, end -> calc5minValue(device, 'tamper', ['detected'], events, begin, end) }],
+    temperature: [min:0, unit:'°', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'temperature', events) }],
+    transportStatus: [min:0, max:100, unit:'% playing', probe:{ device, state, events, begin, end -> calc5minValue(device, 'transportStatus', ['playing'], events, begin, end) }],
+    valve: [min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'valve', ['open'], events, begin, end) }],
+    water: [min:0, max:100, unit:'% wet', probe:{ device, state, events, begin, end -> calc5minValue(device, 'water', ['wet'], events, begin, end) }],
+    windowBlind: [min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'windowBlind', ['opening', 'partially open', 'open'], events, begin, end) }],
+    windowShade: [min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'windowShade', ['opening', 'partially open', 'open'], events, begin, end) }],
+    voltage: [min:0, unit:'V', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'voltage', events) }],
 
     // Non-standard attributes
-    pm25: [ unit:'μg/m3', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'pm25', events) } ],
-    vocIndex: [ unit:'', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'vocIndex', events) } ],
+    pm25: [unit:'μg/m3', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'pm25', events) }],
+    vocIndex: [unit:'', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'vocIndex', events) }],
 ]
 
 @CompileStatic
@@ -491,7 +491,10 @@ Map dashboards() {
 
         section {
             paragraph "${renderCommonStyle()}${table}"
-            //input(name:'useCloudLinks', type:'bool', title:'Use cloud links', defaultValue:false, submitOnChange:true)
+            // input(name:'useCloudLinks', type:'bool', title:'Use cloud links', defaultValue:false, submitOnChange:true)
+            // if (useCloudLinks) {
+            //     paragraph '<b>Warning</b>: Using cloud links will impose a <u>substantial load</u> on your hub resources and the Hubitat cloud services. This is due to metrics data files from the File Manager being proxied through the cloud infrastructure.'
+            // }
         }
 
         // Render add button
@@ -748,7 +751,7 @@ def collectDeviceConfiguration() {
 
         // Skip uncomplete/broken entries
         if (app.getSetting("d.${position}") == null || app.getSetting("a.${position}") == null) continue
-        retVal.add([ position, app.getSetting("d.${position}"), app.getSetting("a.${position}") ])
+        retVal.add([position, app.getSetting("d.${position}"), app.getSetting("a.${position}")])
     }
     state.lastPosition = retVal.size == 0 ? 0 : retVal.last()[0]
 
@@ -763,24 +766,18 @@ List<String> collectDashboards() {
 }
 
 def buildURL(String fileName) {
-    String prefix = useCloudLinks == true
-        ? "${getApiServerUrl()}/${hubUID}/apps/${app.id}"
-        : "${(getFullLocalApiServerUrl() =~ URL_PATTERN).findAll()[0][1]}"
-    
+    String prefix = useCloudLinks == true ? "${getApiServerUrl()}/${hubUID}/apps/${app.id}" : "${(getFullLocalApiServerUrl() =~ URL_PATTERN).findAll()[0][1]}"
     return "${prefix}/${fileName}?access_token=${state.accessToken}"
 }
 
 def buildDashboardURL(String dashboardName) {
-    String prefix = useCloudLinks == true
-        ? "${getApiServerUrl()}/${hubUID}/apps/${app.id}"
-        : "${(getFullLocalApiServerUrl() =~ URL_PATTERN).findAll()[0][1]}"
-    
+    String prefix = useCloudLinks == true ? "${getApiServerUrl()}/${hubUID}/apps/${app.id}" : "${(getFullLocalApiServerUrl() =~ URL_PATTERN).findAll()[0][1]}"
     return "${prefix}/watchtower.html?name=${java.net.URLEncoder.encode(dashboardName, 'UTF-8')}&access_token=${state.accessToken}"
 }
 
 
 // ===================================================================================================================
-// Metrics handler
+// Metrics handlers
 // ===================================================================================================================
 
 void collectHubMetrics() {
@@ -836,7 +833,7 @@ void update5MinData(ZonedDateTime now, DeviceWrapper device, List<String> attrs)
     debug "Updating 5 min metrics for device #${deviceId}, events=${events} ..."
 
     // Compute and save a new CSV record
-    List<String> newCsvRecord = [ "${now.toEpochSecond()}" ]
+    List<String> newCsvRecord = ["${now.toEpochSecond()}"]
     attrs.each { newCsvRecord.add(SUPPORTED_ATTRIBUTES[it].probe(device, state, events, beginDate.getTime(), now.toInstant().toEpochMilli())) }
     appendDataRecord("wt_${deviceId}_5m.csv", newCsvRecord, attrs, conf_5minMaxLines ?: 864)
 }
@@ -847,13 +844,21 @@ void update1HourData(ZonedDateTime now, String deviceId, List<String> attrs) {
     // Compute averages from lower interval file
     String lowerFileName = "wt_${deviceId}_5m.csv"
     Long onlyAfter = now.minusHours(1).toEpochSecond()
-    List<BigDecimal> averages = computeAverages(lowerFileName, onlyAfter)
-    if (averages.size == 0) return
+    try {
+        String lowerFileContents = new String(downloadHubFile(lowerFileName), 'UTF-8')
+        BigDecimal[] averages = computeAverages(lowerFileContents, attrs, onlyAfter)
+        if (averages == null) {
+            warn 'Could not compute 1 hour averages'
+            return
+        }
 
-    // Compute and save a new CSV record
-    List<String> newCsvRecord = [ "${now.toEpochSecond()}" ]
-    averages.each { newCsvRecord.add("${it.setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()}") }
-    appendDataRecord("wt_${deviceId}_1h.csv", newCsvRecord, attrs, conf_1HourMaxLines ?: 744)
+        // Create and save a new CSV record
+        List<String> newCsvRecord = ["${now.toEpochSecond()}"]
+        for (int i = 0; i < averages.length; i++) newCsvRecord.add("${averages[i].setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()}")
+        appendDataRecord("wt_${deviceId}_1h.csv", newCsvRecord, attrs, conf_1HourMaxLines ?: 744)
+    } catch (NoSuchFileException ex) {
+        warn "update1HourData: File not found: ${lowerFileName}"
+    }
 }
 
 void update1DayData(ZonedDateTime now, String deviceId, List<String> attrs) {
@@ -862,13 +867,21 @@ void update1DayData(ZonedDateTime now, String deviceId, List<String> attrs) {
     // Compute averages from lower interval file
     String lowerFileName = "wt_${deviceId}_5m.csv"
     Long onlyAfter = now.minusDays(1).toEpochSecond()
-    List<BigDecimal> averages = computeAverages(lowerFileName, onlyAfter)
-    if (averages.size == 0) return
+    try {
+        String lowerFileContents = new String(downloadHubFile(lowerFileName), 'UTF-8')
+        BigDecimal[] averages = computeAverages(lowerFileContents, attrs, onlyAfter)
+        if (averages == null) {
+            warn 'Could not compute 1 day averages'
+            return
+        }
 
-    // Compute and save a new CSV record
-    List<String> newCsvRecord = [ "${now.toEpochSecond()}" ]
-    averages.each { newCsvRecord.add("${it.setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()}") }
-    appendDataRecord("wt_${deviceId}_1d.csv", newCsvRecord, attrs, conf_1DayMaxLines ?: 732)
+        // Create and save a new CSV record
+        List<String> newCsvRecord = ["${now.toEpochSecond()}"]
+        for (int i = 0; i < averages.length; i++) newCsvRecord.add("${averages[i].setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()}")
+        appendDataRecord("wt_${deviceId}_1d.csv", newCsvRecord, attrs, conf_1DayMaxLines ?: 732)
+    } catch (NoSuchFileException ex) {
+        warn "update1DayData: File not found: ${lowerFileName}"
+    }
 }
 
 void update1WeekData(ZonedDateTime now, String deviceId, List<String> attrs) {
@@ -877,13 +890,21 @@ void update1WeekData(ZonedDateTime now, String deviceId, List<String> attrs) {
     // Compute averages from lower interval file
     String lowerFileName = "wt_${deviceId}_1h.csv"
     Long onlyAfter = now.minusWeeks(1).toEpochSecond()
-    List<BigDecimal> averages = computeAverages(lowerFileName, onlyAfter)
-    if (averages.size == 0) return
+    try {
+        String lowerFileContents = new String(downloadHubFile(lowerFileName), 'UTF-8')
+        BigDecimal[] averages = computeAverages(lowerFileContents, attrs, onlyAfter)
+        if (averages == null) {
+            warn 'Could not compute 1 week averages'
+            return
+        }
 
-    // Compute and save a new CSV record
-    List<String> newCsvRecord = [ "${now.toEpochSecond()}" ]
-    averages.each { newCsvRecord.add("${it.setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()}") }
-    appendDataRecord("wt_${deviceId}_1w.csv", newCsvRecord, attrs, conf_1WeekMaxLines ?: 522)
+        // Create and save a new CSV record
+        List<String> newCsvRecord = ["${now.toEpochSecond()}"]
+        for (int i = 0; i < averages.length; i++) newCsvRecord.add("${averages[i].setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()}")
+        appendDataRecord("wt_${deviceId}_1w.csv", newCsvRecord, attrs, conf_1WeekMaxLines ?: 522)
+    } catch (NoSuchFileException ex) {
+        warn "update1DayData: File not found: ${lowerFileName}"
+    }
 }
 
 // ===================================================================================================================
@@ -908,29 +929,41 @@ List<String> loadDataLines(String fileName, Long maxLines) {
     }
 }
 
-List<BigDecimal> computeAverages(String fileName, Long onlyAfter) {
-    debug "computeAverages(${fileName}, ${onlyAfter})"
-    List<String> fileLines = null
-    try {
-        fileLines = new String(downloadHubFile(fileName), 'UTF-8').trim().split("\n").drop(1)
-        if (fileLines.size == 0) return Collections.emptyList()
-    } catch (NoSuchFileException ex) {
-        warn "computeAverages(${fileName}, ${onlyAfter}): File not found: ${fileName}"
-        return Collections.emptyList()
+@CompileStatic
+BigDecimal[] computeAverages(String fileContents, List<String> attrs, Long onlyAfter) {
+    if (fileContents == null) return null
+
+    String[] fileLines = fileContents.trim().split('\n')
+    if (fileLines.length < 2) return null
+
+    // Sanity check; do we need this?
+    int attrsCount = attrs.size()
+    if (fileLines[0].split(',').length != attrsCount + 1) {
+        warn "Sanity check failed: ${fileLines[0].split(',').length} != ${attrsCount + 1}"
+        return null
     }
 
-    // Parse and retrieve records of interest
-    List<List<BigDecimal>> recordsOfInterest = fileLines
-        .collect { line -> line.split(',').collect { new BigDecimal(it) } }
-        .findAll { it[0] > onlyAfter }
-        .collect { it.tail() }
-    int validRecordsNumber = recordsOfInterest.size
-    debug "Found ${validRecordsNumber} records of interest: ${recordsOfInterest}"
+    // Init result
+    BigDecimal[] retVal = new BigDecimal[attrsCount]
+    for (int i = 0; i < attrsCount; i++) retVal[i] = BigDecimal.ZERO
 
-    // Calculate list with average values
-    return recordsOfInterest
-        .inject(null) { result, record -> result == null ? record : ([result, record].transpose()*.sum()) }
-        .collect { it / validRecordsNumber }
+    // Parse only records of interest (starting from the end of the file, and skipping first line) and calculate their sums
+    int onlyAfterRecordsCount = 0
+    for (int i = fileLines.length - 1; i > 0; i--) {
+        String[] rowElements = fileLines[i].split(',')
+        if (Long.parseLong(rowElements[0]) <= onlyAfter) break
+        for (int j = 0; j < attrsCount; j++) retVal[j] += new BigDecimal(rowElements[j + 1])
+        onlyAfterRecordsCount++
+    }
+    debug "Found ${onlyAfterRecordsCount} records of interest"
+    if (onlyAfterRecordsCount == 0) return null
+
+    // Divide by onlyAfterRecordsCount to get the averages; exception is the 'energy' attribute, that si a counter not a gauge
+    for (int i = 0; i < attrsCount; i++) {
+        if (attrs.get(i) == 'energy') continue
+        retVal[i] = retVal[i] / onlyAfterRecordsCount
+    }
+    return retVal
 }
 
 void deleteDataFiles(DeviceWrapper device) {
@@ -947,22 +980,21 @@ void deleteDataFiles(DeviceWrapper device) {
 // ===================================================================================================================
 
 mappings {
-    path('/watchtower.html') { action:[ GET:'getDashboardHtmlMapping' ]}
-    path('/watchtower.js') { action:[ GET:'getDashboardJsMapping' ]}
-    path('/icon.png') { action:[ GET:'getIconMapping' ]}
-    path('/app.webmanifest') { action:[ GET:'getAppManifestMapping' ]}
-    path('/grid-layout.json') { action:[ GET:'getGridLayoutMapping', PUT:'setGridLayoutMapping' ]}
-    path('/monitored-devices.json') { action:[ GET:'getMonitoredDevicesMapping' ]}
-    path('/supported-attributes.json') { action:[ GET:'getSupportedAttributesMapping' ]}
-    path("/hub-info.json") { action:[ GET:'getHubInfoMapping' ]}
+    path('/watchtower.html') { action:[GET:'getDashboardHtmlMapping']}
+    path('/watchtower.js') { action:[GET:'getDashboardJsMapping']}
+    path('/watchtower.csv') { action:[GET:'getDashboardCsvMapping']}
+    path('/icon.png') { action:[GET:'getIconMapping']}
+    path('/app.webmanifest') { action:[GET:'getAppManifestMapping']}
+    path('/grid-layout.json') { action:[GET:'getGridLayoutMapping', PUT:'setGridLayoutMapping']}
+    path('/monitored-devices.json') { action:[GET:'getMonitoredDevicesMapping']}
+    path('/supported-attributes.json') { action:[GET:'getSupportedAttributesMapping']}
+    path("/hub-info.json") { action:[GET:'getHubInfoMapping']}
 }
 
 def getDashboardHtmlMapping() {
     debug "Proxying watchtower.html to ${request.HOST} (${request.requestSource})"
     if (params.name == null) throw new RuntimeException('Missing "name" query param')
-    return render(
-        status: 200,
-        contentType: 'text/html',
+    return render(status:200, contentType:'text/html',
         data: new String(downloadHubFile('watchtower.html'), 'UTF-8')
             .replaceAll('\\$\\{access_token\\}', "${state.accessToken}")
             .replaceAll('\\$\\{dashboard_name\\}', "${params.name}")
@@ -971,27 +1003,29 @@ def getDashboardHtmlMapping() {
 
 def getDashboardJsMapping() {
     debug "Proxying watchtower.js to ${request.HOST} (${request.requestSource})"
-    return render(
-        status: 200,
-        contentType: 'text/javascript',
-        data: new String(downloadHubFile('watchtower.js'), 'UTF-8')
+    // if (request.requestSource == 'cloud') return render(status:301,
+    //     headers: [location:'https://dan-danache.github.io/hubitat/watchtower-app/watchtower.js']
+    // )
+    return render(status:200, contentType:'text/javascript', data:new String(downloadHubFile('watchtower.js'), 'UTF-8'))
+}
+
+def getDashboardCsvMapping() {
+    debug "Proxying CSV data file: device=${params.device}, precision=${params.precision}"
+    if (params.device == null) throw new RuntimeException('Missing "device" query param')
+    if (params.precision == null) throw new RuntimeException('Missing "precision" query param')
+    return render(status:200, contentType:'text/csv',
+        data: new String(downloadHubFile("wt_${params.device}_${params.precision}.csv"), 'UTF-8')
     )
 }
 
 def getIconMapping() {
-    return render(
-        status: 200,
-        contentType: 'image/png',
-        data: APP_ICON.decodeBase64()
-    )
+    return render(status:200, contentType:'image/png', data:APP_ICON.decodeBase64())
 }
 
 def getAppManifestMapping() {
     debug "Returning PWA manifest for dashboard: ${params.name}"
     if (params.name == null) throw new RuntimeException('Missing "name" query param')
-    return render(
-        status: 200,
-        contentType: 'application/manifest+json',
+    return render(status:200, contentType:'application/manifest+json',
         data: """\
         {
             "id": "${java.util.UUID.nameUUIDFromBytes(params.name.getBytes())}",
@@ -1045,13 +1079,13 @@ def saveGridLayout(data) {
 }
 
 def getMonitoredDevicesMapping() {
-    debug "Returning monitored devices list"
+    debug 'Returning monitored devices list'
     List devices = collectDeviceConfiguration().collect { return [id:it[1]?.id ?: '0', name:it[1]?.displayName ?: HUB_NAME, attrs:it[2]] }
     return render(status:200, contentType:'application/json', data:new JsonBuilder(devices).toString())
 }
 
 def getSupportedAttributesMapping() {
-    debug "Returning supported attributes list"
+    debug 'Returning supported attributes list'
     Map attributes = SUPPORTED_ATTRIBUTES.collectEntries{ key, val -> [key, val.findAll { k, v -> k != 'probe' }] }
     attributes.coolingSetpoint.unit = "°${location.temperatureScale}"
     attributes.heatingSetpoint.unit = "°${location.temperatureScale}"
@@ -1061,18 +1095,14 @@ def getSupportedAttributesMapping() {
 }
 
 def getHubInfoMapping() {
-    debug "Returning Hub information"
-    return render(
-        status: 200,
-        contentType: "application/json",
-        data: """\
+    debug 'Returning Hub information'
+    return render(status:200, contentType:'application/json', data: """\
         {
             "name": "${location.hub.name}",
             "ip": "${location.hub.localIP}",
             "uptime": ${location.hub.uptime.toLong()},
             "model": "${getHubVersion()}",
-            "fw": "${location.hub.firmwareVersionString}",
-            "tscale": "${location.temperatureScale}"
+            "fw": "${location.hub.firmwareVersionString}"
         }
         """
     )
