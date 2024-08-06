@@ -100,7 +100,7 @@ export class AttributePanel extends LitElement {
             title: {
                 display: true,
                 text: `${attrLabel} ${supportedAttributes[this.config.attr].unit}`,
-                color: colors.Green
+                color: colors.TextColorDarker
             },
             ticks: { color: colors.TextColorDarker },
             grid: { color: colors.TextColorDarker + '33' },

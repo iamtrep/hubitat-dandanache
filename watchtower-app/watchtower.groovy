@@ -28,7 +28,7 @@ import com.hubitat.hub.domain.Event
 @Field static final List<String> HUB_ATTRIBUTES = ['hubCPU', 'hubRAM', 'hubTemperature', 'hubDatabaseSize']
 
 @Field static final Map SUPPORTED_ATTRIBUTES = [
-    hubCPU: [min:0, max:100, unit:'%', probe:{ device, state, events, begin, end -> state.hubCPU ?: '0' }],
+    hubCPU: [min:0, max:50, unit:'%', probe:{ device, state, events, begin, end -> state.hubCPU ?: '0' }],
     hubRAM: [min:0, unit:'MB free', probe:{ device, state, events, begin, end -> state.hubRAM ?: '0' }],
     hubTemperature: [min:0, unit:'°', probe:{ device, state, events, begin, end -> state.hubTemperature ?: '0' }],
     hubDatabaseSize: [min:0, unit:'MB', probe:{ device, state, events, begin, end -> state.hubDatabaseSize ?: '0' }],

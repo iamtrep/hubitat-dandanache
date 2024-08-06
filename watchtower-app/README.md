@@ -4,13 +4,11 @@
 
 Watchtower is a Hubitat application designed to monitor and record device attributes at various time resolutions, ensuring efficient long-term data retention.
 
-Utilizing a fixed-size database akin to a Round-Robin Database (RRD), Watchtower captures high-resolution data every five minutes, which then degrades into hourly, daily, and weekly averages. This method allows users to maintain a comprehensive historical record of their smart devices' performance without overwhelming storage capacities.
+Watchtower captures high-resolution data every five minutes, which then degrades into hourly, daily, and weekly averages. This method allows users to maintain a comprehensive historical record of their smart devices' performance without overwhelming storage capacities.
 
 Users can configure which devices and attributes to monitor, and the application automatically reads and stores these values in CSV files, making it easy to access and analyze the collected data.
 
 In addition to robust data collection, Watchtower offers customizable dashboards for visualizing device metrics. Dashboards can render various types of tiles, such as device charts, attribute comparisons, hub details, text/HTML, and iframes.
-
-Watchtower provides a reliable solution for long-term smart home monitoring and data visualization.
 
 ## Installation
 
@@ -23,9 +21,6 @@ To install the Watchtower app using the Hubitat Package Manager (and receive aut
 5. Choose **Watchtower by Dan Danache** and click **Next**.
 6. Read the license agreement and click **Next**.
 7. Wait for the installation to complete and click **Next**.
-8. Go back to the **Apps** menu in the Hubitat interface.
-9. Click the **Add user app** button in the top right corner.
-10. Select **Watchtower** from the list of apps.
 
 ## Metrics Collection
 
@@ -57,7 +52,7 @@ The following time resolution are used:
 To use the Watchtower app, follow these steps:
 
 1. Go to the **Apps** menu in the Hubitat interface.
-2. Select **Watchtower** from the list of apps.
+1. Select **Watchtower** from the list of apps.
 
 ### Main Screen
 
@@ -69,13 +64,11 @@ When you open the Watchtower app, the following screen will welcome you.
 
 On this screen, you can configure which smart devices will be monitored by the Watchtower app.
 
-Click the **Add device** button to start monitoring a new device. You will be prompted to select a device and then select what device attributes (from device Current State) you want to monitor.
-
-**Note**: Not all device attributes are supported. Only the [official attributes](https://docs2.hubitat.com/en/developer/driver/capability-list) will be available for selection.
-
 ![Devices screen](img/devices.png)
 
-Click the **Done** button on the bottom-right to return back to the main screen.
+Click the **Add device configuration** button to start monitoring a new device. You will be prompted to select a device and then select what device attributes (from device Current State) you want to monitor.
+
+**Note**: Not all device attributes are supported. Only the [official attributes](https://docs2.hubitat.com/en/developer/driver/capability-list) will be available for selection.
 
 ![Add device screen](img/add-device.png)
 
@@ -99,7 +92,7 @@ Click the **Done** button on the bottom-right to return back to the main screen.
 
 From the settings screen, you can configure how long the collected metrics are stored for each time resolution.
 
-**Warning**: Changing the "max record" settings will directly impact the CSV files size for every configured device. Loading of dashboard tiles will also be slower if you increase the default values since more data needs to be downloaded from the hub.
+**Caution**: Changing the "max record" settings will directly impact the CSV files size for every configured device. Loading of dashboard tiles will also be slower if you increase the default values since more data needs to be downloaded from the hub.
 
 ![Settings screen](img/settings.png)
 
@@ -107,7 +100,7 @@ Click the **Done** button on the bottom-right to save the configuration and retu
 
 ## Dashboard Configuration
 
-When you load a dashboard in a new tab for the first time (by clicking the dashboard name in the Watchtower app), a blank screen will appear where you can add dashboard tiles.
+When you load a dashboard in a new tab for the first time (by clicking the dashboard name in the Watchtower app), a blank screen will appear where you can add multiple tiles.
 
 **Note**: If you have just configured new monitored devices in the Watchtower app, there may not be enough data collected to display on the dashboard tiles. If a chart displays the **No data yet** message, don't worry. Simply check back later (e.g., in a day or two) to allow the application to collect sufficient data points.
 
@@ -115,11 +108,11 @@ When you load a dashboard in a new tab for the first time (by clicking the dashb
 
 The dashboard menu is not displayed by default and will only appear when the dashboard has no tiles. To toggle the dashboard menu, press the **ESC** (Escape) key on your keyboard. On mobile devices, you can bring up the menu by swiping from the left margin of the screen.
 
+![Dashboard menu](img/dashboard-menu.png)
+
 From the dashboard menu on the left, you can add a new dashboard tile, save the current dashboard layout, or configure the auto-refresh interval.
 
 **Important**: Changes to the dashboard layout are not saved automatically! When you are satisfied with the dashboard layout, you must click the **Save dashboard** button.
-
-![Dashboard menu](img/dashboard-menu.png)
 
 ### Supported Dashboard Tiles
 
@@ -175,12 +168,14 @@ The zoom and pan functionality allows you to interact with charts displaying mul
 #### Zooming In and Out
 
 - **Zoom In**: Scroll up with the mouse wheel to magnify the chart, focusing on specific data points or intervals.
+
 - **Zoom Out**: Scroll down with the mouse wheel to broaden the view, encompassing a larger time range or dataset.
 
 #### Panning (Horizontal Movement)
 Panning enables you to explore different time periods within the same chart:
 
 - **Left Panning**: Click, hold, and drag the chart to the left to view later data points or shift the view to the future.
+
 - **Right Panning**: Click, hold, and drag the chart to the right to reveal earlier data points or shift the view to the past.
 
 These interactive features enhance your ability to dynamically analyze data. Experiment with zooming and panning to uncover insights within your charts!
@@ -193,7 +188,7 @@ Charts will automatically switch between line and bar types based on the number 
 Using the left dashboard menu, select the desired auto-refresh interval.
 
 ### Themes Support
-Dashboards can be configured to use a light or dark theme. You can change the theme from the left dashboard menu.
+Dashboards can be configured to use a light or dark theme. You can change the theme from the dashboard menu.
 
 ![Light theme](img/theme-light.png)
 
