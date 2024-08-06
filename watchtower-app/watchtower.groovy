@@ -1,4 +1,4 @@
-f/*
+/*
  * Watchtower app for Hubitat
  *
  * Data-driven insights for a smarter home.
