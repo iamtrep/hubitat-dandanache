@@ -125,9 +125,9 @@ export class DashboardMenu extends LitElement {
 
     connectedCallback() {
         super.connectedCallback();
-        window.addEventListener('keydown', event =>  event.key === '`' && (this.open = !this.open));
-        window.addEventListener('touchstart', event =>  this.touchStart(event));
-        window.addEventListener('touchend', event =>  this.touchEnd(event));
+        window.addEventListener('keydown', event => event.key === 'Escape' && (this.open = !this.open));
+        window.addEventListener('touchstart', event => this.touchStart(event));
+        window.addEventListener('touchend', event => this.touchEnd(event));
     }
 
     applyMobileView(mobileView) {

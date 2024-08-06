@@ -75,7 +75,7 @@ export class DatastoreHelper {
     static async fetchDeviceData(deviceId, attr1, attr2, precision) {
         const data = { attr1: [], attr2: [] }
         try {
-            const response = await fetch(new Request(`/local/wt_${deviceId}_${precision}.csv`), { cache: 'no-store' })
+            const response = await fetch(new Request(this.buildCsvUrl(deviceId, precision)), { cache: 'no-store' })
 
             // Data not available yet
             if (response.status == 404) return data
@@ -100,6 +100,11 @@ export class DatastoreHelper {
             console.error(ex)
             alert(ex.message)
         }
+    }
+
+    static buildCsvUrl(deviceId, precision) {
+        if (window.location.host !== 'cloud.hubitat.com') return `/local/wt_${deviceId}_${precision}.csv`
+        return `./watchtower.csv?device=${deviceId}&precision${precision}?access_token=${this.accessToken()}`
     }
 
     static async fetchAttributeData(attribute, deviceIds, precision) {

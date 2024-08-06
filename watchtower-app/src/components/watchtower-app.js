@@ -1,4 +1,4 @@
-import { html, css, LitElement } from '../vendor/vendor.min.js';
+import { html, css, LitElement, nothing } from '../vendor/vendor.min.js';
 import { DatastoreHelper } from '../helpers/datastore-helper.js'
 
 export class WatchtowerApp extends LitElement {
@@ -8,6 +8,10 @@ export class WatchtowerApp extends LitElement {
             height: calc(100vh - 10px);
         }
     `
+
+    static properties = {
+        halt: { type: Boolean, state: true },
+    }
 
     constructor() {
         super()
@@ -19,8 +23,13 @@ export class WatchtowerApp extends LitElement {
         this.params = new URLSearchParams(window.location.search)
         this.name = this.params.get('name')
         if (this.name === null) {
-            alert('Query parameter [name] is missing!')
+            this.bailOut('0001')
             throw new Error('Query parameter [name] is missing!')
+        }
+
+        if (this.params.get('access_token') === null) {
+            this.bailOut('0002')
+            throw new Error('Query parameter [access_token] is missing!')
         }
 
         this.mobileView = window.innerWidth < 768
@@ -30,10 +39,12 @@ export class WatchtowerApp extends LitElement {
             this.mobileView = newState
             this.applyMobileView()
         })
+
+        this.halt = false
     }
 
     render() {
-        return html`
+        return this.halt !== false ? nothing : html`
             <dashboard-grid name=${this.name}></dashboard-grid>
             <dashboard-menu
                 @add=${this.showAddDialog}
@@ -73,6 +84,17 @@ export class WatchtowerApp extends LitElement {
 
         // Apply mobile view
         this.applyMobileView()
+    }
+
+    bailOut(errCode) {
+        alert(`
+            This file is part of the Watchtower application.
+
+            To load or create a Watchtower dashboard, please got to:
+            • Apps -> Watchtower -> Dashbaords
+
+            Error Code: #${errCode}
+        `)
     }
 
     applyMobileView() {

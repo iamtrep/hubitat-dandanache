@@ -113,7 +113,7 @@ When you load a dashboard in a new tab for the first time (by clicking the dashb
 
 ### Dashboard Menu
 
-The dashboard menu is not displayed by default and will only appear when the dashboard has no tiles. To toggle the dashboard menu, press the backtick (`` ` ``) key on your keyboard. On mobile devices, you can bring up the menu by swiping from the left margin of the screen.
+The dashboard menu is not displayed by default and will only appear when the dashboard has no tiles. To toggle the dashboard menu, press the **ESC** (Escape) key on your keyboard. On mobile devices, you can bring up the menu by swiping from the left margin of the screen.
 
 From the dashboard menu on the left, you can add a new dashboard tile, save the current dashboard layout, or configure the auto-refresh interval.
 
