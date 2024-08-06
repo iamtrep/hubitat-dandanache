@@ -973,6 +973,10 @@ void deleteDataFiles(DeviceWrapper device) {
     try { deleteHubFile("wt_${device.id}_1h.csv") } catch (NoSuchFileException ex) { }
     try { deleteHubFile("wt_${device.id}_1d.csv") } catch (NoSuchFileException ex) { }
     try { deleteHubFile("wt_${device.id}_1w.csv") } catch (NoSuchFileException ex) { }
+
+    // Also cleanup app state entries used for counter attributes (e.g. energy)
+    // @see calc5minIncrease()
+    state.entrySet().removeIf { it.key.startsWith("v.${device.id}_") }
 }
 
 // ===================================================================================================================

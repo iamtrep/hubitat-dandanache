@@ -351,9 +351,9 @@ Note: ".grid-stack" is required for proper CSS styling and drag/drop, and is the
             0% { transform: rotate(0deg) }
             100% { transform: rotate(360deg) }
         }
-    `;static properties={name:{type:String,reflect:!0},mobileView:{type:Boolean,state:!0}};applyMobileView(d){this.mobileView=d,this.renderRoot.querySelectorAll(".panel").forEach(m=>m.mobileView=this.mobileView),this.grid.enableResize(!this.mobileView),this.grid.enableMove(!this.mobileView)}render(){return re`
+    `;static properties={name:{type:String,reflect:!0},mobileView:{type:Boolean,state:!0}};applyMobileView(d){this.mobileView=d,this.renderRoot.querySelectorAll(".panel").forEach(m=>m.mobileView=this.mobileView),this.grid.enableResize(!this.mobileView),this.grid.enableMove(!this.mobileView),setTimeout(()=>this.grid.setAnimation(!this.mobileView),1e3)}render(){return re`
             <div class="grid-stack spinner" mobile-view=${this.mobileView?"true":ee}></div>
-        `}firstUpdated(){this.grid=GridStack.init({sizeToContent:!1,margin:5,float:!0,cellHeight:206,column:8,columnOpts:{layout:"move",columnMax:8,breakpointForWindow:!0,breakpoints:[{w:420,c:1},{w:800,c:2},{w:1024,c:4},{w:1366,c:6}]},handle:".panel-title",removable:!0,alwaysShowResizeHandle:!1},this.renderRoot.querySelector(".grid-stack"))}async init(d){d.length===0?this.addPanel({type:"text-panel",title:"Quick Instructions",message:`
+        `}firstUpdated(){this.grid=GridStack.init({sizeToContent:!1,margin:5,animate:!1,float:!0,cellHeight:206,column:8,columnOpts:{layout:"move",columnMax:8,breakpointForWindow:!0,breakpoints:[{w:420,c:1},{w:800,c:2},{w:1024,c:4},{w:1366,c:6}]},handle:".panel-title",removable:!0,alwaysShowResizeHandle:!1},this.renderRoot.querySelector(".grid-stack"))}async init(d){d.length===0?this.addPanel({type:"text-panel",title:"Quick Instructions",message:`
                     <b>\u{1F60E} Welcome to your new dashboard!</b>
                     <ul>
                         <li>Press the <b>ESC</b> (Escape) key on your keyboard to show or hide the left menu.

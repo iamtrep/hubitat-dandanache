@@ -71,6 +71,7 @@ export class DashboardGrid extends LitElement {
         this.renderRoot.querySelectorAll('.panel').forEach(panel => panel.mobileView = this.mobileView)
         this.grid.enableResize(!this.mobileView)
         this.grid.enableMove(!this.mobileView)
+        setTimeout(() => this.grid.setAnimation(!this.mobileView), 1000)
     }
 
     render() {
@@ -83,6 +84,7 @@ export class DashboardGrid extends LitElement {
         this.grid = GridStack.init({
             sizeToContent: false,
             margin: 5,
+            animate: false,
             float: true,
 
             // Non-configurable options
