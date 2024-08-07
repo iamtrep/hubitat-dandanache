@@ -11,6 +11,7 @@ export class WatchtowerApp extends LitElement {
 
     static properties = {
         halt: { type: Boolean, state: true },
+        embedded: { type: Boolean, state: true },
     }
 
     constructor() {
@@ -40,12 +41,19 @@ export class WatchtowerApp extends LitElement {
             this.applyMobileView()
         })
 
+        // Embeddable
+        window.addEventListener('load', () => {
+            if (window.top === window.self) return
+            document.body.classList.add('embedded')
+            this.embedded = true
+        })
+
         this.halt = false
     }
 
     render() {
         return this.halt !== false ? nothing : html`
-            <dashboard-grid name=${this.name}></dashboard-grid>
+            <dashboard-grid name=${this.name} class="${this.embedded ? 'embedded' : nothing}"></dashboard-grid>
             <dashboard-menu
                 @add=${this.showAddDialog}
                 @compact=${this.compactPanels}

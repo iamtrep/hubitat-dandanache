@@ -19,11 +19,11 @@ export class DashboardMenu extends LitElement {
             padding: 1em;
             background-color: var(--bg-color-darker);
             color: var(--text-color);
-            box-shadow: 0 0 1em var(--shadow-color);
             border-right: 1px var(--border-color) solid;
             animation: hideme .3s;
         }
         :host([open]) nav {
+            box-shadow: 0 0 1em var(--shadow-color);
             left: 0;
             animation: showme .3s;
         }

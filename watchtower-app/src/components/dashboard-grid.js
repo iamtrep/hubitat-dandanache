@@ -12,6 +12,10 @@ export class DashboardGrid extends LitElement {
             border-radius: 5px;
             box-shadow: 0 0 0.3em var(--shadow-color);
         }
+        :host(.embedded) .grid-stack-item-content {
+            box-shadow: none;
+            border: none;
+        }
         .panel-container {
             width: 100%;
             height: 100%;
