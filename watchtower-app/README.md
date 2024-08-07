@@ -15,12 +15,13 @@ In addition to robust data collection, Watchtower offers customizable dashboards
 To install the Watchtower app using the Hubitat Package Manager (and receive automatic updates), follow these steps:
 
 1. Go to the **Apps** menu in the Hubitat interface.
-2. Select **Hubitat Package Manager** from the list of apps.
-3. Click **Install** and then **Search by Keywords**.
-4. Type **Watchtower** in the search box and click **Next**.
-5. Choose **Watchtower by Dan Danache** and click **Next**.
-6. Read the license agreement and click **Next**.
-7. Wait for the installation to complete and click **Next**.
+1. Select **Hubitat Package Manager** from the list of apps.
+1. In the top-right, make sure that you have at least version **1.9.2** installed; otherwise, first update HPM to its latest version.
+1. Click **Install** and then **Search by Keywords**.
+1. Type **Watchtower** in the search box and click **Next**.
+1. Choose **Watchtower by Dan Danache** and click **Next**.
+1. Read the license agreement and click **Next**.
+1. Wait for the installation to complete and click **Next**.
 
 ## Metrics Collection
 
