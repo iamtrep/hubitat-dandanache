@@ -36,7 +36,7 @@ import com.hubitat.hub.domain.Event
     acceleration: [min:0, max:100, unit:'% active', probe:{ device, state, events, begin, end -> calc5minValue(device, 'acceleration', ['active'], events, begin, end) }],
     airQualityIndex: [min:0, max:500, unit:'', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'airQualityIndex', events) }],
     amperage: [min:0, unit:'A', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'amperage', events) }],
-    battery: [min:0, max:100, unit:'%', probe:{ device, state, events, begin, end -> "${device.currentValue('battery')}" }],
+    battery: [min:0, max:100, unit:'%', probe:{ device, state, events, begin, end -> "${device.currentValue('battery') ?: 0}" }],
     camera: [min:0, max:100, unit:'% on', probe:{ device, state, events, begin, end -> calc5minValue(device, 'camera', ['on'], events, begin, end) }],
     carbonDioxide: [min:0, unit:'ppm', probe:{ device, state, events, begin, end -> calc5minAverage(device, 'carbonDioxide', events) }],
     contact: [min:0, max:100, unit:'% open', probe:{ device, state, events, begin, end -> calc5minValue(device, 'contact', ['open'], events, begin, end) }],
@@ -85,6 +85,8 @@ import com.hubitat.hub.domain.Event
 
 @CompileStatic
 static String calc5minValue(DeviceWrapper device, String attribute, List<String> onValues, List<Event> events, long beginTimestamp, long endTimestamp) {
+    String currentValue = device.currentValue(attribute)
+    if (currentValue == null) return '0'
     long onTime = 0
     long lastOnTimestamp = beginTimestamp
     for (int i = 0; i < events.size(); i++) {
@@ -97,14 +99,15 @@ static String calc5minValue(DeviceWrapper device, String attribute, List<String>
             onTime += event.getDate().getTime() - lastOnTimestamp
         }
     }
-    if (onValues.contains(device.currentValue(attribute))) onTime += endTimestamp - lastOnTimestamp
+    if (onValues.contains(currentValue)) onTime += endTimestamp - lastOnTimestamp
     return new BigDecimal(onTime / 3000.0d).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
 }
 
 @CompileStatic
 static String calc5minIncrease(DeviceWrapper device, String attribute, Map state) {
-    String stateKey = String.format('v.%s_%s', device.getId(), attribute)
     String currentValue = device.currentValue(attribute)
+    if (currentValue == null) return '0'
+    String stateKey = String.format('v.%s_%s', device.getId(), attribute)
     String lastValue = state.get(stateKey) ?: currentValue
     state.put(stateKey, currentValue)
     return (new BigDecimal(currentValue) - new BigDecimal(lastValue)).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
@@ -113,6 +116,7 @@ static String calc5minIncrease(DeviceWrapper device, String attribute, Map state
 @CompileStatic
 static String calc5minAverage(DeviceWrapper device, String attribute, List<Event> events) {
     String currentValue = device.currentValue(attribute)
+    if (currentValue == null) return '0'
     BigDecimal sum = BigDecimal.ZERO
     int count = 0
     for (int i = 0; i < events.size(); i++) {
