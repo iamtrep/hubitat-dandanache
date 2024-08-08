@@ -92,8 +92,12 @@ export class DevicePanel extends LitElement {
             },
             ticks: { color: colors.TextColorDarker },
             grid: { color: colors.TextColorDarker + '33' },
-            suggestedMin: supportedAttributes[this.config.attr1].min,
-            suggestedMax: supportedAttributes[this.config.attr1].max
+        }
+        this.attr1Min = supportedAttributes[this.config.attr1].min
+        this.attr1Max = supportedAttributes[this.config.attr1].max
+        if (this.scale === 'fixed') {
+            if (this.attr1Min !== undefined) this.chart.options.scales.attr1.suggestedMin = this.attr1Min
+            if (this.attr1Max !== undefined) this.chart.options.scales.attr1.suggestedMax = this.attr1Max
         }
 
         if (this.config.attr2 !== undefined) {
@@ -120,8 +124,12 @@ export class DevicePanel extends LitElement {
                 },
                 ticks: { color: colors.TextColorDarker },
                 grid: { drawOnChartArea: false },
-                min: supportedAttributes[this.config.attr2].min,
-                max: supportedAttributes[this.config.attr2].max
+            }
+            this.attr2Min = supportedAttributes[this.config.attr2].min
+            this.attr2Max = supportedAttributes[this.config.attr2].max
+            if (this.scale === 'fixed') {
+                if (this.attr2Min !== undefined) this.chart.options.scales.attr2.suggestedMin = this.attr2Min
+                if (this.attr2Max !== undefined) this.chart.options.scales.attr2.suggestedMax = this.attr2Max
             }
         }
 
@@ -157,6 +165,21 @@ export class DevicePanel extends LitElement {
 
     decorateConfig(config) {
         return { ...config, ...this.config }
+    }
+
+    setYScale(scale) {
+        this.scale = scale
+        if (!this.chart) return
+        if (scale == 'auto') {
+            delete this.chart.options.scales.attr1.suggestedMin
+            delete this.chart.options.scales.attr1.suggestedMax
+        } else {
+            if (this.attr1Min !== undefined) this.chart.options.scales.attr1.suggestedMin = this.attr1Min
+            if (this.attr1Max !== undefined) this.chart.options.scales.attr1.suggestedMax = this.attr1Max
+            if (this.attr2Min !== undefined) this.chart.options.scales.attr2.suggestedMin = this.attr2Min
+            if (this.attr2Max !== undefined) this.chart.options.scales.attr2.suggestedMax = this.attr2Max
+        }
+        this.chart.update()
     }
 }
 

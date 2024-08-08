@@ -70,14 +70,6 @@ export class DashboardGrid extends LitElement {
         mobileView: { type: Boolean, state: true }
     }
 
-    applyMobileView(mobileView) {
-        this.mobileView = mobileView
-        this.renderRoot.querySelectorAll('.panel').forEach(panel => panel.mobileView = this.mobileView)
-        this.grid.enableResize(!this.mobileView)
-        this.grid.enableMove(!this.mobileView)
-        setTimeout(() => this.grid.setAnimation(!this.mobileView), 1000)
-    }
-
     render() {
         return html`
             <div class="grid-stack spinner" mobile-view=${this.mobileView ? 'true' : nothing}></div>
@@ -145,6 +137,14 @@ export class DashboardGrid extends LitElement {
         this.renderRoot.querySelector('.grid-stack').classList.remove('spinner')
     }
 
+    applyMobileView(mobileView) {
+        this.mobileView = mobileView
+        this.renderRoot.querySelectorAll('.panel').forEach(panel => panel.mobileView = this.mobileView)
+        this.grid.enableResize(!this.mobileView)
+        this.grid.enableMove(!this.mobileView)
+        setTimeout(() => this.grid.setAnimation(!this.mobileView), 1000)
+    }
+
     setRefreshInterval(refreshMinutes) {
         this.interval && clearInterval(this.interval)
         if (refreshMinutes == 0) return
@@ -152,6 +152,10 @@ export class DashboardGrid extends LitElement {
             this.renderRoot.querySelectorAll('.panel').forEach(panel => panel.refresh())
         }, refreshMinutes * 60 * 1000)
         console.info(`Setting auto-refresh timer for ${refreshMinutes} minutes`)
+    }
+
+    setYScale(yScale) {
+        this.renderRoot.querySelectorAll('device-panel, attribute-panel').forEach(panel => panel.setYScale(yScale))
     }
 
     addPanel(config, w = 2, h = 1, x = undefined, y = undefined) {

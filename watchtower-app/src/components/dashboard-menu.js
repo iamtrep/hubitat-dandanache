@@ -59,7 +59,7 @@ export class DashboardMenu extends LitElement {
         }
         label {
             display: block;
-            margin-bottom: 5px;
+            margin: 1em 0 .5em 0;
             font-size: .85rem;
         }
         select {
@@ -76,12 +76,21 @@ export class DashboardMenu extends LitElement {
             outline: 1px var(--Blue) solid;
             border-color: var(--Blue)
         }
+        aside {
+            color: var(--text-color-darker);
+            position: absolute;
+            bottom: .5em;
+            left: 50%;
+            transform: translateX(-50%);
+            user-select: none;
+        }
     `;
 
     static properties = {
         open: { type: Boolean, reflect: true },
         refreshInterval: { type: String, state: true },
-        startX: { type: Number, state: true },
+        theme: { type: String, state: true },
+        yScale: { type: String, state: true },
         mobileView: { type: Boolean, state: true }
     }
 
@@ -89,9 +98,8 @@ export class DashboardMenu extends LitElement {
         super()
         this.open = false
         this.refreshInterval = '0'
-
-        const params = new URLSearchParams(window.location.search)
-        this.theme = params.get('theme') === 'dark' ? 'dark' : 'light'
+        this.theme = 'light'
+        this.yScale = 'auto'
     }
 
     render() {
@@ -115,10 +123,16 @@ export class DashboardMenu extends LitElement {
                     <option value="light">light</option>
                     <option value="dark">dark</option>
                 </select>
+                <label>Y-axis scale</label>
+                <select id="yScale" .value=${this.yScale} @change=${this.changeYScale}>
+                    <option value="auto">auto</option>
+                    <option value="fixed">fixed</option>
+                </select>
                 ${this.mobileView ? nothing: html`
                     <hr>
                     <button @click=${this.saveDashboard} title="Save current dashboard layout">✓ Save dashboard</button>
                 `}
+                <aside>v1.1.0</aside>
             </nav>
         `;
     }
@@ -143,7 +157,10 @@ export class DashboardMenu extends LitElement {
     }
 
     saveDashboard() {
-        this.dispatchEvent(new CustomEvent('save', { detail: { refresh: this.refresh }}))
+        this.dispatchEvent(new CustomEvent('save', { detail: {
+            refresh: this.refreshInterval,
+            yScale: this.yScale,
+        }}))
     }
 
     changeRefreshInterval(event) {
@@ -153,6 +170,11 @@ export class DashboardMenu extends LitElement {
 
     changeTheme(event) {
         this.setTheme(event.target.value)
+    }
+
+    changeYScale(event) {
+        this.yScale = event.target.value
+        this.dispatchEvent(new CustomEvent('changeYScale', { detail: this.yScale }))
     }
 
     setTheme(theme) {

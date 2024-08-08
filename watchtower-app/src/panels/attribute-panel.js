@@ -96,16 +96,19 @@ export class AttributePanel extends LitElement {
         this.chart.options.scales.y = {
             position: 'left',
             display: true,
-            //beginAtZero: true,
             title: {
                 display: true,
                 text: `${attrLabel} ${supportedAttributes[this.config.attr].unit}`,
                 color: colors.TextColorDarker
             },
             ticks: { color: colors.TextColorDarker },
-            grid: { color: colors.TextColorDarker + '33' },
-            suggestedMin: supportedAttributes[this.config.attr].min,
-            suggestedMax: supportedAttributes[this.config.attr].max
+            grid: { color: colors.TextColorDarker + '33' }
+        }
+        this.attrMin = supportedAttributes[this.config.attr].min
+        this.attrMax = supportedAttributes[this.config.attr].max
+        if (this.scale === 'fixed') {
+            if (this.attrMin !== undefined) this.chart.options.scales.y.suggestedMin = this.attrMin
+            if (this.attrMax !== undefined) this.chart.options.scales.y.suggestedMax = this.attrMax
         }
 
         this.chart.data = { datasets }
@@ -137,6 +140,19 @@ export class AttributePanel extends LitElement {
 
     decorateConfig(config) {
         return { ...config, ...this.config }
+    }
+
+    setYScale(scale) {
+        this.scale = scale
+        if (!this.chart) return
+        if (scale == 'auto') {
+            delete this.chart.options.scales.y.suggestedMin
+            delete this.chart.options.scales.y.suggestedMax
+        } else {
+            this.chart.options.scales.y.suggestedMin = this.attrMin
+            this.chart.options.scales.y.suggestedMax = this.attrMax
+        }
+        this.chart.update()
     }
 }
 

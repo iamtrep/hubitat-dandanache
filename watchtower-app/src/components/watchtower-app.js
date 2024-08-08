@@ -58,6 +58,7 @@ export class WatchtowerApp extends LitElement {
                 @add=${this.showAddDialog}
                 @compact=${this.compactPanels}
                 @changeRefreshInterval=${this.changeRefreshInterval}
+                @changeYScale=${this.changeYScale}
                 @save=${this.saveDashboard}
             ></dashboard-menu>
             <dashboard-add-dialog @done=${this.addDashboardPanel}></dashboard-add-dialog>
@@ -77,6 +78,7 @@ export class WatchtowerApp extends LitElement {
         const layout = await DatastoreHelper.fetchGridLayout(this.params.get('name'));
         const refreshInterval = layout.refresh ? parseInt(layout.refresh) : 0
         const theme = layout.theme === 'dark' ? 'dark' : 'light'
+        const yScale = layout.yScale == 'fixed' ? 'fixed' : 'auto'
 
         // Show menu if dashboard contains no panels
         if (layout.panels.length === 0) this.menuElm.open = true
@@ -85,9 +87,11 @@ export class WatchtowerApp extends LitElement {
         await this.gridElm.updateComplete
         this.gridElm.init(layout.panels)
         this.gridElm.setRefreshInterval(refreshInterval)
+        this.gridElm.setYScale(yScale)
 
         // Update menu
-        this.menuElm.refreshInterval = `${refreshInterval}`
+        this.menuElm.refreshInterval = refreshInterval
+        this.menuElm.yScale = yScale
         this.menuElm.setTheme(theme)
 
         // Apply mobile view
@@ -110,10 +114,9 @@ export class WatchtowerApp extends LitElement {
         this.menuElm.applyMobileView(this.mobileView)
     }
 
-    async saveDashboard() {
+    async saveDashboard(event) {
         const layout = {
-            refresh: this.menuElm.refreshInterval,
-            theme: this.menuElm.theme,
+            ...event.detail,
             panels: this.gridElm.getPanelsConfig()
         }
         console.info('Saving dashboard to Hubitat', this.name, layout)
@@ -135,5 +138,9 @@ export class WatchtowerApp extends LitElement {
     changeRefreshInterval(event) {
         const refreshInterval = parseInt(event.detail)
         this.gridElm.setRefreshInterval(refreshInterval)
+    }
+
+    changeYScale(event) {
+        this.gridElm.setYScale(event.detail)
     }
 }
