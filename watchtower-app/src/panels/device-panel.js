@@ -173,6 +173,10 @@ export class DevicePanel extends LitElement {
         if (scale == 'auto') {
             delete this.chart.options.scales.attr1.suggestedMin
             delete this.chart.options.scales.attr1.suggestedMax
+            if (this.config.attr2 !== undefined) {
+                delete this.chart.options.scales.attr2.suggestedMin
+                delete this.chart.options.scales.attr2.suggestedMax
+            }
         } else {
             if (this.attr1Min !== undefined) this.chart.options.scales.attr1.suggestedMin = this.attr1Min
             if (this.attr1Max !== undefined) this.chart.options.scales.attr1.suggestedMax = this.attr1Max
